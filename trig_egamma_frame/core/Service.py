@@ -2,7 +2,7 @@
 
 __all__ = ["ToolSvc", "ToolMgr"]
 
-from trig_egamma_frame              import Messenger
+from trig_egamma_frame.core         import Messenger
 from trig_egamma_frame.core.macros  import *
 import collections
 

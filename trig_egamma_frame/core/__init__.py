@@ -6,6 +6,14 @@ from . import StatusCode
 __all__.extend(StatusCode.__all__)
 from .StatusCode import *
 
+from . import Property
+__all__.extend(Property.__all__)
+from .Property import *
+
+from . import helpers
+__all__.extend(helpers.__all__)
+from .helpers import *
+
 from . import enumerators
 __all__.extend(enumerators.__all__)
 from .enumerators import *
@@ -13,10 +21,6 @@ from .enumerators import *
 from . import Messenger
 __all__.extend(Messenger.__all__)
 from .Messenger import *
-
-from . import Property
-__all__.extend(Property.__all__)
-from .Property import *
 
 #from . import MultiProcessing
 #__all__.extend(MultiProcessing.__all__)

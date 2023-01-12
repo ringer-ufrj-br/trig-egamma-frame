@@ -4,6 +4,7 @@
 __all__ = [ 'expand_folders', 
             'ensure_extension', 
             'check_extension',
+            'get_attributes',
             'mkdir_p', 
             'progressbar', 
             'list2stdvector', 

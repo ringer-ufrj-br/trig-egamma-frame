@@ -1,9 +1,9 @@
 
 __all__ = ['EDM']
 
-from trig_egamma_frame              import Messenger
-from trig_egamma_frame              import EnumStringification
-from trig_egamma_frame              import StatusCode
+from trig_egamma_frame.core         import Messenger
+from trig_egamma_frame.core         import EnumStringification
+from trig_egamma_frame.core         import StatusCode
 from trig_egamma_frame.core.macros  import *
 
 from cppyy.ll import cast

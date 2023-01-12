@@ -1,11 +1,11 @@
 
 __all__ = ['TEventLoop']
 
-from trig_egamma_frame              import Messenger, LoggingLevel
-from trig_egamma_frame              import get_property
-from trig_egamma_frame              import StatusCode,StatusTool,StatusWTD
-from trig_egamma_frame              import EventContext
-from trig_egamma_frame              import StoreGate
+from trig_egamma_frame.core         import Messenger, LoggingLevel
+from trig_egamma_frame.core         import get_property
+from trig_egamma_frame.core         import StatusCode,StatusTool,StatusWTD
+from trig_egamma_frame.core         import EventContext
+from trig_egamma_frame.core         import StoreGate
 from trig_egamma_frame.core.helpers import expand_folders,progressbar
 from trig_egamma_frame.core.macros  import *
 

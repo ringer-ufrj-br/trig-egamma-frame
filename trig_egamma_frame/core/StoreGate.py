@@ -2,8 +2,8 @@
 
 __all__ = ['StoreGate','restoreStoreGate']
 
-from trig_egamma_frame              import get_property
-from trig_egamma_frame              import Messenger, LoggingLevel
+from trig_egamma_frame.core         import get_property
+from trig_egamma_frame.core         import Messenger, LoggingLevel
 from trig_egamma_frame.core.macros  import *
 from trig_egamma_frame.core.helpers import expand_path, ensure_extension
 

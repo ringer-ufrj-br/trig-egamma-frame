@@ -10,10 +10,10 @@ from trig_egamma_frame.core.enumerators import StatusTool, StatusWTD
 import collections
 
 
-class EventContext( Logger ):
+class EventContext( Messenger ):
 
   def __init__(self, t):
-    Logger.__init__(self)
+    Messenger.__init__(self)
     self._containers = collections.OrderedDict()
     self._tree=None
     self._decorations = dict()
