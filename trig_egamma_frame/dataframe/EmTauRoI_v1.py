@@ -1,10 +1,9 @@
 
 __all__ = ['EmTauRoI_v1']
 
-from Gaugi import EDM
-from Gaugi import StatusCode
-from Gaugi import stdvector2list
-from kepler.core import Dataframe as DataframeEnum
+from trig_egamma_frame.core import EDM
+from trig_egamma_frame.core import StatusCode
+from trig_egamma_frame.core import stdvector2list
 
 
 class EmTauRoI_v1(EDM):

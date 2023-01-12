@@ -2,12 +2,11 @@
 __all__ = ["TDT", "AcceptType"]
 
 
-from Gaugi import EDM
-from Gaugi import StatusCode, EnumStringification
-from Gaugi import stdvector2list
-from Gaugi.macros import *
+from trig_egamma_frame.core import EDM
+from trig_egamma_frame.core import StatusCode, EnumStringification
+from trig_egamma_frame.core import stdvector2list
+from trig_egamma_frame.core.macros import *
 
-from kepler.core import Dataframe as DataframeEnum
 import ROOT
 
 

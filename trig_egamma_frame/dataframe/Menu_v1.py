@@ -2,13 +2,13 @@
 __all__ = ["Menu_v1"]
 
 
-from Gaugi import EDM
-from Gaugi import ToolSvc
-from Gaugi import StatusCode
-from Gaugi.macros import *
+from trig_egamma_frame import EDM
+from trig_egamma_frame import ToolSvc
+from trig_egamma_frame import StatusCode
+from trig_egamma_frame.core.macros import *
 
-from kepler.events import AcceptType
-from kepler.emulator import Accept
+#from kepler.events import AcceptType
+#from kepler.emulator import Accept
 
 
 #

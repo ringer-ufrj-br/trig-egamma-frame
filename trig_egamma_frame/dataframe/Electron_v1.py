@@ -1,10 +1,10 @@
 
 __all__ = ['Electron_v1', 'EgammaParameters', 'IsolationType']
 
-from Gaugi import EDM
-from Gaugi  import StatusCode, EnumStringification
-from Gaugi  import stdvector2list
-from kepler.events import TrackCaloMatchType
+from trig_egamma_frame.core      import EDM
+from trig_egamma_frame.core      import StatusCode, EnumStringification
+from trig_egamma_frame.core      import stdvector2list
+from trig_egamma_frame.dataframe import TrackCaloMatchType
 import math
 import numpy as np
 

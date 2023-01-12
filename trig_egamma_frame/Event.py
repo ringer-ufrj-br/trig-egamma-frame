@@ -2,10 +2,10 @@
 __all__ = ['ElectronLoop', 'PhotonLoop']
 
 
-from Gaugi.macros import *
-from Gaugi import StatusCode, StatusTool
-from Gaugi.TEventLoop import TEventLoop
-from kepler.core.enumerators import Dataframe as DataframeEnum
+from trig_egamma_frame.core.macros      import *
+from trig_egamma_frame.core             import StatusCode, StatusTool
+from trig_egamma_frame.core             import TEventLoop
+from trig_egamma_frame.enumerators      import Dataframe as DataframeEnum
 
 #
 # Electron loop
@@ -27,30 +27,31 @@ class ElectronLoop( TEventLoop ):
       MSG_FATAL( self, "Impossible to initialize the TEventLoop services.")
 
     if self._dataframe is DataframeEnum.Run2:
-      from kepler.dataframe import Electron_v1
+      from trig_egamma_frame.c_struct import Electron_v1
       self._event = Electron_v1()
-      from kepler.events import Electron_v1      as Electron
-      from kepler.events import TrigEMCluster_v1 as TrigEMCluster
-      from kepler.events import TrigElectron_v1  as TrigElectron
-      from kepler.events import CaloCluster_v1   as CaloCluster
-      from kepler.events import TrackParticle_v1 as TrackParticle
-      from kepler.events import EmTauRoI_v1      as EmTauRoI
-      from kepler.events import EventInfo_v1     as EventInfo
-      from kepler.events import MonteCarlo_v1    as MonteCarlo
-      from kepler.events import Menu_v1          as Menu
+      from trig_egamma_frame.dataframe import Electron_v1      as Electron
+      from trig_egamma_frame.dataframe import TrigEMCluster_v1 as TrigEMCluster
+      from trig_egamma_frame.dataframe import TrigElectron_v1  as TrigElectron
+      from trig_egamma_frame.dataframe import CaloCluster_v1   as CaloCluster
+      from trig_egamma_frame.dataframe import TrackParticle_v1 as TrackParticle
+      from trig_egamma_frame.dataframe import EmTauRoI_v1      as EmTauRoI
+      from trig_egamma_frame.dataframe import EventInfo_v1     as EventInfo
+      from trig_egamma_frame.dataframe import MonteCarlo_v1    as MonteCarlo
+      from trig_egamma_frame.dataframe import Menu_v1          as Menu
 
     elif self._dataframe is DataframeEnum.Run3:
-      from kepler.dataframe import Electron_v2
+      
+      from trig_egamma_frame.c_struct import Electron_v2
       self._event = Electron_v2()
-      from kepler.events import Electron_v2      as Electron
-      from kepler.events import TrigEMCluster_v1 as TrigEMCluster
-      from kepler.events import TrigElectron_v2  as TrigElectron
-      from kepler.events import CaloCluster_v2   as CaloCluster
-      from kepler.events import TrackParticle_v2 as TrackParticle
-      from kepler.events import EmTauRoI_v2      as EmTauRoI
-      from kepler.events import EventInfo_v2     as EventInfo
-      from kepler.events import MonteCarlo_v2    as MonteCarlo
-      from kepler.events import Menu_v1          as Menu
+      from trig_egamma_frame.dataframe import Electron_v2      as Electron
+      from trig_egamma_frame.dataframe import TrigEMCluster_v1 as TrigEMCluster
+      from trig_egamma_frame.dataframe import TrigElectron_v2  as TrigElectron
+      from trig_egamma_frame.dataframe import CaloCluster_v2   as CaloCluster
+      from trig_egamma_frame.dataframe import TrackParticle_v2 as TrackParticle
+      from trig_egamma_frame.dataframe import EmTauRoI_v2      as EmTauRoI
+      from trig_egamma_frame.dataframe import EventInfo_v2     as EventInfo
+      from trig_egamma_frame.dataframe import MonteCarlo_v2    as MonteCarlo
+      from trig_egamma_frame.dataframe import Menu_v1          as Menu
 
     else:
       return StatusCode.FATAL
@@ -87,7 +88,7 @@ class ElectronLoop( TEventLoop ):
 
     # append TDT container
     if self._dataframe is DataframeEnum.Run2:
-      from kepler.events import TDT_v1 as TDT
+      from trig_egamma_frame.dataframe import TDT_v1 as TDT
       self._containersSvc.update({
                             # metadata containers
                             'HLT__TDT'                   : TDT(),
@@ -158,7 +159,7 @@ class PhotonLoop( TEventLoop ):
       MSG_FATAL( self, "Impossible to initialize the TEventLoop services.")
 
     if self._dataframe is DataframeEnum.Photon_v1:
-      from kepler.events import Photon_v1
+      from trig_egamma_frame.dataframe import Photon_v1
       self._event = Photon_v1()
     else:
       return StatusCode.FATAL
@@ -166,14 +167,14 @@ class PhotonLoop( TEventLoop ):
 
     MSG_INFO( self, "Creating containers...")
     # Allocating containers
-    from kepler.events import Photon
-    from kepler.events import TrigEMCluster
-    from kepler.events import CaloCluster
-    from kepler.events import EmTauRoI
-    from kepler.events import EventInfo
-    from kepler.events import MonteCarlo
-    from kepler.events import TDT
-    from ringer.kepler.kepler.events import Menu_v1
+    from trig_egamma_frame.dataframe import Photon
+    from trig_egamma_frame.dataframe import TrigEMCluster
+    from trig_egamma_frame.dataframe import CaloCluster
+    from trig_egamma_frame.dataframe import EmTauRoI
+    from trig_egamma_frame.dataframe import EventInfo
+    from trig_egamma_frame.dataframe import MonteCarlo
+    from trig_egamma_frame.dataframe import TDT
+    from ringer.kepler.trig_egamma_frame.dataframe import Menu_v1
 
 
     # Initialize the base of this container.

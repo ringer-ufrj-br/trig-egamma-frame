@@ -1,9 +1,10 @@
 
 __all__ = ['TrigElectron_v1']
 
-from Gaugi import EDM
-from Gaugi import StatusCode
+from trig_egamma_frame.core import EDM
+from trig_egamma_frame.core import StatusCode
 import numpy as np
+
 
 
 class TrigElectron_v1(EDM):

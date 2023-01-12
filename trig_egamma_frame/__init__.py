@@ -13,3 +13,11 @@ from . import c_struct
 __all__.extend(c_struct.__all__)
 from .c_struct import *
 
+from . import dataframe
+__all__.extend(dataframe.__all__)
+from .dataframe import *
+
+from . import Event
+__all__.extend(Event.__all__)
+from .Event import *
+

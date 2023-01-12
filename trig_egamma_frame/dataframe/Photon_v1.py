@@ -2,9 +2,9 @@
 __all__ = ['Photon_v1', 'EgammaParameters']
 
 
-from Gaugi import EDM
-from Gaugi import StatusCode, EnumStringification
-from Gaugi import stdvector2list
+from trig_egamma_frame.core import EDM
+from trig_egamma_frame.core import StatusCode, EnumStringification
+from trig_egamma_frame.core import stdvector2list
 import math
 
 

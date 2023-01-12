@@ -2,9 +2,8 @@
 __all__ = ["CaloCluster_v1"]
 
 
-from Gaugi import EDM
-from Gaugi import StatusCode
-from kepler.core import Dataframe as DataframeEnum
+from trig_egamma_frame.core import EDM
+from trig_egamma_frame.core import StatusCode
 import numpy as np
 
 class CaloCluster_v1(EDM):
