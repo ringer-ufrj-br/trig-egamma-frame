@@ -2,12 +2,10 @@
 
 __all__ = ['StoreGate','restoreStoreGate']
 
-
-from Gaugi import Logger, LoggingLevel
-from Gaugi.macros import *
-from Gaugi import get_property
-from Gaugi.utils import expand_path
-from Gaugi.utils import ensure_extension
+from trig_egamma_frame              import get_property
+from trig_egamma_frame              import Messenger, LoggingLevel
+from trig_egamma_frame.core.macros  import *
+from trig_egamma_frame.core.helpers import expand_path, ensure_extension
 
 from ROOT import TFile
 import numpy as np
@@ -18,21 +16,20 @@ import gc
 #
 # StoreGate manager
 #
-class StoreGate( Logger ) :
+class StoreGate( Messenger ) :
 
   #
   # Constructor
   #
   def __init__( self, outputFile, restore=False ):
 
-    Logger.__init__(self)
-
+    Messenger.__init__(self)
     outputFile = ensure_extension(outputFile,'root')
     self.__outputFile = expand_path( outputFile )
 
     if restore:
       if not os.path.exists( self.__outputFile ):
-        raise ValueError("File '%s' does not exist" % self.__outputFile)
+        raise ValueError(f"File {self.__outputFile} does not exist")
       self.__file = TFile( self.__outputFile, "read")
     else:
       self.__file = TFile( self.__outputFile, "recreate")
@@ -77,13 +74,12 @@ class StoreGate( Logger ) :
       self.__file.mkdir(fullpath)
       self.__file.cd(fullpath)
       self.__currentDir = fullpath
-      MSG_DEBUG(self, 'Created directory with name %s', theDir)
+      MSG_DEBUG(self, f'Created directory with name {theDir}')
 
   #
   # Go to the pointed directory
   #
   def cd(self, theDir):
-
     self.__currentDir = ''
     self.__file.cd()
     fullpath = (theDir).replace('//','/')
@@ -91,7 +87,7 @@ class StoreGate( Logger ) :
       self.__currentDir = fullpath
       if self.__file.cd(fullpath):
         return True
-    MSG_ERROR(self , "Couldn't cd to folder %s", fullpath)
+    MSG_ERROR(self , f"Couldn't cd to folder {fullpath}")
     return False
 
 
@@ -127,10 +123,10 @@ class StoreGate( Logger ) :
       fullpath='/'+fullpath
     if fullpath in self.__dirs:
       obj = self.__objects[fullpath]
-      #self._logger.verbose('Retrieving object type %s into %s',type(obj), fullpath)
+      #self._Messenger.verbose('Retrieving object type %s into %s',type(obj), fullpath)
       return obj
     else:
-      MSG_WARNING(self, 'Object with path %s doesnt exist', fullpath)
+      MSG_WARNING(self, f'Object with path {fullpath} doesnt exist')
       return None
 
 
@@ -152,7 +148,7 @@ class StoreGate( Logger ) :
       except:
         MSG_FATAL(self, "Can not set the labels! abort.")
     else:
-      MSG_WARNING(self, "Can not set the labels because this feature (%s) does not exist into the storage",feature)
+      MSG_WARNING(self, f"Can not set the labels because this feature ({feature}) does not exist into the storage")
 
 
   def collect(self):

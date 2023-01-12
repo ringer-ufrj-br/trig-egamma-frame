@@ -18,17 +18,13 @@ from . import Property
 __all__.extend(Property.__all__)
 from .Property import *
 
-from . import MultiProcessing
-__all__.extend(MultiProcessing.__all__)
-from .MultiProcessing import *
+#from . import MultiProcessing
+#__all__.extend(MultiProcessing.__all__)
+#from .MultiProcessing import *
 
 from . import constants
 __all__.extend(constants.__all__)
 from .constants import *
-
-from . import EventContext
-__all__.extend(EventContext.__all__)
-from .EventContext import *
 
 from . import Service
 __all__.extend(Service.__all__)
@@ -42,24 +38,13 @@ from . import StoreGate
 __all__.extend(StoreGate.__all__)
 from .StoreGate import *
 
-# Import all root classes
-try:
-  import ROOT
-  useROOT=True
-except:
-  useROOT=Fal
-  print ('WARNING: ROOT not found. You will not be able to use the TEventLoop, StoreGate and monet  services provied by the gaugi core.')
+from . import TEventLoop
+__all__.extend(TEventLoop.__all__)
+from .TEventLoop import *
 
-
-if useROOT:
-  print('Using all sub packages with ROOT dependence')
-  from . import TEventLoop
-  __all__.extend(TEventLoop.__all__)
-  from .TEventLoop import *
-
-  from . import EDM
-  __all__.extend(EDM.__all__)
-  from .EDM import *
+from . import EDM
+__all__.extend(EDM.__all__)
+from .EDM import *
 
 
 

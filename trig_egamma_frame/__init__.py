@@ -1,10 +1,9 @@
 __all__ = []
 
 
-from . import Events
-__all__.extend(Events.__all__)
-from .Events import *
-
+from . import core
+__all__.extend(core.__all__)
+from .core import *
 
 from . import enumerators
 __all__.extend(enumerators.__all__)

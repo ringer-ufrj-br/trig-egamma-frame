@@ -9,6 +9,7 @@ __all__ = [
            "MSG_FATAL",
            ]
 
+
 def MSG_VERBOSE( self, msg, *args):
   self._logger.verbose(msg,*args)
 

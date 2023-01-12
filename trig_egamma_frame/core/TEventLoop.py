@@ -1,23 +1,27 @@
 
 __all__ = ['TEventLoop']
 
-from Gaugi        import Logger, LoggingLevel
-from Gaugi        import get_property
-from Gaugi.utils  import expand_folders
-from Gaugi.utils  import progressbar
-from Gaugi.macros import *
-from Gaugi import StatusCode,StatusTool,StatusWTD
+from trig_egamma_frame              import Messenger, LoggingLevel
+from trig_egamma_frame              import get_property
+from trig_egamma_frame              import StatusCode,StatusTool,StatusWTD
+from trig_egamma_frame              import EventContext
+from trig_egamma_frame              import StoreGate
+from trig_egamma_frame.core.helpers import expand_folders,progressbar
+from trig_egamma_frame.core.macros  import *
 
 import collections
 import ROOT
+import traceback
 
 
-class TEventLoop( Logger ):
+
+
+class TEventLoop( Messenger ):
 
   def __init__(self, name, **kw):
 
     # Retrieve all information needed
-    Logger.__init__(self, name)
+    Messenger.__init__(self, name)
     fList                   = get_property( kw, 'inputFiles'      , []                             )
     self._ofile             = get_property( kw, 'outputFile'      , "histos.root"                  )
     self._treePath          = get_property( kw, 'treePath'        , None                           )
@@ -46,11 +50,10 @@ class TEventLoop( Logger ):
     self._metadataInputFile = None
 
 
-  def name(self):
-    return self._name
 
-
+  #
   # Initialize all services
+  #
   def initialize( self ):
 
     MSG_INFO( self, 'Initializing TEventLoop...')
@@ -73,19 +76,19 @@ class TEventLoop( Logger ):
         else:
           treePath=self._treePath
       except:
-        MSG_WARNING( self, "Couldn't retrieve TTree (%s) from GetListOfKeys!", treePath)
+        MSG_WARNING( self, f"Couldn't retrieve TTree ({treePath}) from GetListOfKeys!")
         continue
 
       obj = self._f.Get(treePath)
       if not obj:
-        MSG_WARNING( self, "Couldn't retrieve TTree (%s)!", treePath)
+        MSG_WARNING( self, f"Couldn't retrieve TTree ({treePath})!")
         MSG_INFO( self, "File available info:")
         self._f.ReadAll()
         self._f.ReadKeys()
         self._f.ls()
         continue
       elif not isinstance(obj, ROOT.TTree):
-        MSG_FATAL( self, "%s is not an instance of TTree!", treePath, ValueError)
+        MSG_FATAL( self, f"{treePath} is not an instance of TTree!")
 
       if not self._metadataInputFile:
         self._metadataInputFile = (inputFile, treePath)
@@ -99,14 +102,12 @@ class TEventLoop( Logger ):
     ## Allocating memory for the number of entries
     self._entries = self._t.GetEntries()
 
-
-    from Gaugi import EventContext
+    
     self._context = EventContext(self._t)
 
     # Create the StoreGate service
     if not self._storegateSvc:
       MSG_INFO( self, "Creating StoreGate...")
-      from Gaugi import StoreGate
       self._storegateSvc = StoreGate( self._ofile )
     else:
       MSG_INFO( self, 'The StoraGate was created for ohter service. Using the service setted by client.')
@@ -115,7 +116,9 @@ class TEventLoop( Logger ):
 
 
 
-
+  #
+  # Execute the main loop...
+  #
   def execute( self ):
 
     ### Loop over events
@@ -123,17 +126,20 @@ class TEventLoop( Logger ):
       
       try:
         self.process(entry)
-      except:
+      except Exception as e:
+        print(e)
+        traceback.print_exc()
         if self._abort:
-          MSG_FATAL(self, "Abort event %d"%entry)
+          MSG_FATAL(self, f"Abort event {entry}")
         else:
-          MSG_ERROR(self, "Error event %d"%entry)
+          MSG_ERROR(self, f"Error event {entry}")
 
 
     return StatusCode.SUCCESS
 
 
   def process(self, entry):
+
     # retrieve all values from the branches
     context = self.getContext()
     context.setEntry(entry)
@@ -145,21 +151,25 @@ class TEventLoop( Logger ):
       if alg.status is StatusTool.DISABLE:
         continue
       if alg.execute( context ).isFailure():
-        MSG_ERROR( self, 'The tool %s return status code different of SUCCESS',alg.name)
+        MSG_ERROR( self, f'The tool {alg.name} return status code different of SUCCESS')
       if alg.wtd is StatusWTD.ENABLE:
-        self._logger.debug('Watchdog is true in %s. Skip events',alg.name)
+        MSG_DEBUG(self, f'Watchdog is true in {alg.name}. Skip events')
         # reset the watchdog since this was used
         alg.wtd = StatusWTD.DISABLE
         break
 
 
+  #
+  # Finalize the core
+  #
   def finalize( self ):
+
     MSG_INFO( self, 'Finalizing all tools...')
     for alg in self._alg_tools:
       if alg.isFinalized():
         continue
       if alg.finalize().isFailure():
-        MSG_ERROR( self, 'The tool %s return status code different of SUCCESS',alg.name)
+        MSG_ERROR( self, f'The tool {alg.name} return status code different of SUCCESS')
 
     MSG_INFO( self, 'Finalizing StoreGate service...')
     self._storegateSvc.write()
@@ -173,7 +183,9 @@ class TEventLoop( Logger ):
     return StatusCode.SUCCESS
 
 
-
+  #
+  # Run
+  #
   def run( self, nov=-1 ):
     self._nov = nov
     self.initialize()
@@ -185,18 +197,21 @@ class TEventLoop( Logger ):
   def getEntries(self):
     return self._entries
 
+  #
   # User method
+  #
   def getEntry( self, entry ):
     self._t.GetEntry( entry )
-
 
 
   def getContext(self):
     return self._context
 
+
   # get the storegate pointer
   def getStoreGateSvc(self):
     return self._storegateSvc
+
 
   # set the storegate from another external source
   def setStoreGateSvc(self, store):

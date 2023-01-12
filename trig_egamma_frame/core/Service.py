@@ -2,17 +2,17 @@
 
 __all__ = ["ToolSvc", "ToolMgr"]
 
-from Gaugi import Logger
-from Gaugi.macros import *
+from trig_egamma_frame              import Messenger
+from trig_egamma_frame.core.macros  import *
 import collections
 
-class Service( Logger ):
+
+class Service( Messenger ):
 
   def __init__(self, name):
-    Logger.__init__(self)
+    Messenger.__init__(self)
     self._name = name
     self._tools = collections.OrderedDict()
-    #MSG_DEBUG( self, "Creating %s as Service...", name)
 
   def name(self):
     return self._name
@@ -29,12 +29,12 @@ class Service( Logger ):
 
   def disable(self):
     for name, tool in self._tools.items():
-      MSG_DEBUG( self, "Disable %s tool", name)
+      MSG_DEBUG( self, f"Disable {name} tool")
       tool.disable()
 
   def enable(self):
     for name, tool in self._tools.items():
-      MSG_DEBUG( self, "Enable %s tool", name)
+      MSG_DEBUG( self, f"Enable {name} tool")
       tool.enable()
 
   def push_back(self, tool):
@@ -59,7 +59,12 @@ class Service( Logger ):
     if key in self._tools.keys():
       return self._tools[key]
     else:
-      MSG_ERROR( self, "Tool with name %s not found in the tool service", key)
+      MSG_ERROR( self, f"Tool with name {key} not found in the tool service")
+
+
+#
+# Create tool services
+#
 
 
 # Use this to attach all tools

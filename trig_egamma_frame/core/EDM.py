@@ -1,10 +1,10 @@
 
 __all__ = ['EDM']
 
-from Gaugi import Logger
-from Gaugi import EnumStringification
-from Gaugi import StatusCode
-from Gaugi.macros import *
+from trig_egamma_frame              import Messenger
+from trig_egamma_frame              import EnumStringification
+from trig_egamma_frame              import StatusCode
+from trig_egamma_frame.core.macros  import *
 
 from cppyy.ll import cast
 import traceback
@@ -12,14 +12,14 @@ import ROOT
 
 
 
-class EDM( Logger ):
+class EDM( Messenger ):
 
   # set the default skimmed dataframe
   _dataframe = None
   
   def __init__(self):
     
-    Logger.__init__(self)
+    Messenger.__init__(self)
     self._idx = 0
     self._is_hlt = False
     self._decoration = dict()
@@ -167,7 +167,6 @@ class EDM( Logger ):
         try:
             self.setBranchAddress( self._tree, branch  , self._event)
             self._branches.append(branch) # hold all branches from the body class
-        
         except Exception as e:
             traceback.print_exc()
             print(e)

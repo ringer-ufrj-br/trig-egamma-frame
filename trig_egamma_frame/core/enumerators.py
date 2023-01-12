@@ -145,3 +145,6 @@ class Color(EnumStringification):
 	CBEIGEBG2  = '\33[106m'
 	CWHITEBG2  = '\33[107m'
 
+
+
+

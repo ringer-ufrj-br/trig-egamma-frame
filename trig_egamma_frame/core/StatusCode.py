@@ -1,5 +1,6 @@
 __all__ = ['StatusCode']
 
+
 # Status code object used for error code
 class StatusObj(object):
 
