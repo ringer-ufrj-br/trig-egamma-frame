@@ -2,10 +2,10 @@
 __all__ = ["EmulationTool", "Accept", "attach"]
 
 
-from Gaugi import ToolSvc
-from Gaugi import Algorithm
-from Gaugi import StatusCode
-from Gaugi.macros import *
+from trig_egamma_frame              import ToolSvc
+from trig_egamma_frame              import Algorithm
+from trig_egamma_frame              import StatusCode
+from trig_egamma_frame.core.macros  import *
 import collections
 
 

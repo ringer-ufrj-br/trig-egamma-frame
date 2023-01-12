@@ -7,8 +7,8 @@ from trig_egamma_frame import ToolSvc
 from trig_egamma_frame import StatusCode
 from trig_egamma_frame.core.macros import *
 
-#from kepler.events import AcceptType
-#from kepler.emulator import Accept
+from trig_egamma_frame.dataframe import AcceptType
+from trig_egamma_frame.emulator  import Accept
 
 
 #

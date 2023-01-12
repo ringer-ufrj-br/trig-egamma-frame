@@ -2,15 +2,16 @@
 __all__ = ['TrigEgammaFastCaloHypoTool']
 
 
-from Gaugi import GeV
-from Gaugi import StatusCode
-from Gaugi import Algorithm
-from Gaugi import ToolSvc
-from Gaugi import declareProperty
-from Gaugi.macros import *
+from trig_egamma_frame import GeV
+from trig_egamma_frame import StatusCode
+from trig_egamma_frame import Algorithm
+from trig_egamma_frame import ToolSvc
+from trig_egamma_frame import declareProperty
+from trig_egamma_frame.core.macros import *
 
-from kepler.menu import treat_trigger_dict_type
-from kepler.emulator import Accept
+
+from trig_egamma_frame.emulator.run2.menu import treat_trigger_dict_type
+from trig_egamma_frame.emulator import Accept
 
 import numpy as np
 import math
@@ -228,7 +229,7 @@ def configure_from_trigger( trigger ):
 def configure( name, etthr, pidname ):
 
   
-  from kepler.emulator import L2CaloCutMaps, TrigEgammaFastCaloHypoTool
+  from trig_egamma_frame.emulator.run2 import L2CaloCutMaps, TrigEgammaFastCaloHypoTool
   cuts = L2CaloCutMaps(etthr)
   hypo  = TrigEgammaFastCaloHypoTool(name,
                                    dETACLUSTERthr = 0.1,

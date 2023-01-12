@@ -64,10 +64,10 @@ class TEventLoop( Messenger ):
       # Check if file exists
       self._f  = ROOT.TFile.Open(inputFile, 'read')
       if not self._f or self._f.IsZombie():
-        MSG_WARNING( self, f"Couldn''t open file: {inputfile}")
+        MSG_WARNING( self, f"Couldn''t open file: {inputFile}")
         continue
       # Inform user whether TTree exists, and which options are available:
-      MSG_DEBUG(self, f"Adding file: {inputfile}")
+      MSG_DEBUG(self, f"Adding file: {inputFile}")
       try:
         # Custon directory token
         if '*' in self._treePath:

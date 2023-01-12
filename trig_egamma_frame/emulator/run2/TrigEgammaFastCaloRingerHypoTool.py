@@ -1,12 +1,12 @@
 
 __all__ = ["TrigEgammaFastCaloRingerHypoTool", "RingerSelectorTool", "load_models"]
 
-from Gaugi.macros import *
-from Gaugi import Algorithm
-from Gaugi import StatusCode
-from Gaugi import GeV
-from Gaugi import ToolSvc
-from Gaugi import declareProperty
+from trig_egamma_frame.core.macros import *
+from trig_egamma_frame.core        import Algorithm
+from trig_egamma_frame.core        import StatusCode
+from trig_egamma_frame.core        import GeV
+from trig_egamma_frame.core        import ToolSvc
+from trig_egamma_frame.core        import declareProperty
 
 from kepler.menu import treat_trigger_dict_type
 from kepler.emulator import Accept
