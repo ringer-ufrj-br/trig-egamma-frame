@@ -25,6 +25,10 @@ from . import Event
 __all__.extend(Event.__all__)
 from .Event import *
 
+from . import algorithms
+__all__.extend(algorithms.__all__)
+from .algorithms import *
+
 from . import dumper
 __all__.extend(dumper.__all__)
 from .dumper import *

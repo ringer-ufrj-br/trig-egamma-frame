@@ -229,8 +229,8 @@ class ElectronDumper_v2( Algorithm ):
   #
   def finalize( self ):
     if self.__dataframe:
-      MSG_INFO(self, "Save dataframe into %s", self.output)
       df = pd.DataFrame(self.__dataframe)
+      MSG_INFO(self, "Save dataframe into %s with (%d,%d)", self.output, df.shape[0], df.shape[1])
       df.to_pickle(self.output)
     return StatusCode.SUCCESS
 

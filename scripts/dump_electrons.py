@@ -73,10 +73,6 @@ acc = ElectronLoop(  "EventATLASLoop",
                   )
 
 
-
-
-
-
 class MyFilter:
     def __init__ ( self, background=False):
         self.background=background
@@ -108,20 +104,16 @@ class MyFilter:
         return True
 
 
-#my_filter = MyFilter(args.is_jf17)
-
-
-
+my_filter = MyFilter(args.is_jf17)
 
 
 #
 # Initial filter
 #
 
-#from kepler import Filter
-#filter = Filter( "Filter", [my_filter])
-#ToolSvc+=filter
-
+from trig_egamma_frame import Filter
+filter = Filter( "Filter", [my_filter])
+ToolSvc+=filter
 
 
 #
