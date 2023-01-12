@@ -28,7 +28,8 @@ class TEventLoop( Messenger ):
     self._dataframe         = get_property( kw, 'dataframe'       , None                           )
     self._nov               = get_property( kw, 'nov'             , -1                             )
     self._abort             = get_property( kw, 'abort'           , True                           )
-    self._mute_progressbar  = get_property( kw, 'mute_progressbar', False                          )
+    self._mute              = get_property( kw, 'mute'            , False                          )
+    self._writeStoregate    = get_property( kw, 'writeStoregate'  , True                           )
     self._level             = LoggingLevel.retrieve( get_property(kw, 'level', LoggingLevel.INFO ) )
     
 
@@ -122,7 +123,7 @@ class TEventLoop( Messenger ):
   def execute( self ):
 
     ### Loop over events
-    for entry in progressbar(range(self.get_nov()), prefix= "Looping over entries ", mute=self._mute_progressbar):
+    for entry in progressbar(range(self.get_nov()), prefix= "Looping over entries ", mute=self._mute):
       
       try:
         self.process(entry)
@@ -171,9 +172,12 @@ class TEventLoop( Messenger ):
       if alg.finalize().isFailure():
         MSG_ERROR( self, f'The tool {alg.name} return status code different of SUCCESS')
 
+
     MSG_INFO( self, 'Finalizing StoreGate service...')
-    self._storegateSvc.write()
+    if self._writeStoregate:
+      self._storegateSvc.write()
     del self._storegateSvc
+
     MSG_DEBUG( self, "Finalizing file...")
     self._f.Close()
     del self._f

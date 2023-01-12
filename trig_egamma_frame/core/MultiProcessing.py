@@ -1,12 +1,9 @@
 
-
-
-
 __all__ = [ "Pool", "Slot"]
 
 
-from Gaugi import LoggingLevel, Logger
-from Gaugi.macros import *
+from trig_egamma_frame.core import LoggingLevel, Messenger
+from trig_egamma_frame.core.macros import *
 from pprint import pprint
 import argparse
 import os, time
@@ -47,7 +44,7 @@ class Slot(object):
 
 
 
-class Pool( Logger ):
+class Pool( Messenger ):
 
   """
   Use this pool to run a single file per job with root file as output
@@ -61,11 +58,10 @@ class Pool( Logger ):
   prun.run()
   """
 
-  def __init__(self, func, command, maxJobs, files, output ):
+  def __init__(self, command, maxJobs, files, output ):
     
-    Logger.__init__(self)
+    Messenger.__init__(self)
     self.__files = files
-    self.__gen = func
     self.__command = command
     self.__output  = output
     self.__slots = [Slot() for _ in range(maxJobs)]
@@ -87,11 +83,16 @@ class Pool( Logger ):
 
 
   def generate(self):
-    f = self.__files.pop()
+
     idx = len(self.__files)
+    f = self.__files.pop()
     output = self.__output + '.' + str(idx)
+    command = self.__command.replace('%IN', f)
+    command = command.replace('%OUT', output)
+    command = command.replace('%ID', str(idx) )
     self.__outputs.append(output)
-    return self.__gen(self.__command, f, output)
+    print(command)
+    return command
 
 
   def run( self ):

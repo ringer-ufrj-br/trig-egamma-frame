@@ -68,8 +68,9 @@ acc = ElectronLoop(  "EventATLASLoop",
                      dataframe  = DataframeEnum.Run3,
                      outputFile = args.outputFile,
                      level      = getattr(LoggingLevel, args.level),
-                     mute_progressbar = args.mute,
-                     abort      = True,
+                     mute       = args.mute,
+                     abort      = False,
+                     writeStoregate = False,
                   )
 
 
