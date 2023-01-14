@@ -2,10 +2,10 @@
 __all__ = ["TDT", "AcceptType"]
 
 
-from trig_egamma_frame.core import EDM
-from trig_egamma_frame.core import StatusCode, EnumStringification
-from trig_egamma_frame.core import stdvector2list
-from trig_egamma_frame.core.macros import *
+from egamma.core import EDM
+from egamma.core import StatusCode, EnumStringification
+from egamma.core import stdvector2list
+from egamma.core.macros import *
 
 import ROOT
 

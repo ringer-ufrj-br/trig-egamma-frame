@@ -1,9 +1,9 @@
 
 __all__ = ['EmTauRoI_v1']
 
-from trig_egamma_frame.core import EDM
-from trig_egamma_frame.core import StatusCode
-from trig_egamma_frame.core import stdvector2list
+from egamma.core import EDM
+from egamma.core import StatusCode
+from egamma.core import stdvector2list
 
 
 class EmTauRoI_v1(EDM):

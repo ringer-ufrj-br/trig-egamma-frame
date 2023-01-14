@@ -2,8 +2,8 @@
 __all__ = ["CaloCluster_v2"]
 
 
-from trig_egamma_frame.core import EDM
-from trig_egamma_frame.core import StatusCode
+from egamma.core import EDM
+from egamma.core import StatusCode
 import numpy as np
 
 class CaloCluster_v2(EDM):

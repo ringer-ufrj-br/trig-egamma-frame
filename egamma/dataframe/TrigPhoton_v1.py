@@ -1,8 +1,8 @@
 
 __all__ = ['TrigPhoton_v1']
 
-from trig_egamma_frame.core import EDM
-from trig_egamma_frame.core import StatusCode
+from egamma.core import EDM
+from egamma.core import StatusCode
 import numpy as np
 
 class TrigPhoton_v1(EDM):

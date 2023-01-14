@@ -1,9 +1,9 @@
 
 __all__ = ['TrigEMCluster_v1', 'CaloSampling']
 
-from trig_egamma_frame.core import EDM
-from trig_egamma_frame.core import StatusCode
-from trig_egamma_frame.core import stdvector2list
+from egamma.core import EDM
+from egamma.core import StatusCode
+from egamma.core import stdvector2list
 from math import cosh
 import numpy as np
 import math

@@ -2,8 +2,8 @@
 __all__ = ["TrackCaloMatchType","SummaryType","TrackParticle_v2"]
 
 
-from trig_egamma_frame.core import EDM
-from trig_egamma_frame.core import StatusCode, EnumStringification
+from egamma.core import EDM
+from egamma.core import StatusCode, EnumStringification
 import numpy as np
 
 

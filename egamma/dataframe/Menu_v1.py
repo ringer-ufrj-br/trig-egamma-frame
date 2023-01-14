@@ -2,13 +2,12 @@
 __all__ = ["Menu_v1"]
 
 
-from trig_egamma_frame import EDM
-from trig_egamma_frame import ToolSvc
-from trig_egamma_frame import StatusCode
-from trig_egamma_frame.core.macros import *
-
-from trig_egamma_frame.dataframe import AcceptType
-from trig_egamma_frame.emulator  import Accept
+from egamma import EDM
+from egamma import ToolSvc
+from egamma import StatusCode
+from egamma.core.macros import *
+from egamma.dataframe import AcceptType
+from egamma.emulator  import Accept
 
 
 #

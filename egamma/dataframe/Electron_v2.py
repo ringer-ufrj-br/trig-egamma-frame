@@ -1,10 +1,10 @@
 
 __all__ = ['Electron_v2', 'EgammaParameters', 'IsolationType']
 
-from trig_egamma_frame.core      import EDM
-from trig_egamma_frame.core      import StatusCode, EnumStringification
-from trig_egamma_frame.core      import stdvector2list
-from trig_egamma_frame.dataframe import TrackCaloMatchType
+from egamma.core      import EDM
+from egamma.core      import StatusCode, EnumStringification
+from egamma.core      import stdvector2list
+from egamma.dataframe import TrackCaloMatchType
 import math
 import numpy as np
 
