@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
-from trig_egamma_frame import LoggingLevel
-from trig_egamma_frame import ToolSvc, GeV
-from trig_egamma_frame import ElectronLoop
-from trig_egamma_frame.enumerators import Dataframe as DataframeEnum
+from egamma import LoggingLevel
+from egamma import ToolSvc, GeV
+from egamma import ElectronLoop
+from egamma.enumerators import Dataframe as DataframeEnum
 
 import argparse
 import sys,os
@@ -112,7 +112,7 @@ my_filter = MyFilter(args.is_jf17)
 # Initial filter
 #
 
-from trig_egamma_frame import Filter
+from egamma import Filter
 filter = Filter( "Filter", [my_filter])
 ToolSvc+=filter
 
@@ -120,7 +120,7 @@ ToolSvc+=filter
 #
 # Electron dumper
 #
-from trig_egamma_frame.dumper import ElectronDumper_v2 as ElectronDumper
+from egamma.dumper import ElectronDumper_v2 as ElectronDumper
 output = args.outputFile.replace('.root','')
 
 
