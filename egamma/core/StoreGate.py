@@ -24,9 +24,9 @@ class StoreGate( Messenger ) :
   def __init__( self, outputFile, restore=False ):
 
     Messenger.__init__(self)
-    outputFile = ensure_extension(outputFile,'root')
-    self.__outputFile = expand_path( outputFile )
-
+    #outputFile = ensure_extension(outputFile,'root')
+    #self.__outputFile = expand_path( outputFile )
+    self.__outputFile = outputFile
     if restore:
       if not os.path.exists( self.__outputFile ):
         raise ValueError(f"File {self.__outputFile} does not exist")

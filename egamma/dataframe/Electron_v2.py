@@ -191,11 +191,11 @@ class Electron_v2(EDM):
                           #'el_multiLepton',
 
                           # extra calo branches
-                          'el_calo_et',
-                          'el_calo_eta',
-                          'el_calo_phi',
-                          'el_calo_etaBE2',
-                          'el_calo_e',
+                          #'el_calo_et',
+                          #'el_calo_eta',
+                          #'el_calo_phi',
+                          #'el_calo_etaBE2',
+                          #'el_calo_e',
 
                           # Extra
                           #'el_ringsE',
@@ -253,11 +253,11 @@ class Electron_v2(EDM):
                           'trig_EF_el_lhtight',
 
                           # extra calo branches
-                          'trig_EF_el_calo_et',
-                          'trig_EF_el_calo_eta',
-                          'trig_EF_el_calo_phi',
-                          'trig_EF_el_calo_etaBE2',
-                          'trig_EF_el_calo_e',
+                          #'trig_EF_el_calo_et',
+                          #'trig_EF_el_calo_eta',
+                          #'trig_EF_el_calo_phi',
+                          #'trig_EF_el_calo_etaBE2',
+                          #'trig_EF_el_calo_e',
               
 
                           #'trig_EF_el_etCone',
@@ -688,17 +688,15 @@ class Electron_v2(EDM):
     # The electron object is empty
     if self.empty():
       return None
+
     elif self._is_hlt:
       cluster = self.getContext().getHandler('HLT__CaloClusterContainer')
       cluster.setPos(self.getPos())
       return cluster
       
     else:
-      if self._event.el_hasCalo:
-        return self.getContext().getHandler('CaloClusterContainer')
-      else:
-        return None
-
+      return self.getContext().getHandler('CaloClusterContainer')
+      
 
   def trackParticle(self):
     """
@@ -712,11 +710,8 @@ class Electron_v2(EDM):
       track.setPos(self.getPos())
       return track
     else:
-      if self._event.el_hasTrack:
-        return self.getContext().getHandler('TrackParticleContainer')
-      else:
-        return None
-
+      return self.getContext().getHandler('TrackParticleContainer')
+      
 
   def ptvarcone20(self):
     """
@@ -764,27 +759,3 @@ class Electron_v2(EDM):
     else:
       return False
     
-
-  def setToBeClosestThan( self, eta, phi ):
-    idx = self.getPos(); minDeltaR = 999
-    found=False
-    def deltaR( eta1, phi1, eta2, phi2 ):
-      deta = abs( eta1 - eta2 )
-      dphi = abs( phi1 - phi2 ) if abs(phi1 - phi2) < np.pi else (2*np.pi-abs(phi1-phi2))
-      return np.sqrt( deta*deta + dphi*dphi )
-    for el in self:
-      dR = deltaR( eta, phi, el.eta(), el.phi() )
-      if dR > 0.07:
-        continue
-      if dR < minDeltaR:
-        minDeltaR = dR
-        idx = el.getPos()
-        found=True
-    self.setPos(idx)
-    return found
-
-
-
-
-
-

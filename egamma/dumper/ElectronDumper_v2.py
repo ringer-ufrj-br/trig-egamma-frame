@@ -18,6 +18,7 @@ import gc
 
 from pprint import pprint
 from prettytable import PrettyTable
+from ROOT import TH1F
 
 
 
@@ -62,6 +63,14 @@ class ElectronDumper_v2( Algorithm ):
   def initialize(self):
 
     Algorithm.initialize(self)
+
+
+    store = self.getStoreGateSvc()
+    store.mkdir('sample')
+    store.addHistogram(TH1F('et','E_{T} distribution;E_{T};Count', 100, 0, 150 ))
+    store.addHistogram(TH1F('eta','#eta distribution;#eta;Count', 50, -2.5, 2.5))
+
+
 
     self.features.extend(['et_bin', 'eta_bin'])
 
@@ -225,6 +234,11 @@ class ElectronDumper_v2( Algorithm ):
       self.__bins_stored[bk] = (etBinIdx,etaBinIdx)
 
     self.fill(event_row)
+
+    store = self.getStoreGateSvc()
+    store.histogram("sample/et").Fill(fc.et()/GeV)
+    store.histogram("sample/eta").Fill(fc.eta())
+
     return StatusCode.SUCCESS
 
 

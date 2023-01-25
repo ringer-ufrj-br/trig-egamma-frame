@@ -1,5 +1,5 @@
 
-__all__ = [ "Pool", "Slot"]
+__all__ = [ "Pool", "Slot", 'complete']
 
 
 from egamma.core import LoggingLevel, Messenger
@@ -14,6 +14,12 @@ import colorama
 import ROOT
 colorama.init(autoreset=True)
 
+
+
+def complete(id):
+  path = os.getcwd()+'/.done.%d'%(id)
+  with open(path,'w'):
+    pass
 
 
 class Slot(object):
@@ -90,9 +96,9 @@ class Pool( Messenger ):
     output = self.__output + '.' + str(idx)
     command = self.__command.replace('%IN', f)
     command = command.replace('%OUT', output)
-    command = command.replace('%ID', str(idx) )
+    command = command.replace('%JOB_ID', str(idx) )
     print(command)
-    return command, output
+    return command, output, idx
 
 
   def run( self ):
@@ -104,10 +110,10 @@ class Pool( Messenger ):
       slot = self.getAvailable()
       if slot:
         print(Back.RED + Fore.WHITE + 'running %d/%d'%(len(self.__files), total))
-        time.sleep(1)
-        command = self.generate()
-        if self.exist(output):
-          MSG_WARNING(self, f"File {output} exist. Skip.")
+        #time.sleep(1)
+        command, output, idx = self.generate()
+        if os.path.exists('.done.%d'%idx):
+          MSG_WARNING(self, f"Skip job id {idx}")
           continue
         self.__outputs.append(output)
         slot.run( command )
@@ -130,18 +136,9 @@ class Pool( Messenger ):
   #
   def exist(self, f):
     if not os.path.exists(f):
-      return False
-    try:
-      if f.endswith('.root'):
-        f = ROOT.TFile(f, 'read')
-        is_open = f.IsOpen()
-        f.Close()
-        return is_open
-      else:
         return False
-    except:
+    else:
       return False
-
 
 
 

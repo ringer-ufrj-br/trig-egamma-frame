@@ -18,11 +18,11 @@ class CaloCluster_v2(EDM):
                               'el_calo_e',
                             ],
                    'HLT__CaloCluster':[
-                              'trig_EF_calo_e',
-                              'trig_EF_calo_et',
-                              'trig_EF_calo_eta',
-                              'trig_EF_calo_phi',
-                              'trig_EF_calo_etaBE2',
+                              'trig_EF_el_calo_e',
+                              'trig_EF_el_calo_et',
+                              'trig_EF_el_calo_eta',
+                              'trig_EF_el_calo_phi',
+                              'trig_EF_el_calo_etaBE2',
                              
                               ]
                     }

@@ -56,8 +56,7 @@ class TEventLoop( Messenger ):
 
     ### Prepare to loop:
     self._t = ROOT.TChain()
-    print('AKI 2')
-    print(self._fList)
+
     for inputFile in progressbar(self._fList, prefix= "Creating collection tree " ):
       # Check if file exists
       self._f  = ROOT.TFile.Open(inputFile, 'read')
@@ -172,6 +171,7 @@ class TEventLoop( Messenger ):
 
     MSG_INFO( self, 'Finalizing StoreGate service...')
     if self._writeStoregate:
+      MSG_INFO(self, f"writting root data into {self._ofile}")
       self._storegateSvc.write()
     del self._storegateSvc
 
