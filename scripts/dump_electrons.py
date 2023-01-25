@@ -7,7 +7,7 @@ from egamma.enumerators import Dataframe as DataframeEnum
 
 import argparse
 import sys,os
-
+import traceback
 import numpy as np
 np.random.seed(512)
 
@@ -18,9 +18,9 @@ parser = argparse.ArgumentParser()
 # job configuration
 #
 
-parser.add_argument('-i','--inputFiles', action='store',
-    dest='inputFiles', required = True, nargs='+',
-    help = "The input files.")
+parser.add_argument('-i','--inputFile', action='store',
+    dest='inputFile', required = True,
+    help = "The input file.")
 
 parser.add_argument('-o','--outputFile', action='store',
     dest='outputFile', required = False, default = None,
@@ -42,10 +42,6 @@ parser.add_argument('--mute', action='store_true',
     dest='mute', required = False, 
     help = "Use this for production. quite output")
 
-parser.add_argument('--is_jf17', action='store_true',
-    dest='is_jf17', required = False, 
-    help = "is jf17 decay.")
-
 #
 # event selection configuration
 #
@@ -58,95 +54,106 @@ if len(sys.argv)==1:
 
 args = parser.parse_args()
 
-et_bins = [4.0,7.0,10.0, 15.0, 20.0, 30.0, 40.0, 50.0, 13000]
-eta_bins = [0.0, 0.8, 1.37, 1.54, 2.37, 2.50]
 
-print(args.inputFiles)
-acc = ElectronLoop(  "EventATLASLoop",
-                     inputFiles = args.inputFiles,
-                     treePath   = args.path,
-                     dataframe  = DataframeEnum.Run3,
-                     outputFile = args.outputFile,
-                     level      = getattr(LoggingLevel, args.level),
-                     mute       = args.mute,
-                     abort      = False,
-                     writeStoregate = False,
-                  )
+try:
+
+    et_bins = [4.0,7.0,10.0, 15.0, 20.0, 30.0, 40.0, 50.0, 13000]
+    eta_bins = [0.0, 0.8, 1.37, 1.54, 2.37, 2.50]
+    print('AKI JOAO')
+    print(args.inputFile)
+
+    acc = ElectronLoop(  "EventATLASLoop",
+                         inputFile  = [args.inputFile],
+                         treePath   = args.path,
+                         dataframe  = DataframeEnum.Run3,
+                         outputFile = args.outputFile,
+                         level      = getattr(LoggingLevel, args.level),
+                         mute       = args.mute,
+                         abort      = False,
+                      )
 
 
-class MyFilter:
-    def __init__ ( self, background=False):
-        self.background=background
+    class MyFilter:
+        def __init__ ( self, background=False):
+            self.background=background
 
-    def __call__(self, ctx):
+        def __call__(self, ctx):
 
-        elCont = ctx.getHandler( "ElectronContainer" )
-        if elCont.et() < 2*GeV:
-            return False
-
-        fc = ctx.getHandler( "HLT__TrigEMClusterContainer" )
-        if not fc.isGoodRinger():
-            return False
-
-        #
-        # Monte Carlo selection
-        #
-        mc = ctx.getHandler("MonteCarloContainer")
-        if self.background:
-            if mc.isTruthElectronFromAny():
+            elCont = ctx.getHandler( "ElectronContainer" )
+            if elCont.et() < 2*GeV:
                 return False
-        else:
-            if fc.et() < 15*GeV: # Jpsiee
-                if not mc.isTruthElectronFromJpsiPrompt():
+
+            fc = ctx.getHandler( "HLT__TrigEMClusterContainer" )
+            if not fc.isGoodRinger():
+                return False
+
+            #
+            # Monte Carlo selection
+            #
+            mc = ctx.getHandler("MonteCarloContainer")
+            if self.background:
+                if mc.isTruthElectronFromAny():
                     return False
-            else: # Zee
-                if not mc.isTruthElectronFromZ():
-                    return False
-        return True
+            else:
+                if fc.et() < 15*GeV: # Jpsiee
+                    if not mc.isTruthElectronFromJpsiPrompt():
+                        return False
+                else: # Zee
+                    if not mc.isTruthElectronFromZ():
+                        return False
+            return True
 
 
-my_filter = MyFilter(args.is_jf17)
+    background = True if 'JF17' in args.inputFile else False
+    my_filter = MyFilter(background)
 
 
-#
-# Initial filter
-#
+    #
+    # Initial filter
+    #
 
-from egamma import Filter
-filter = Filter( "Filter", [my_filter])
-ToolSvc+=filter
-
-
-#
-# Electron dumper
-#
-from egamma.dumper import ElectronDumper_v2 as ElectronDumper
-output = args.outputFile.replace('.root','')
+    from egamma import Filter
+    filter = Filter( "Filter", [my_filter])
+    ToolSvc+=filter
 
 
-dumper = ElectronDumper(output, et_bins, eta_bins, target=0 if args.is_jf17 else 1, dumpRings=True )
+    #
+    # Electron dumper
+    #
+    from egamma.dumper import ElectronDumper_v2 as ElectronDumper
 
 
-
-def isZ_decorator( ctx ):
-    mc = ctx.getHandler("MonteCarloContainer")
-    return mc.isTruthElectronFromZ()
-def isAny_decorator( ctx ):
-    mc = ctx.getHandler("MonteCarloContainer")
-    return mc.isTruthElectronFromAny()
-def isJpsi_decorator( ctx ):
-    mc = ctx.getHandler("MonteCarloContainer")
-    return mc.isTruthElectronFromJpsiPrompt()
+    dumper = ElectronDumper(args.outputFile, et_bins, eta_bins )
 
 
 
-dumper.decorate( "mc_isTruthElectronFromZ"          , isZ_decorator   )
-dumper.decorate( "mc_isTruthElectronFromAny"        , isAny_decorator )
-dumper.decorate( "mc_isTruthElectronFromJpsiPromt"  , isJpsi_decorator)
+    def isZ_decorator( ctx ):
+        mc = ctx.getHandler("MonteCarloContainer")
+        return mc.isTruthElectronFromZ()
+    def isAny_decorator( ctx ):
+        mc = ctx.getHandler("MonteCarloContainer")
+        return mc.isTruthElectronFromAny()
+    def isJpsi_decorator( ctx ):
+        mc = ctx.getHandler("MonteCarloContainer")
+        return mc.isTruthElectronFromJpsiPrompt()
+    def target( ctx ):
+        # get the target value from the sample
+        return 0 if background else 1 # signal (Zee or Jpsiee)
 
 
+    dumper.decorate( "mc_isTruthElectronFromZ"          , isZ_decorator   )
+    dumper.decorate( "mc_isTruthElectronFromAny"        , isAny_decorator )
+    dumper.decorate( "mc_isTruthElectronFromJpsiPromt"  , isJpsi_decorator)
+    dumper.decorate( "target", target)
 
-ToolSvc+=dumper
-acc.run(args.nov)
 
+    ToolSvc+=dumper
+    acc.run(args.nov)
+    print('job done')
+    os.system(f'rm {args.outputFile}.root')
+    sys.exit(0)
 
+except  Exception as e:
+    traceback.print_exc()
+    print ('job failed')
+    sys.exit(1)

@@ -6,7 +6,7 @@ from egamma.dataframe import EgammaParameters
 
 from egamma.core import Algorithm
 from egamma.core import StatusCode
-from egamma.core import save, load, declareProperty
+from egamma.core import save, load, declareProperty, progressbar
 from egamma.core.macros import *
 from egamma.core.constants import GeV
 
@@ -41,6 +41,7 @@ class ElectronDumper_v2( Algorithm ):
     self.__decorators = collections.OrderedDict({})
     self.__extra_features = list()
     self.__dataframe = None
+    self.__bins_stored = {}
 
 
  
@@ -219,6 +220,10 @@ class ElectronDumper_v2( Algorithm ):
       MSG_FATAL( "This event missing some column. We have some problem into the dumper code! please, verify it!")
 
 
+    bk = f'et{etBinIdx}_eta{etaBinIdx}'
+    if not bk in self.__bins_stored:
+      self.__bins_stored[bk] = (etBinIdx,etaBinIdx)
+
     self.fill(event_row)
     return StatusCode.SUCCESS
 
@@ -230,8 +235,13 @@ class ElectronDumper_v2( Algorithm ):
   def finalize( self ):
     if self.__dataframe:
       df = pd.DataFrame(self.__dataframe)
-      MSG_INFO(self, "Save dataframe into %s with (%d,%d)", self.output, df.shape[0], df.shape[1])
-      df.to_pickle(self.output)
+      for key, (etBinIdx,etaBinIdx) in progressbar(self.__bins_stored.items(), prefix='Saving...'):
+        df_bin = df.loc[(df.et_bin==etBinIdx) & (df.eta_bin==etaBinIdx)]
+        output = self.output.replace('.pic','')
+        output+='.'+key+'.pic'
+        MSG_INFO(self, "Save dataframe into %s with (%d,%d)", output, df_bin.shape[0], df_bin.shape[1])
+        #df_bin.to_hdf(output, key='data')
+        df_bin.to_pickle(output)
     return StatusCode.SUCCESS
 
 

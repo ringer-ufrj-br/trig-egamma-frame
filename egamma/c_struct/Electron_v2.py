@@ -52,13 +52,11 @@ def Electron_v2():
    float         el_ptvarcone40;
    float         el_nGoodVtx;
    float         el_nPileupPrimaryVtx;
-   bool          el_hasCalo;
    float         el_calo_eta;
    float         el_calo_phi;
    float         el_calo_et;
    float         el_calo_etaBE2;
    float         el_calo_e;
-   bool          el_hasTrack;
    float         el_trk_d0;
    float         el_trk_z0;
    float         el_trk_eta;
@@ -158,6 +156,11 @@ def Electron_v2():
    vector<float>   *trig_EF_el_trk_sigd0;
    vector<float>   *trig_EF_el_trk_d0significance;
    vector<int>     *trig_EF_el_trk_summaryValues;
+   vector<float>   *trig_EF_el_calo_eta;
+   vector<float>   *trig_EF_el_calo_phi;
+   vector<float>   *trig_EF_el_calo_et;
+   vector<float>   *trig_EF_el_calo_etaBE2;
+   vector<float>   *trig_EF_el_calo_e;
    vector<int>     *trig_EF_el_dnntight;
    vector<int>     *trig_EF_el_dnnmedium;
    vector<int>     *trig_EF_el_dnnloose;

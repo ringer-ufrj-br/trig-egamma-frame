@@ -61,3 +61,5 @@ RUN pip install virtualenv
 COPY requirements.txt /
 RUN cd / && pip install -r requirements.txt 
 RUN rm /requirements.txt
+RUN echo "source /apt/root/buildthis/bin/thisroot.sh" >> /setup_envs.sh
+

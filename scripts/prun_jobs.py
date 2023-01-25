@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-from trig_egamma_frame import Slot, expand_folders
-from trig_egamma_frame import expand_folders, Pool
+from egamma import Slot, expand_folders
+from egamma import expand_folders, Pool
 import time, os
 import argparse
 
@@ -30,9 +30,6 @@ parser.add_argument('-nt', '--numberOfThreads', action='store',
     dest='numberOfThreads', required = False, default = 1, type=int,
     help = "The number of threads.")
 
-parser.add_argument('-b', '--backup', action='store', dest='backup', 
-                    required = False, default=None,
-                    help = "Backup index.", type=int)
 
 import sys,os
 if len(sys.argv)==1:
@@ -43,10 +40,6 @@ args = parser.parse_args()
 
 files = expand_folders( args.inputs )
 files.sort()
-if args.backup:
-    while len(files)>args.backup:
-        files.pop()
-
 prun = Pool( args.command, args.numberOfThreads, files, args.output)
 prun.run()
 if args.merge:

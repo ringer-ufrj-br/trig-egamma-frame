@@ -146,8 +146,6 @@ class Electron_v2(EDM):
   # define all skimmed branches here.
   __eventBranches = {'Electron':[
 
-                          'el_hasCalo',
-                          'el_hasTrack',
 
                           # shower shapes
                           'el_e',
@@ -193,11 +191,11 @@ class Electron_v2(EDM):
                           #'el_multiLepton',
 
                           # extra calo branches
-                          #'el_calo_et',
-                          #'el_calo_eta',
-                          #'el_calo_phi',
-                          #'el_calo_etaBE2',
-                          #'el_calo_e',
+                          'el_calo_et',
+                          'el_calo_eta',
+                          'el_calo_phi',
+                          'el_calo_etaBE2',
+                          'el_calo_e',
 
                           # Extra
                           #'el_ringsE',
@@ -210,9 +208,6 @@ class Electron_v2(EDM):
 
                         ],
                         'HLT__Electron':[
-
-                          'trig_EF_el_hasCalo',
-                          'trig_EF_el_hasTrack',
 
                           # shower shapes
                           'trig_EF_el_e',
@@ -257,7 +252,12 @@ class Electron_v2(EDM):
                           'trig_EF_el_lhmedium',
                           'trig_EF_el_lhtight',
 
-
+                          # extra calo branches
+                          'trig_EF_el_calo_et',
+                          'trig_EF_el_calo_eta',
+                          'trig_EF_el_calo_phi',
+                          'trig_EF_el_calo_etaBE2',
+                          'trig_EF_el_calo_e',
               
 
                           #'trig_EF_el_etCone',
@@ -690,10 +690,9 @@ class Electron_v2(EDM):
       return None
     elif self._is_hlt:
       cluster = self.getContext().getHandler('HLT__CaloClusterContainer')
-      if cluster.setToBeClosestThan(self.eta(), self.phi()):
-        return cluster
-      else:
-        return None
+      cluster.setPos(self.getPos())
+      return cluster
+      
     else:
       if self._event.el_hasCalo:
         return self.getContext().getHandler('CaloClusterContainer')
@@ -710,10 +709,8 @@ class Electron_v2(EDM):
       return None
     elif self._is_hlt:
       track = self.getContext().getHandler('HLT__TrackParticleContainer')
-      if track.setToBeClosestThan(self.eta(),self.phi()):
-        return track
-      else:
-        return None
+      track.setPos(self.getPos())
+      return track
     else:
       if self._event.el_hasTrack:
         return self.getContext().getHandler('TrackParticleContainer')

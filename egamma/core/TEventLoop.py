@@ -22,7 +22,7 @@ class TEventLoop( Messenger ):
 
     # Retrieve all information needed
     Messenger.__init__(self, name)
-    fList                   = get_property( kw, 'inputFiles'      , []                             )
+    self._fList             = get_property( kw, 'inputFile'       , []                             )
     self._ofile             = get_property( kw, 'outputFile'      , "histos.root"                  )
     self._treePath          = get_property( kw, 'treePath'        , None                           )
     self._dataframe         = get_property( kw, 'dataframe'       , None                           )
@@ -32,14 +32,9 @@ class TEventLoop( Messenger ):
     self._writeStoregate    = get_property( kw, 'writeStoregate'  , True                           )
     self._level             = LoggingLevel.retrieve( get_property(kw, 'level', LoggingLevel.INFO ) )
     
+    if type(self._fList) is not list:
+      self._fList = [self._fList]
 
-    files = []
-    for path in fList:
-      # Need to loop over for LCG grid
-      for f in path.split(','):
-        files.extend( expand_folders( f ) )
-    
-    self._fList = files
     self._containersSvc  = collections.OrderedDict() # container dict to hold all EDMs
     self._storegateSvc = None # storegate service to hold all hists
     self._t = None # TChain used to hold the ttree files
@@ -61,6 +56,8 @@ class TEventLoop( Messenger ):
 
     ### Prepare to loop:
     self._t = ROOT.TChain()
+    print('AKI 2')
+    print(self._fList)
     for inputFile in progressbar(self._fList, prefix= "Creating collection tree " ):
       # Check if file exists
       self._f  = ROOT.TFile.Open(inputFile, 'read')

@@ -11,6 +11,7 @@ import subprocess
 
 from colorama import Back, Fore
 import colorama
+import ROOT
 colorama.init(autoreset=True)
 
 
@@ -90,9 +91,8 @@ class Pool( Messenger ):
     command = self.__command.replace('%IN', f)
     command = command.replace('%OUT', output)
     command = command.replace('%ID', str(idx) )
-    self.__outputs.append(output)
     print(command)
-    return command
+    return command, output
 
 
   def run( self ):
@@ -106,6 +106,10 @@ class Pool( Messenger ):
         print(Back.RED + Fore.WHITE + 'running %d/%d'%(len(self.__files), total))
         time.sleep(1)
         command = self.generate()
+        if self.exist(output):
+          MSG_WARNING(self, f"File {output} exist. Skip.")
+          continue
+        self.__outputs.append(output)
         slot.run( command )
     
     while self.busy():
@@ -119,5 +123,31 @@ class Pool( Messenger ):
     os.system(command)
     for fname in self.__outputs:
       os.system( 'rm -rf '+fname)
+
+
+  #
+  # Check if file exist or his consistencels
+  #
+  def exist(self, f):
+    if not os.path.exists(f):
+      return False
+    try:
+      if f.endswith('.root'):
+        f = ROOT.TFile(f, 'read')
+        is_open = f.IsOpen()
+        f.Close()
+        return is_open
+      else:
+        return False
+    except:
+      return False
+
+
+
+
+
+
+
+
 
 
