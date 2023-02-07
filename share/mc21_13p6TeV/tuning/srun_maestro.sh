@@ -10,8 +10,6 @@
 #export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 
 MASTER=$1
-CPU=$2
-GPU=$3
 
-srun ./run_maestro.sh $MASTER $CPU $GPU
+srun ./run_maestro.sh $MASTER
 wait
