@@ -58,11 +58,11 @@ class StoreGate( Messenger ) :
     self.__dirs = None
     self.__objects = None
     gc.collect()
-    #self.__file.Close()
 
 
   def write(self):
     self.__file.Write()
+    self.__file.Close()
 
   #
   # Create a folder

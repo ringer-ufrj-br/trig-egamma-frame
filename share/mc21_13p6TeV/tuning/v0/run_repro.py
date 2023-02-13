@@ -11,9 +11,14 @@ parser = argparse.ArgumentParser(description = '', add_help = False)
 parser = argparse.ArgumentParser()
 
 
-parser.add_argument('-j','--job', action='store',
-        dest='job', required = True, 
-            help = "The job config file that will be used to configure the job (sort and init).")
+parser.add_argument('-i','--inputFile', action='store',
+        dest='inputFile', required = True, 
+            help = "The tuned file.")
+
+parser.add_argument('-r' ,'--ref', action='store',
+        dest='ref', required = True, default = None,
+            help = "The reference file")
+
 
 parser.add_argument('-v','--volume', action='store',
         dest='volume', required = False, default=os.getcwd(),
@@ -23,20 +28,8 @@ parser.add_argument('-d','--dataFile', action='store',
         dest='dataFile', required = True, default = None,
             help = "The data/target file used to train the model.")
 
-parser.add_argument('--et', action='store',
-        dest='et', required = True, default = None, type=int,
-            help = "et bin")
-
-parser.add_argument('--eta', action='store',
-        dest='eta', required = True, default = None, type=int, 
-            help = "eta bin")
-
-parser.add_argument('-r' ,'--ref', action='store',
-        dest='ref', required = True, default = None,
-            help = "The reference file")
-
 parser.add_argument('-o' ,'--output', action='store',
-        dest='output', required = False, default = None,
+        dest='output', required = False, default=None,
             help = "The output file")
 
 if len(sys.argv)==1:
@@ -72,15 +65,11 @@ def data_loader( path, cv, sort):
 
 
 try:
-  from neuralnet import training
-  training(args, data_loader)
+  from neuralnet import reprocessing
+  reprocessing(args, data_loader)
   sys.exit(0)
 except  Exception as e:
   traceback.print_exc()
   sys.exit(1)
-
-
-
-
 
 

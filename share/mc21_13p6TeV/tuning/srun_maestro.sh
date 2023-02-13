@@ -9,7 +9,8 @@
 #echo $SLURM_JOB_NODELIST
 #export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 
-MASTER=$1
+DATABASE=$1
+MASTER=$2
 
-srun ./run_maestro.sh $MASTER
+srun ./run_maestro.sh $DATABASE $MASTER
 wait

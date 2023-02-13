@@ -41,7 +41,7 @@ WORKDIR /usr
 RUN wget --progress=dot:giga https://cmake.org/files/v3.19/cmake-3.19.7-Linux-x86_64.sh -P /usr/
 RUN chmod 755 cmake-3.19.7-Linux-x86_64.sh
 RUN ./cmake-3.19.7-Linux-x86_64.sh --skip-license
-
+RUN apt-get update && apt-get install -y texlive-full
 
 
 
@@ -58,6 +58,7 @@ ENV PYTHONPATH "/apt/root/buildthis/lib:$PYTHONPATH"
 RUN pip install --upgrade pip
 RUN pip install virtualenv
 
+RUN ls
 COPY requirements.txt /
 RUN cd / && pip install -r requirements.txt 
 RUN rm /requirements.txt

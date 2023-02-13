@@ -53,18 +53,6 @@ class Slot(object):
 
 class Pool( Messenger ):
 
-  """
-  Use this pool to run a single file per job with root file as output
-
-  from Gaugi import expand_folders
-  from Gaugi import Pool
-  files = expand_folders( args.inputFiles )
-  def func(command, input, output):
-    return command + ' -i ' + input + ' -o ' + output
-  prun = Pool( func, args.command, args.numberOfThreads, files, args.outputFile )
-  prun.run()
-  """
-
   def __init__(self, command, maxJobs, files, output ):
     
     Messenger.__init__(self)

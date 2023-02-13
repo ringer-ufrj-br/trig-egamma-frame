@@ -27,6 +27,7 @@ for sort in range(sorts):
         d = {
             'sort'      : sort,
             'init'      : init,
+            'model_idx' : 0,
             'tag'       : tag,
             'seed'      : seed,
             'verbose'   : True,

@@ -1,11 +1,11 @@
 #!/bin/bash
 
+DATABASE=$1
+MASTER=$2 # should be 0 or 1
 
-MASTER=$1 # should be 0 or 1
 
 
-
-source /home/joao.pinto/public/server/setup_grid.sh
+source /home/joao.pinto/public/server/setup_grid.sh $DATABASE
 
 
 if [[ $MASTER -eq 1 ]];

@@ -6,7 +6,7 @@ from egamma.dataframe import EgammaParameters
 
 from egamma.core import Algorithm
 from egamma.core import StatusCode
-from egamma.core import save, load, declareProperty, progressbar
+from egamma.core import save, load, declareProperty, progressbar, mkdir_p
 from egamma.core.macros import *
 from egamma.core.constants import GeV
 
@@ -15,6 +15,7 @@ import numpy as np
 import collections
 import math
 import gc
+import os
 
 from pprint import pprint
 from prettytable import PrettyTable
@@ -248,11 +249,15 @@ class ElectronDumper_v2( Algorithm ):
   #
   def finalize( self ):
     if self.__dataframe:
+
+      basepath = os.getcwd() + '/' + self.output
+
+      mkdir_p(basepath)
+
       df = pd.DataFrame(self.__dataframe)
       for key, (etBinIdx,etaBinIdx) in progressbar(self.__bins_stored.items(), prefix='Saving...'):
         df_bin = df.loc[(df.et_bin==etBinIdx) & (df.eta_bin==etaBinIdx)]
-        output = self.output.replace('.pic','')
-        output+='.'+key+'.pic'
+        output = basepath+'/'+self.output+'.'+key+'.pic'
         MSG_INFO(self, "Save dataframe into %s with (%d,%d)", output, df_bin.shape[0], df_bin.shape[1])
         #df_bin.to_hdf(output, key='data')
         df_bin.to_pickle(output)
