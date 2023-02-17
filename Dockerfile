@@ -58,7 +58,7 @@ ENV PYTHONPATH "/apt/root/buildthis/lib:$PYTHONPATH"
 RUN pip install --upgrade pip
 RUN pip install virtualenv
 
-RUN ls
+RUN ls -lisah
 COPY requirements.txt /
 RUN cd / && pip install -r requirements.txt 
 RUN rm /requirements.txt

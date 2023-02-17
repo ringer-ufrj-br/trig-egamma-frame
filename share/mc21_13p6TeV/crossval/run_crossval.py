@@ -69,37 +69,33 @@ cv_v0    = crossval_table( tuned_info, etbins = etbins, etabins = etabins )
 cv_v1    = crossval_table( tuned_info, etbins = etbins, etabins = etabins )
 
 
-cv_run2.fill('/home/joao.pinto/public/cern_data/tunings/Run2/Zee/v8/r1/*/*/*','Run2-v8')
-cv_v0.fill( '/home/joao.pinto/public/cern_data/tunings/Run3/mc21_13p6TeV/v0/*/*/*.pic', 'Run3-v0')
-cv_v1.fill( '/home/joao.pinto/public/cern_data/tunings/Run3/mc21_13p6TeV/v1/*/*/*.pic', 'Run3-v1')
+#cv_run2.fill('/home/joao.pinto/public/cern_data/tunings/Run2/mc21_13p6TeV/v8/r1/*/*/*.pic','Run2-v8')
+#cv_v0.fill( '/home/joao.pinto/public/cern_data/tunings/Run3/mc21_13p6TeV/v0/r1/*/*/*.pic', 'Run3-v0')
+#cv_v1.fill( '/home/joao.pinto/public/cern_data/tunings/Run3/mc21_13p6TeV/v1/r1/*/*/*.pic', 'Run3-v1')
 
-#cv_run2.to_csv('table_run2.csv')
+#cv_run2.to_csv('table_run2_v8.csv')
 #cv_v0.to_csv('table_run3_v0.csv')
 #cv_v1.to_csv('table_run3_v1.csv')
 
 
 
-#cv_run2.from_csv('table_run2.csv')
-#cv_v0.from_csv('table_run3_v0.csv')
-#cv_v1.from_csv('table_run3_v1.csv')
+cv_run2.from_csv('table_run2_v8.csv')
+cv_v0.from_csv('table_run3_v0.csv')
+cv_v1.from_csv('table_run3_v1.csv')
 
 
 
 
 best_inits_run2 = cv_run2.filter_inits("max_sp_val")
-best_inits_run2 = best_inits_run2.loc[best_inits_run2.model_idx==3] # select all rows with 5 neurons
+best_inits_run2 = best_inits_run2.loc[(best_inits_run2.model_idx==3) & (best_inits_run2.et_bin >= 3)] # select all rows with 5 neurons
 best_sorts_run2 = cv_run2.filter_sorts( best_inits_run2 , 'max_sp_op')
-
-#
-# For Run 3 we have all bins together, need to get above 2 to > 15 GeV
-#
 
 best_inits_v0 = cv_v0.filter_inits("max_sp_val")
 best_inits_v0 = best_inits_v0.loc[ (best_inits_v0.model_idx==0) & (best_inits_v0.et_bin >= 3)] # select all rows with 5 neurons
 best_sorts_v0 = cv_v0.filter_sorts( best_inits_v0 , 'max_sp_op')
 
 best_inits_v1 = cv_v1.filter_inits("max_sp_val")
-best_inits_v1 = best_inits_v1.loc[(best_inits_v1.model_idx==0) & (best_inits_v0.et_bin >= 3)]
+best_inits_v1 = best_inits_v1.loc[(best_inits_v1.model_idx==0) & (best_inits_v1.et_bin >= 3)]
 best_sorts_v1 = cv_v1.filter_sorts( best_inits_v1 , 'max_sp_op')
 
 
@@ -107,23 +103,59 @@ best_sorts_v1 = cv_v1.filter_sorts( best_inits_v1 , 'max_sp_op')
 
 
 best_inits = pd.concat([
-                        #best_inits_run2,
+                        best_inits_run2,
                         best_inits_v0,
                         best_inits_v1,
             
                        ])
 best_sorts = pd.concat([
-                        #best_sorts_run2,
+                        best_sorts_run2,
                         best_sorts_v0,
                         best_sorts_v1,
                        ])
 
 
-print(best_inits.columns.values)
+
+#for op in op_names:
+#    cv_run2.dump_beamer_table( best_inits.loc[best_inits.op_name == op] ,  
+#                            'tuning_run3_Zee_'+op, 
+#                             title = op+' Tunings Zee', 
+#                             tags = ['Run2-v8', 'Run3-v0', 'Run3-v1']
+#                           )
+
+
+
+best_inits_run2 = cv_run2.filter_inits("max_sp_val")
+best_inits_run2 = best_inits_run2.loc[(best_inits_run2.model_idx==0) & (best_inits_run2.et_bin < 3)] # select all rows with 5 neurons
+best_sorts_run2 = cv_run2.filter_sorts( best_inits_run2 , 'max_sp_op')
+
+best_inits_v0 = cv_v0.filter_inits("max_sp_val")
+best_inits_v0 = best_inits_v0.loc[ (best_inits_v0.model_idx==0) & (best_inits_v0.et_bin < 3)] # select all rows with 5 neurons
+best_sorts_v0 = cv_v0.filter_sorts( best_inits_v0 , 'max_sp_op')
+
+best_inits_v1 = cv_v1.filter_inits("max_sp_val")
+best_inits_v1 = best_inits_v1.loc[(best_inits_v1.model_idx==0) & (best_inits_v1.et_bin < 3)]
+best_sorts_v1 = cv_v1.filter_sorts( best_inits_v1 , 'max_sp_op')
+
+
+
+best_inits = pd.concat([
+                        best_inits_run2,
+                        best_inits_v0,
+                        best_inits_v1,
+            
+                       ])
+best_sorts = pd.concat([
+                        best_sorts_run2,
+                        best_sorts_v0,
+                        best_sorts_v1,
+                       ])
+
 
 for op in op_names:
     cv_run2.dump_beamer_table( best_inits.loc[best_inits.op_name == op] ,  
-                            'tuning_run3_'+op, 
-                             title = op+' Tunings', 
+                            'tuning_run3_Jpsi_'+op, 
+                             title = op+' Tunings Jpsi', 
                              tags = ['Run2-v8', 'Run3-v0', 'Run3-v1']
                            )
+
