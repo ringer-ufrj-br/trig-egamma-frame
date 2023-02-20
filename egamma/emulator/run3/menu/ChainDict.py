@@ -103,7 +103,7 @@ PhotonChainParts = {
     }
 
 
-def treatPidName(pidname):
+def treat_pidname(pidname):
   if 'tight' in pidname:
     return 'tight'
   elif 'medium' in pidname:

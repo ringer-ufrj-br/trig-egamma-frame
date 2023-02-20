@@ -1,4 +1,6 @@
 
+__all__ = ["ElectronChain"]
+
 
 from egamma.core import Messenger
 from egamma.core.macros  import *
@@ -130,12 +132,13 @@ class ElectronChain(Messenger):
 
 
   def compile(self):
-
     hypos = []
     for name in self.sequences:
-      
         hypo = getattr(self, name)()
-        print(hypo)
+        if hypo:
+          hypos.append(hypo)
+
+    print(hypos)
       
 
   #
@@ -157,22 +160,50 @@ class ElectronChain(Messenger):
 
   def getFastElectron(self):
     from egamma.emulator.run3.electron.step2_hypo import configure
+    name = "L2Electron__" + self.trigName
+    hypo = configure( name , self.chainPart)
+    return hypo
+
+  def getFastTracking(self):
+    return None
+
+  def getPrecisionCaloElectron(self):
+    from egamma.emulator.run3.electron.step3_hypo import configure
+    name = "PrecisionCalo__" + self.trigName
     hypo = configure( name , self.chainPart)
     return hypo
 
 
+    return None
 
+  def getPrecisionTracking(self):
+    return None
+
+  def getPrecisionTrack_GSFRefitted(self):
+    return None
+
+  def getPrecisionGSFElectron(self):
+    return None
+
+
+
+
+
+#
+# Local test
+#
 if __name__ == "__main__":
 
 
     trigger_list = [
-                    #'HLT_e26_lhtight_ivarloose_L1EM22VHI',
+                    'HLT_e26_lhtight_ivarloose_L1EM22VHI',
                     #'HLT_e28_lhtight_ivarloose_noringer_nogsg_lrtmedium_L1EM22VHI',
-                    'HLT_e60_etcut_L1EM26M',
+                    #'HLT_e60_etcut_L1EM26M',
                     #'HLT_e60_nopid_L1EM26M',
                     ]
 
     for trigger in trigger_list:
+
 
         chain = ElectronChain(trigger)
 

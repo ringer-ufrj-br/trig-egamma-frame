@@ -108,7 +108,7 @@ class L2Electron(Messenger):
 #
 # For electrons
 #
-class L2ElectronConfiguration:
+class L2ElectronConfiguration(Messenger):
 
   __operation_points  = [  'tight'    , 
                            'medium'   , 
@@ -130,7 +130,9 @@ class L2ElectronConfiguration:
                              'lrttight' :5.0
                            }
 
-  def __init__(self, name, monGroups, cpart, self.hypo=None):
+  def __init__(self, name, cpart):
+
+    Messenger.__init__(self)
 
     self.__threshold  = cpart['threshold']
     self.__sel        = cpart['addInfo'][0] if cpart['addInfo'] else cpart['IDinfo']
@@ -145,7 +147,6 @@ class L2ElectronConfiguration:
     self.hypo.CaloTrackdEoverPHigh = 999.0
     self.hypo.TRTRatio             = -999.
     
-    MSG_INFO(self, 'Chain     :%s', self.__name )
     MSG_INFO(self, 'Threshold :%s', self.__threshold )
     MSG_INFO(self, 'Pidname   :%s', self.__sel )
 
@@ -186,11 +187,14 @@ class L2ElectronConfiguration:
   #
   def compile(self):
     if 'idperf' in self.idperfInfo():
+      MSG_INFO(self, "Configure nocut...")
       self.nocut()
     else:
+      MSG_INFO(self, "Configure nominal...")
       self.nominal()
     # secondary extra cut
     if self.lrtInfo() in self.__trigElectronLrtd0Cut.keys():
+      MSG_INFO(self, "Adding LRT cuts...")
       self.addLRTCut()
 
 

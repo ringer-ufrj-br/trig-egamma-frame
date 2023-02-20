@@ -1,12 +1,10 @@
 
-
-
-__all__ = ['TrigEgammaL1CaloHypoTool']
+__all__ = []
 
 
 from egamma.core import Messenger
 from egamma.core.macros  import *
-from egamma.core import declareProperty, ToolSvc, StatusCode
+from egamma.core import declareProperty, StatusCode
 
 import math
 import re
@@ -245,21 +243,6 @@ class L1Calo( Messenger ):
     return cut
 
 
-
-
-
-def configure_from_trigger( trigger ):
-
-  d = get_config_from( trigger )
-  l1item = d['L1Seed']
-  name = 'Hypo__L1Calo__' + trigger
-
-  emulator = ToolSvc.retrieve("Emulator")
-  if not emulator.isValid(name):
-    configure( name, l1item )
-    emulator+=hypo
-
-  return name
 
 
 

@@ -6,10 +6,11 @@ __all__ = []
 from egamma.core import Messenger
 from egamma.core.macros  import *
 from egamma.core import declareProperty, StatusCode
+from egamma.emulator.run3.electron import L2CaloCutMaps
+from egamma.emulator.run3.ringer import RingerSelector
+from egamma.emulator.run3.menu import electronFlags, treat_pidname
 from egamma import GeV
 from ROOT import TEnv
-from tensorflow import keras
-from egamma.emulator.run3.electron import L2CaloCutMaps
 
 
 import numpy as np
@@ -59,9 +60,12 @@ class L2Calo(Messenger):
 
     if self.UseRinger:
       MSG_INFO(self, f"Loading ringer models from {self.ConfigPath}")
-      self.load(self.ConfigPath)
+      self.ringer = RingerSelector(ConfigPath=self.ConfigPath)
+      if self.ringer.initialize().IsFailure():
+        MSG_FATAL(self, "Its not possible to initialize the ringer selector.")
 
     return StatusCode.SUCCESS
+
 
 
   #
@@ -105,11 +109,9 @@ class L2Calo(Messenger):
       MSG_DEBUG(self, 'The cluster had eta coordinates beyond the EM fiducial volume.')
       return False
 
-
     if self.AcceptAll:
       MSG_DEBUG(self, "Accept all.")
       return True
-
 
     # correct phi the to right range (probably not needed anymore)
     if  math.fabs(phiRef) > np.pi: phiRef -= 2*np.pi; # correct phi if outside range
@@ -129,7 +131,6 @@ class L2Calo(Messenger):
     # Deal with angle diferences greater than Pi
     dPhi =  math.fabs(pClus.phi() - phiRef)
     dPhi = dPhi if (dPhi < np.pi) else  (2*np.pi - dPhi)
-
 
     # calculate cluster quantities // definition taken from TrigElectron constructor
     if ( pClus.emaxs1() + pClus.e2tsts1() ) > 0 :
@@ -228,21 +229,19 @@ class L2Calo(Messenger):
     return True
 
 
+
   #
   # Emulate ringer decision
   #
   def emulate_ringer(self, context):
 
-
     fc = context.getHandler("HLT__TrigEMClusterContainer")
-    eventInfo = context.getHandler( "EventInfoContainer" )
 
     avgmu = eventInfo.avgmu()
     absEta = abs(fc.eta())
 
     if eta>2.5: eta=2.5
     et = fc.et() # in GeV
-
 
     if self.AcceptAll:
       MSG_DEBUG(self, "Accept all")
@@ -251,114 +250,7 @@ class L2Calo(Messenger):
     if et < self.EtCut:
       return False
 
-
-    discriminant = None
-
-    for model in self.models:
-      if model.etmin() < et/GeV <= model.etmax():
-        if model.etamin() < absEta <= model.etamax():
-          discriminant = model.predict(context)
-
-    if not discriminant:
-      return False
-
-
-    cutter=None
-    for obj in self.cuts:
-      if obj.etmin() < et/GeV <= obj.etmax():
-        if obj.etamin() < absEta <= obj.etamax():
-          cutter=obj
-
-    if not cutter:
-      return False
-
-    return cut.accept(discriminant, avgmu)
-
-
-  #
-  # Load all ringer models from athena format
-  #
-  def load( configPath ):
-    
-    basepath = '/'.join(configPath.split('/')[:-1])
-
-    # Load configuration file
-    env = TEnv( configPath )
-    version = env.GetValue("__version__", '')
-
-    def treat_float( env, key ):
-      return [float(value) for value in  env.GetValue(key, '').split('; ')]
-
-    def treat_string( env, key ):
-      return [str(value) for value in  env.GetValue(key, '').split('; ')]
-
-    #
-    # Reading all models
-    #
-    nmodels     = env.GetValue("Model__size", 0)
-    etmin_list  = treat_float( env, 'Model__etmin' )
-    etmax_list  = treat_float( env, 'Model__etmax' )
-    etamin_list = treat_float( env, 'Model__etamin' )
-    etamax_list = treat_float( env, 'Model__etamax' )
-    paths       = treat_string(env, 'Model__path' )
-    
-    class Model:
-      def __init__(self, model, etmin, etmax, etamin, etamax):
-        self.model=model
-        self.etmin=etmin; self.etmax=etmax
-        self.etamin=etamin; self.etamax=etamax
-
-    self.models = []
-    for idx, path in enumerate(paths):
-      model = keras.models.load_model(basepath+'/'+path.replace('.onnx','h5'))
-      self.models.append(Model( model,
-                                etmin_list[idx],
-                                etmax_list[idx],
-                                etamin_list[idx],
-                                etamax_list[idx],
-                                ))
-
-    #
-    # Reading all thresholds
-    #  
-   
-    nhresholds  = env.GetValue("Threshold__size", 0)
-    max_avgmu   = treat_float( env, "Threshold__MaxAverageMu" )
-    min_avgmu   = treat_float( env, "Threshold__MinAverageMu" )
-    etmin_list  = treat_float( env, 'Threshold__etmin' )
-    etmax_list  = treat_float( env, 'Threshold__etmax' )
-    etamin_list = treat_float( env, 'Threshold__etamin' )
-    etamax_list = treat_float( env, 'Threshold__etamax' )
-    slopes      = treat_float( env, 'Threshold__slope' )
-    offsets     = treat_float( env, 'Threshold__offset' )
-
-    class Threshold:
-      def __init__(self, slope, offset, avgmumin, avgmumax, etmin, etmax, etamin, etamax):
-        self.slope=slope; self.offset=offset
-        self.etmin=etmin; self.etmax=etmax
-        self.etamin=etamin; self.etamax=etamax
-        self.avgmumin=avgmumin; self.avgmumax=avgmumax
-
-      # Is passed?
-      def accept(self, discr, avgmu):
-        if avgmu < self.avgmumin:
-          avgmu=0
-        if avgmu > self.avgmumax:
-          avgmu=self.avgmumax
-        return True if discr > avgmu*self.slope + self.offset else False 
-
-
-    for idx in range(nhresholds):
-      self.cuts.append( Threshold( 
-                                    slopes[idx],
-                                    offsets[idx],
-                                    min_avgmu[idx],
-                                    max_avgmu[idx],
-                                    etmin_list[idx],
-                                    etmax_list[idx],
-                                    etamin_list[idx],
-                                    etamax_list[idx],
-                                  ))
+    return self.ringer.emulate(context)
 
 
 
@@ -368,6 +260,8 @@ class L2Calo(Messenger):
 #
 # For electron and photons auto configuration
 #
+
+
 
 
 class L2CaloConfiguration(Messenger):
@@ -485,9 +379,19 @@ class L2CaloConfiguration(Messenger):
     self.hypo.EtCut     = (self.etthr()-3.)*GeV  
     if not self.pidname() in self.__operation_points:
       MSG_FATAL(self, f"Bad selection name: {self.pidname()}")
+    
+    opnames = {
+      'tight' : 'Tight',
+      'medium': 'Medium',
+      'loose' : 'Loose',
+      'vloose': 'VeryLoose',
+    }
 
+    # setup the electron ringer abspath
+    path = electronFlags.ringerVersion + '/ElectronRinger{op}TriggerConfig.conf'.format(op=opnames[treat_pidname(self.pidname())])
     # Configure ringer here
-    self.hypo.ConfigPath = ""
+    self.hypo.ConfigPath = path
+
 
 
   #
