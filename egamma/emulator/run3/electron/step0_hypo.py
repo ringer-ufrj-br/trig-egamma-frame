@@ -1,19 +1,12 @@
 
-__all__ = ['TrigEgammaL1CaloHypoTool']
 
-from Gaugi import Algorithm
-from Gaugi import StatusCode
-from Gaugi import ToolSvc
-from Gaugi import declareProperty
-from Gaugi.macros import *
+
+__all__ = ['TrigEgammaL1CaloHypoTool']
 
 
 from egamma.core import Messenger
 from egamma.core.macros  import *
-
-
-from kepler.menu import treat_trigger_dict_type
-from kepler.emulator import Accept
+from egamma.core import declareProperty, ToolSvc, StatusCode
 
 import math
 import re
@@ -21,14 +14,14 @@ import re
 #
 # Hypo tool
 #
-class TrigEgammaL1CaloHypoTool( Messenger ):
+class L1Calo( Messenger ):
 
   #
   # Constructor
   #
   def __init__(self, name, **kw):
     
-    Algorithm.__init__(self, name)
+    Messenger.__init__(self)
     
     #
     # L1 configuration default parameters
@@ -44,14 +37,13 @@ class TrigEgammaL1CaloHypoTool( Messenger ):
     declareProperty( self, kw, "IsolCutMax"     , 50                                )
     declareProperty( self, kw, "L1Item"         , 'L1_EM3'                          )
 
+    self.name = name
  
 
   #
   # Initialize method
   #
   def initialize(self):
- 
-    self.init_lock()
     return StatusCode.SUCCESS
 
 
@@ -59,7 +51,6 @@ class TrigEgammaL1CaloHypoTool( Messenger ):
   # Finalize method
   #
   def finalize(self):
-    self.fina_lock()
     return StatusCode.SUCCESS
 
 
@@ -67,10 +58,9 @@ class TrigEgammaL1CaloHypoTool( Messenger ):
   # Accept method
   #
   def accept( self, context ):
-
     l1 = context.getHandler( "HLT__EmTauRoIContainer" )
     passed = self.emulate( l1, self.L1Item )
-    return Accept( self.name(), [ ("Pass", passed ) ] )
+    return Accept( self.name, [ ("Pass", passed ) ] )
 
 
   #
@@ -260,7 +250,7 @@ class TrigEgammaL1CaloHypoTool( Messenger ):
 
 def configure_from_trigger( trigger ):
 
-  d = treat_trigger_dict_type( trigger )
+  d = get_config_from( trigger )
   l1item = d['L1Seed']
   name = 'Hypo__L1Calo__' + trigger
 
@@ -281,16 +271,16 @@ def configure( name, l1item ):
 
 
   # L1 configuration parameters
-  hypo = TrigEgammaL1CaloHypoTool( name,
-                                   WPNames        =  ['Tight','Medium','Loose'], # must be: ["T","M","L"] (Tight,Medium and Loose)
-                                   HadCoreCutMin  =  [ 1.0   ,  1.0  ,  1.0  ,  1.0  ], # must be a list with for values: (default,tight,medium and loose)
-                                   HadCoreCutOff  =  [-0.2   , -0,2  , -0.2  , -0.2  ],
-                                   HadCoreSlope 	 = [ 1/23. ,  1/23.,  1/23.,  1/23.],
-                                   EmIsolCutMin   = [ 2.0   ,  1.0  ,  1.0  ,  1.5  ],
-                                   EmIsolCutOff   = [-1.8   , -2.6  , -2.0  , -1.8  ],
-                                   EmIsolSlope    = [ 1/8.  ,  1/8. ,  1/8. ,  1/8. ],
-                                   IsolCutMax     = 50,
-                                   L1Item         = l1item )
+  hypo = L1Calo( name,
+                 WPNames        =  ['Tight','Medium','Loose'], # must be: ["T","M","L"] (Tight,Medium and Loose)
+                 HadCoreCutMin  =  [ 1.0   ,  1.0  ,  1.0  ,  1.0  ], # must be a list with for values: (default,tight,medium and loose)
+                 HadCoreCutOff  =  [-0.2   , -0,2  , -0.2  , -0.2  ],
+                 HadCoreSlope 	 = [ 1/23. ,  1/23.,  1/23.,  1/23.],
+                 EmIsolCutMin   = [ 2.0   ,  1.0  ,  1.0  ,  1.5  ],
+                 EmIsolCutOff   = [-1.8   , -2.6  , -2.0  , -1.8  ],
+                 EmIsolSlope    = [ 1/8.  ,  1/8. ,  1/8. ,  1/8. ],
+                 IsolCutMax     = 50,
+                 L1Item         = l1item )
 
   return hypo
 

@@ -27,7 +27,7 @@ class EmulationTool( Algorithm ):
   # Add a selector to the list
   #
   def __add__( self, tool ):
-    self.__tools[tool.name()] = tool
+    self.__tools[tool.name] = tool
     return self
 
   #

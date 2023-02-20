@@ -1,17 +1,14 @@
 
-__all__ = ['TrigEgammaFastCaloHypoTool']
+
+__all__ = ['L2Calo']
 
 
-from trig_egamma_frame import GeV
-from trig_egamma_frame import StatusCode
-from trig_egamma_frame import Algorithm
-from trig_egamma_frame import ToolSvc
-from trig_egamma_frame import declareProperty
-from trig_egamma_frame.core.macros import *
-
-
-from trig_egamma_frame.emulator.run2.menu import treat_trigger_dict_type
-from trig_egamma_frame.emulator import Accept
+from egamma.core import Messenger
+from egamma.core.macros  import *
+from egamma.core import declareProperty, ToolSvc, StatusCode
+from egamma import GeV
+from ROOT import TEnv
+from tensorflow import keras
 
 import numpy as np
 import math
@@ -23,14 +20,14 @@ def same(value):
 #
 # L2Calo hypo tool
 #
-class TrigEgammaFastCaloHypoTool( Algorithm ):
+class L2Calo(Messenger):
 
   #
   # Constructor
   #
   def __init__(self, name, **kw):
 
-    Algorithm.__init__(self, name)
+    Messenger.__init__(self)
 
     declareProperty( self, kw, "EtaBins"        , [0.0, 0.6, 0.8, 1.15, 1.37, 1.52, 1.81, 2.01, 2.37, 2.47] )
     declareProperty( self, kw, "F1thr"          , same(0.005)                         )
@@ -45,11 +42,19 @@ class TrigEgammaFastCaloHypoTool( Algorithm ):
     declareProperty( self, kw, "WETA2thr"       , same(99999.)                        )
     declareProperty( self, kw, "WSTOTthr"       , same(99999.)                        )
     declareProperty( self, kw, "F3thr"          , same(99999.)                        )
+    declareProperty( self, kw, "DoRinger"       , True                                )
+    declareProperty( self, kw, "ConfigPath"     , None                                )
+
 
   #
   # Initialize method
   #
   def initialize(self): 
+
+    if self.DoRinger:
+      MSG_INFO(self, f"Loading ringer models from {self.ConfigPath}")
+      self.load(self.ConfigPath)
+
     return StatusCode.SUCCESS
 
 
@@ -58,7 +63,11 @@ class TrigEgammaFastCaloHypoTool( Algorithm ):
   #
   def accept(self, context):
 
-    passed = self.emulate(context)
+    if self.DoRinger:
+      passed = self.emulate_ringer(context)
+    else:
+      passed = self.emulate(context)
+
     return Accept( self.name(), [ ("Pass", passed)] )
 
 
@@ -77,7 +86,7 @@ class TrigEgammaFastCaloHypoTool( Algorithm ):
     phiRef = emTauRoi.phi()
     etaRef = emTauRoi.eta()
 
-    if etaRef > 2.6:
+    if abs(etaRef) > 2.6:
       MSG_DEBUG(self, 'The cluster had eta coordinates beyond the EM fiducial volume.')
       return False
 
@@ -200,6 +209,136 @@ class TrigEgammaFastCaloHypoTool( Algorithm ):
 
 
   #
+  # Emulate ringer decision
+  #
+  def emulate_ringer(self, context)
+
+
+    fc = context.getHandler("HLT__TrigEMClusterContainer")
+    eventInfo = context.getHandler( "EventInfoContainer" )
+
+    avgmu = eventInfo.avgmu()
+    absEta = abs(fc.eta())
+
+    if eta>2.5: eta=2.5
+    et = fc.et() # in GeV
+
+    if et < self.EtCut*GeV:
+      return False
+
+
+    discriminant = None
+
+    for model in self.models:
+      if model.etmin() < et/GeV <= model.etmax():
+        if model.etamin() < absEta <= model.etamax():
+          discriminant = model.predict(context)
+
+    if not discriminant:
+      return False
+
+
+
+    cutter=None
+    for obj in self.cuts:
+      if obj.etmin() < et/GeV <= obj.etmax():
+        if obj.etamin() < absEta <= obj.etamax():
+          cutter=obj
+
+    if not cutter:
+      return False
+
+    return cut.accept(discriminant, avgmu)
+
+
+  #
+  # Load all ringer models from athena format
+  #
+  def load( configPath ):
+    
+    basepath = '/'.join(configPath.split('/')[:-1])
+
+    # Load configuration file
+    env = TEnv( configPath )
+    version = env.GetValue("__version__", '')
+
+    def treat_float( env, key ):
+      return [float(value) for value in  env.GetValue(key, '').split('; ')]
+
+    def treat_string( env, key ):
+      return [str(value) for value in  env.GetValue(key, '').split('; ')]
+
+    #
+    # Reading all models
+    #
+    nmodels     = env.GetValue("Model__size", 0)
+    etmin_list  = treat_float( env, 'Model__etmin' )
+    etmax_list  = treat_float( env, 'Model__etmax' )
+    etamin_list = treat_float( env, 'Model__etamin' )
+    etamax_list = treat_float( env, 'Model__etamax' )
+    paths       = treat_string(env, 'Model__path' )
+    
+    class Model:
+      def __init__(self, model, etmin, etamax, etmin, etmax):
+        self.model=model
+        self.etmin=etmin; self.etmax=etmax
+        self.etamin=etamin; self.etamax=etamax
+
+    self.models = []
+    for idx, path in enumerate(paths):
+      model = keras.models.load_model(basepath+'/'+path.replace('.onnx','h5'))
+      self.models.append(Model( model,
+                                etmin_list[idx],
+                                etmax_list[idx],
+                                etamin_list[idx],
+                                etamax_list[idx],
+                                ))
+
+    #
+    # Reading all thresholds
+    #  
+   
+    nhresholds  = env.GetValue("Threshold__size", 0)
+    max_avgmu   = treat_float( env, "Threshold__MaxAverageMu" )
+    min_avgmu   = treat_float( env, "Threshold__MinAverageMu" )
+    etmin_list  = treat_float( env, 'Threshold__etmin' )
+    etmax_list  = treat_float( env, 'Threshold__etmax' )
+    etamin_list = treat_float( env, 'Threshold__etamin' )
+    etamax_list = treat_float( env, 'Threshold__etamax' )
+    slopes      = treat_float( env, 'Threshold__slope' )
+    offsets     = treat_float( env, 'Threshold__offset' )
+
+    class Threshold:
+      def __init__(self, slope, offset, avgmumin, avgmumax, etmin, etmax, etamin, etamax):
+        self.slope=slope; self.offset=offset
+        self.etmin=etmin; self.etmax=etmax
+        self.etamin=etamin; self.etamax=etamax
+        self.avgmumin=avgmumin; self.avgmumax=avgmumax
+
+      # Is passed?
+      def accept(self, discr, avgmu):
+        if avgmu < self.avgmumin:
+          avgmu=0
+        if avgmu > self.avgmumax:
+          avgmu=self.avgmumax
+        return True if discr > avgmu*self.slope + self.offset else False 
+
+
+    for idx in range(nhresholds):
+      self.cuts.append( Threshold( 
+                                    slopes[idx],
+                                    offsets[idx],
+                                    min_avgmu[idx],
+                                    max_avgmu[idx],
+                                    etmin_list[idx],
+                                    etmax_list[idx],
+                                    etamin_list[idx],
+                                    etamax_list[idx],
+                                  ))
+
+
+
+  #
   # Finalize method
   #
   def finalize(self):
@@ -233,20 +372,23 @@ def configure( name, etthr, pidname ):
   
   from trig_egamma_frame.emulator.run2 import L2CaloCutMaps, TrigEgammaFastCaloHypoTool
   cuts = L2CaloCutMaps(etthr)
-  hypo  = TrigEgammaFastCaloHypoTool(name,
-                                   dETACLUSTERthr = 0.1,
-                                   dPHICLUSTERthr = 0.1,
-                                   EtaBins        = [0.0, 0.6, 0.8, 1.15, 1.37, 1.52, 1.81, 2.01, 2.37, 2.47],
-                                   F1thr          = same(0.005),
-                                   ETthr          = same(0),
-                                   ET2thr         = same(90.0*GeV),
-                                   HADET2thr      = same(999.0),
-                                   WETA2thr       = same(99999.),
-                                   WSTOTthr       = same(99999.),
-                                   F3thr          = same(99999.),
-                                   HADETthr       = cuts.MapsHADETthr[pidname],
-                                   CARCOREthr     = cuts.MapsCARCOREthr[pidname],
-                                   CAERATIOthr    = cuts.MapsCAERATIOthr[pidname],
-                                   )
+  hypo  = L2Calo(name,
+                 dETACLUSTERthr = 0.1,
+                 dPHICLUSTERthr = 0.1,
+                 EtaBins        = [0.0, 0.6, 0.8, 1.15, 1.37, 1.52, 1.81, 2.01, 2.37, 2.47],
+                 F1thr          = same(0.005),
+                 ETthr          = same(0),
+                 ET2thr         = same(90.0*GeV),
+                 HADET2thr      = same(999.0),
+                 WETA2thr       = same(99999.),
+                 WSTOTthr       = same(99999.),
+                 F3thr          = same(99999.),
+                 HADETthr       = cuts.MapsHADETthr[pidname],
+                 CARCOREthr     = cuts.MapsCARCOREthr[pidname],
+                 CAERATIOthr    = cuts.MapsCAERATIOthr[pidname],
+                 DoRinger       = True,
+                 EtCut          = etcut, 
+                 )
 
   return hypo
+
