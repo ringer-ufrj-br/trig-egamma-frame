@@ -267,8 +267,9 @@ def configure_from_trigger( trigger ):
 #
 # Configure the hypo tool using the trigger chain name
 #
-def configure( name, l1item ):
+def configure( name, chainPart ):
 
+  l1item = chainPart['L1Threshold']
 
   # L1 configuration parameters
   hypo = L1Calo( name,

@@ -1,14 +1,16 @@
 
 
-__all__ = ['L2Calo']
+__all__ = []
 
 
 from egamma.core import Messenger
 from egamma.core.macros  import *
-from egamma.core import declareProperty, ToolSvc, StatusCode
+from egamma.core import declareProperty, StatusCode
 from egamma import GeV
 from ROOT import TEnv
 from tensorflow import keras
+from egamma.emulator.run3.electron import L2CaloCutMaps
+
 
 import numpy as np
 import math
@@ -18,7 +20,7 @@ def same(value):
 
     
 #
-# L2Calo hypo tool
+# L2Calo hypo self.hypo
 #
 class L2Calo(Messenger):
 
@@ -28,22 +30,26 @@ class L2Calo(Messenger):
   def __init__(self, name, **kw):
 
     Messenger.__init__(self)
+    self.name = name
 
+    declareProperty( self, kw, "AcceptAll"      , False                               )
+    declareProperty( self, kw, "UseRinger"      , False                               )
     declareProperty( self, kw, "EtaBins"        , [0.0, 0.6, 0.8, 1.15, 1.37, 1.52, 1.81, 2.01, 2.37, 2.47] )
-    declareProperty( self, kw, "F1thr"          , same(0.005)                         )
     declareProperty( self, kw, "ETthr"          , same(0)                             )
+    declareProperty( self, kw, "dETACLUSTERthr" , 0.1                                 )
+    declareProperty( self, kw, "dPHICLUSTERthr" , 0.1                                 )
+    declareProperty( self, kw, "F1thr"          , same(0.005)                         )
     declareProperty( self, kw, "ET2thr"         , same(90.0*GeV)                      )
     declareProperty( self, kw, "HADET2thr"      , same(999.0)                         )
     declareProperty( self, kw, "HADETthr"       , same(999.0)                         )
-    declareProperty( self, kw, "CARCOREthr"     , same(999.0)                         )
-    declareProperty( self, kw, "CAERATIOthr"    , same(999.0)                         )
-    declareProperty( self, kw, "dETACLUSTERthr" , 0.1                                 )
-    declareProperty( self, kw, "dPHICLUSTERthr" , 0.1                                 )
     declareProperty( self, kw, "WETA2thr"       , same(99999.)                        )
     declareProperty( self, kw, "WSTOTthr"       , same(99999.)                        )
     declareProperty( self, kw, "F3thr"          , same(99999.)                        )
-    declareProperty( self, kw, "DoRinger"       , True                                )
+    declareProperty( self, kw, "CARCOREthr"     , same(999.0)                         )
+    declareProperty( self, kw, "CAERATIOthr"    , same(999.0)                         )
     declareProperty( self, kw, "ConfigPath"     , None                                )
+    declareProperty( self, kw, "EtCut"          , -999                                )
+
 
 
   #
@@ -51,10 +57,17 @@ class L2Calo(Messenger):
   #
   def initialize(self): 
 
-    if self.DoRinger:
+    if self.UseRinger:
       MSG_INFO(self, f"Loading ringer models from {self.ConfigPath}")
       self.load(self.ConfigPath)
 
+    return StatusCode.SUCCESS
+
+
+  #
+  # Finalize method
+  #
+  def finalize(self):
     return StatusCode.SUCCESS
 
 
@@ -63,12 +76,12 @@ class L2Calo(Messenger):
   #
   def accept(self, context):
 
-    if self.DoRinger:
+    if self.UseRinger:
       passed = self.emulate_ringer(context)
     else:
       passed = self.emulate(context)
 
-    return Accept( self.name(), [ ("Pass", passed)] )
+    return Accept( self.name, [ ("Pass", passed)] )
 
 
 
@@ -76,6 +89,8 @@ class L2Calo(Messenger):
   # Emulation method
   #
   def emulate(self, context):
+
+
 
     pClus = context.getHandler( "HLT__TrigEMClusterContainer" )
     # get the equivalent L1 EmTauRoi object in athena
@@ -89,6 +104,11 @@ class L2Calo(Messenger):
     if abs(etaRef) > 2.6:
       MSG_DEBUG(self, 'The cluster had eta coordinates beyond the EM fiducial volume.')
       return False
+
+
+    if self.AcceptAll:
+      MSG_DEBUG(self, "Accept all.")
+      return True
 
 
     # correct phi the to right range (probably not needed anymore)
@@ -211,7 +231,7 @@ class L2Calo(Messenger):
   #
   # Emulate ringer decision
   #
-  def emulate_ringer(self, context)
+  def emulate_ringer(self, context):
 
 
     fc = context.getHandler("HLT__TrigEMClusterContainer")
@@ -223,7 +243,12 @@ class L2Calo(Messenger):
     if eta>2.5: eta=2.5
     et = fc.et() # in GeV
 
-    if et < self.EtCut*GeV:
+
+    if self.AcceptAll:
+      MSG_DEBUG(self, "Accept all")
+      return True
+
+    if et < self.EtCut:
       return False
 
 
@@ -236,7 +261,6 @@ class L2Calo(Messenger):
 
     if not discriminant:
       return False
-
 
 
     cutter=None
@@ -279,7 +303,7 @@ class L2Calo(Messenger):
     paths       = treat_string(env, 'Model__path' )
     
     class Model:
-      def __init__(self, model, etmin, etamax, etmin, etmax):
+      def __init__(self, model, etmin, etmax, etamin, etamax):
         self.model=model
         self.etmin=etmin; self.etmax=etmax
         self.etamin=etamin; self.etamax=etamax
@@ -338,57 +362,166 @@ class L2Calo(Messenger):
 
 
 
+
+
+
+#
+# For electron and photons auto configuration
+#
+
+
+class L2CaloConfiguration(Messenger):
+
+  __operation_points  = [  'tight'    , 
+                           'medium'   , 
+                           'loose'    , 
+                           'vloose'   , 
+                           'lhtight'  , 
+                           'lhmedium' , 
+                           'lhloose'  , 
+                           'lhvloose' ,
+                           'dnntight' ,
+                           'dnnmedium',
+                           'dnnloose' ,
+                           'dnnvloose',
+                           ]
+
+
+  def __init__(self, name, cpart):
+    Messenger.__init__(self)
+    self.__cand         = cpart['trigType']
+    self.__threshold    = cpart['threshold']
+    self.__sel          = 'ion' if 'ion' in cpart['extra'] else (cpart['addInfo'][0] if cpart['addInfo'] else cpart['IDinfo'])
+    self.__gsfinfo      = cpart['gsfInfo'] if cpart['trigType']=='e' and cpart['gsfInfo'] else ''
+    self.__idperfinfo   = cpart['idperfInfo'] if cpart['trigType']=='e' and cpart['idperfInfo'] else ''
+    self.__noringerinfo = cpart['L2IDAlg']
+
+    self.hypo = L2Calo(name)
+    self.hypo.AcceptAll      = False
+    self.hypo.UseRinger      = False
+    self.hypo.EtaBins        = [0.0, 0.6, 0.8, 1.15, 1.37, 1.52, 1.81, 2.01, 2.37, 2.47]
+    self.hypo.ETthr          = same( self.__threshold*GeV )
+    self.hypo.dETACLUSTERthr = 0.1
+    self.hypo.dPHICLUSTERthr = 0.1
+    self.hypo.F1thr          = same( 0.005    )
+    self.hypo.ET2thr         = same( 90.0*GeV )
+    self.hypo.HADET2thr      = same( 999.0    )
+    self.hypo.HADETthr       = same( 0.058    )
+    self.hypo.WETA2thr       = same( 99999.   )
+    self.hypo.WSTOTthr       = same( 99999.   )
+    self.hypo.F3thr          = same( 99999.   )
+    self.hypo.CARCOREthr     = same( -9999.   )
+    self.hypo.CAERATIOthr    = same( -9999.   )
+
+    MSG_INFO(self, 'Signature :%s'   , self.__cand )
+    MSG_INFO(self, 'Threshold :%s'   , self.__threshold )
+    MSG_INFO(self, 'Pidname   :%s'   , self.__sel )
+    MSG_INFO(self, 'noringerinfo :%s', self.__noringerinfo )
+
+
+  def pidname( self ):
+    return self.__sel
+
+  def etthr(self):
+    return self.__threshold
+
+  def isElectron(self):
+    return 'e' in self.__cand
+
+  def isPhoton(self):
+    return 'g' in self.__cand
+
+  def noringerinfo(self):
+    return self.__noringerinfo
+
+  def gsfinfo(self):
+    return self.__gsfinfo
+
+  def idperfinfo(self):
+    return self.__idperfinfo
+
+
+  def nocut(self):
+    
+    MSG_INFO(self, 'Configure nocut' )
+    self.hypo.AcceptAll      = True
+    self.hypo.UseRinger      = False
+    self.hypo.ETthr          = same( self.etthr()*GeV )
+    self.hypo.dETACLUSTERthr = 9999.
+    self.hypo.dPHICLUSTERthr = 9999.
+    self.hypo.F1thr          = same( 0.0    )
+    self.hypo.HADETthr       = same( 9999.  )
+    self.hypo.CARCOREthr     = same( -9999. )
+    self.hypo.CAERATIOthr    = same( -9999. )
+
+
+  def etcut(self):
+
+    MSG_INFO(self, 'Configure etcut or nopid' )
+    self.hypo.UseRinger      = False
+    self.hypo.ETthr          = same( ( self.etthr()  -  3 )*GeV )
+    self.hypo.dETACLUSTERthr = 9999.
+    self.hypo.dPHICLUSTERthr = 9999.
+    self.hypo.F1thr          = same( 0.0    )
+    self.hypo.HADETthr       = same( 9999.  )
+    self.hypo.CARCOREthr     = same( -9999. )
+    self.hypo.CAERATIOthr    = same( -9999. )
+
+
+  def noringer(self):
+
+    MSG_INFO(self, 'Configure noringer' )
+    self.hypo.UseRinger   = False
+    self.hypo.ETthr       = same( ( self.etthr()  - 3 )*GeV , self.hypo)
+    self.hypo.HADETthr    = L2CaloCutMaps( self.etthr() ).MapsHADETthr[self.pidname()]
+    self.hypo.CARCOREthr  = L2CaloCutMaps( self.etthr() ).MapsCARCOREthr[self.pidname()]
+    self.hypo.CAERATIOthr = L2CaloCutMaps( self.etthr() ).MapsCAERATIOthr[self.pidname()]
+
+
+  def nominal(self):
+
+    MSG_INFO(self, 'Configure ringer' )
+    self.hypo.UseRinger = True
+    self.hypo.EtCut     = (self.etthr()-3.)*GeV  
+    if not self.pidname() in self.__operation_points:
+      MSG_FATAL(self, f"Bad selection name: {self.pidname()}")
+
+    # Configure ringer here
+    self.hypo.ConfigPath = ""
+
+
   #
-  # Finalize method
+  # compile the chain
   #
-  def finalize(self):
-    return StatusCode.SUCCESS
+  def compile(self):
+
+    if self.pidname() in ('etcut', 'ion', 'nopid'):
+      self.etcut()
+
+    elif self.pidname() in self.__operation_points and 'noringer' in self.noringerinfo() and self.isElectron():
+      self.noringer()
+
+    elif self.pidname() in self.__operation_points and 'noringer' not in self.noringerinfo() and self.isElectron():
+      self.nominal()
+
+    elif self.pidname() in self.__operation_points and self.isPhoton() and  'ringer'!=self.noringerinfo():
+      self.etcut()
+    elif self.pidname() in self.__operation_points and self.isPhoton() and  'ringer'==self.noringerinfo():
+      self.nominal()
+   
+    elif self.etthr()==0:
+      self.nocut()
 
 
-
-
-
-def configure_from_trigger( trigger ):
-
-  d = treat_trigger_dict_type( trigger )
-  etthr = d['etthr']
-  pidname = d['pidname']
-  name = 'Hypo__FastCalo__' + trigger
-
-  emulator = ToolSvc.retrieve("Emulator")
-  if not emulator.isValid(name):
-    hypo = configure(name, etthr, pidname)
-    emulator+=hypo
-
-  return name
 
 
 
 #
 # Configure the hypo from trigger name
 #
-def configure( name, etthr, pidname ):
+def configure( name, chainPart):
 
-  
-  from trig_egamma_frame.emulator.run2 import L2CaloCutMaps, TrigEgammaFastCaloHypoTool
-  cuts = L2CaloCutMaps(etthr)
-  hypo  = L2Calo(name,
-                 dETACLUSTERthr = 0.1,
-                 dPHICLUSTERthr = 0.1,
-                 EtaBins        = [0.0, 0.6, 0.8, 1.15, 1.37, 1.52, 1.81, 2.01, 2.37, 2.47],
-                 F1thr          = same(0.005),
-                 ETthr          = same(0),
-                 ET2thr         = same(90.0*GeV),
-                 HADET2thr      = same(999.0),
-                 WETA2thr       = same(99999.),
-                 WSTOTthr       = same(99999.),
-                 F3thr          = same(99999.),
-                 HADETthr       = cuts.MapsHADETthr[pidname],
-                 CARCOREthr     = cuts.MapsCARCOREthr[pidname],
-                 CAERATIOthr    = cuts.MapsCAERATIOthr[pidname],
-                 DoRinger       = True,
-                 EtCut          = etcut, 
-                 )
-
-  return hypo
+  config = L2CaloConfiguration(name, chainPart)
+  config.compile()
+  return config.hypo
 
