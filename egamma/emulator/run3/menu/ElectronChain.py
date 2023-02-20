@@ -138,8 +138,6 @@ class ElectronChain(Messenger):
         if hypo:
           hypos.append(hypo)
 
-    print(hypos)
-      
 
   #
   # Configure L1 trigger
@@ -173,9 +171,6 @@ class ElectronChain(Messenger):
     hypo = configure( name , self.chainPart)
     return hypo
 
-
-    return None
-
   def getPrecisionTracking(self):
     return None
 
@@ -183,10 +178,30 @@ class ElectronChain(Messenger):
     return None
 
   def getPrecisionGSFElectron(self):
-    return None
+    from egamma.emulator.run3.electron.step4_hypo import configure
+    name = "PrecisionElectron__" + self.trigName
+    hypo = configure( name , self.chainPart)
+    return hypo
+
+  def getPrecisionElectron(self):
+    from egamma.emulator.run3.electron.step4_hypo import configure
+    name = "PrecisionElectron__" + self.trigName
+    hypo = configure( name , self.chainPart)
+    return hypo
 
 
+  def initialize(self):
+    for hypo in self.hypos:
+      if hypo.initialize().isFailure():
+        MSG_FATAL(self, f"Its not possible to initialize {hypo.name}")
 
+  def finalize(self):
+    for hypo in self.hypos:
+      if hypo.finalize().isFailure():
+        MSG_FATAL(self, f"Its not possible to finalize {hypo.name}")
+
+
+  def emulate(self, context):
 
 
 #
@@ -198,13 +213,11 @@ if __name__ == "__main__":
     trigger_list = [
                     'HLT_e26_lhtight_ivarloose_L1EM22VHI',
                     #'HLT_e28_lhtight_ivarloose_noringer_nogsg_lrtmedium_L1EM22VHI',
-                    #'HLT_e60_etcut_L1EM26M',
+                    'HLT_e60_etcut_L1EM26M',
                     #'HLT_e60_nopid_L1EM26M',
                     ]
 
     for trigger in trigger_list:
-
-
         chain = ElectronChain(trigger)
 
 
