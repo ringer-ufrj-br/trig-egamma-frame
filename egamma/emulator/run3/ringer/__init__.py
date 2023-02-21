@@ -4,17 +4,17 @@ __all__ = ["Model", "Threshold"]
 
 
 class Model:
-  def __init__(self, model, etmin, etmax, etamin, etamax, input_generator):
+  def __init__(self, model, etmin, etmax, etamin, etamax, barcode):
     self.model=model
     self.etmin=etmin; self.etmax=etmax
     self.etamin=etamin; self.etamax=etamax
-    self.input_generator = input_generator
+    self.barcode=barcode
 
   #
   # Predict discriminant output
   #
-  def predict(self, context):
-    return self.model.predict(inputs)[0][0].numpy()
+  def predict(self, inputs):
+    return self.model(inputs)[0][0]
 
 
 class Threshold:

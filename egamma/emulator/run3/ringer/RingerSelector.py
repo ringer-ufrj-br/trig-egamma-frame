@@ -8,6 +8,7 @@ from egamma import GeV
 from ROOT import TEnv
 from egamma.emulator.run3.ringer import Model, Threshold
 from tensorflow import keras
+import numpy as np
 
 
 def treat_float( env, key ):
@@ -40,7 +41,7 @@ class RingerSelector(Messenger):
     # Load configuration file
     env = TEnv( self.ConfigPath )
     version = env.GetValue("__version__", '')
-    self.cutMap = []
+    self.cuts = []
     self.models = []
     
     # Reading all models
@@ -75,7 +76,7 @@ class RingerSelector(Messenger):
     offsets     = treat_float( env, 'Threshold__offset' )
 
     for idx in range(nhresholds):
-      self.cutMap.append( Threshold( 
+      self.cuts.append( Threshold( 
                                     slopes[idx],
                                     offsets[idx],
                                     min_avgmu[idx],
@@ -94,8 +95,8 @@ class RingerSelector(Messenger):
     cl = context.getHandler("HLT__TrigEMClusterContainer")
 
     for model in self.models:
-      if model.etmin() < cl.et()/GeV <= model.etmax():
-        if model.etamin() < abs(cl.eta) <= model.etamax():
+      if model.etmin < cl.et()/GeV <= model.etmax:
+        if model.etamin < abs(cl.eta()) <= model.etamax:
           # prepare inputs given barcode configuration
           inputs = self.prepare_inputs(context, model.barcode)
           return model.predict(inputs)
@@ -111,8 +112,8 @@ class RingerSelector(Messenger):
     evtInfo = context.getHandler( "EventInfoContainer")
     avgmu = evtInfo.avgmu()
     for cut in self.cuts:
-      if cut.etmin() < cl.et()/GeV <= cut.etmax():
-        if cut.etamin() < abs(cl.eta) <= cut.etamax():
+      if cut.etmin < cl.et()/GeV <= cut.etmax:
+        if cut.etamin < abs(cl.eta()) <= cut.etamax:
           # prepare inputs given barcode configuration
           return cut.accept(discriminant, avgmu)
         # is in eta range?
@@ -129,6 +130,8 @@ class RingerSelector(Messenger):
     if barcode != 3:
       rings = cl.ringsE() / abs(sum(cl.ringsE()))
       inputs.append(rings)
+    
+    return np.array(inputs)
 
 
 

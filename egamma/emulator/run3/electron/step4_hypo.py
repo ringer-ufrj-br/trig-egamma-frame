@@ -4,6 +4,7 @@ __all__ = ['TrigEgammaPrecisionElectronHypoTool']
 from egamma.core import Messenger
 from egamma.core.macros  import *
 from egamma.core import declareProperty, StatusCode
+from egamma.emulator import Accept
 from egamma import GeV
 
 import numpy as np
@@ -27,14 +28,15 @@ class PrecisionElectron( Messenger ):
 
     Messenger.__init__(self)
     self.name = name
-    declareProperty( self, kw, "Branch"              , 'trig_EF_el_lhtight'     )
-    declareProperty( self, kw, "EtConeCut"           , [-1, -1, -1, -1, -1, -1] )
-    declareProperty( self, kw, "PtConeCut"           , [-1, -1, -1, -1, -1, -1] )
-    declareProperty( self, kw, "RelEtConeCut"        , [-1, -1, -1, -1, -1, -1] )
-    declareProperty( self, kw, "RelPtConeCut"        , [-1, -1, -1, -1, -1, -1] )
-    declareProperty( self, kw, "DoIsolation"         , False                    )
-    declareProperty( self, kw, "UseClusETforCaloIso" , True                     )
-    declareProperty( self, kw, "UseClusETforTrackIso", True                     )
+    declareProperty( self, kw, "RelPtConeCut"         , -1       )
+    declareProperty( self, kw, "AcceptAll"            , False    )
+    declareProperty( self, kw, "ETthr"                ,   0      )
+    declareProperty( self, kw, "dPHICLUSTERthr"       ,   0      )
+    declareProperty( self, kw, "dETACLUSTERthr"       ,   0.2    )
+    declareProperty( self, kw, "PidName"              , ""       )
+    declareProperty( self, kw, "d0Cut"                , -1       )
+    declareProperty( self, kw, "DoNoPid"              , False    )
+
 
 
   #
@@ -56,11 +58,7 @@ class PrecisionElectron( Messenger ):
     bitAccept = [False for _ in range(elCont.size())]
 
     # get the equivalent L1 EmTauRoi object in athena
-    emTauRoi = pClus.emTauRoI()
-
-    if not elCont.checkBody( self.Branch ):
-      MSG_FATAL( self, "The branch %s is not found into the HLT electron body.", self.branch )
-
+    emTauRoI = pClus.emTauRoI()
 
     for el in elCont:
       passed = self.emulate(el, emTauRoI)
@@ -74,8 +72,6 @@ class PrecisionElectron( Messenger ):
     return Accept( self.name, [ ("Pass", passed) ] )
 
 
-
-
   def emulate(self, el, roi):
 
     passed = False
@@ -86,7 +82,6 @@ class PrecisionElectron( Messenger ):
 
     # correct phi the to right range (probably not needed anymore)
     if  math.fabs(phiRef) > np.pi: phiRef -= 2*np.pi # correct phi if outside range
-
 
     if self.AcceptAll:
       return True
@@ -108,10 +103,10 @@ class PrecisionElectron( Messenger ):
     if deta > self.dETACLUSTERthr:
       return False
       
-    if dphi < self.dPHICLUSTERthr:        
+    if dphi > self.dPHICLUSTERthr:   
       return False
 
-    if cl.et() < self.Etthr:
+    if cl.et() < self.ETthr:
       return False
 
     if self.DoNoPid:
@@ -124,7 +119,7 @@ class PrecisionElectron( Messenger ):
         return False
 
     # Pid cut
-    if not el.accept('trig_EF_el_'+self.Pidname):
+    if not el.accept('trig_EF_el_'+self.PidName):
       return False
 
     ptvarcone20 = el.ptvarcone20()
@@ -202,8 +197,7 @@ class PrecisionElectronConfiguration(Messenger):
     
 
     self.hypo = PrecisionElectron(name)
-    self.hypo.EtaBins        = [0.0, 0.6, 0.8, 1.15, 1.37, 1.52, 1.81, 2.01, 2.37, 2.47]
-    self.hypo.ETthr          = same( self.__threshold*GeV, self.hypo )
+    self.hypo.ETthr          = self.__threshold*GeV
     self.hypo.dETACLUSTERthr = 0.1
     self.hypo.dPHICLUSTERthr = 0.1
     self.hypo.RelPtConeCut   = -999
@@ -240,15 +234,15 @@ class PrecisionElectronConfiguration(Messenger):
   def nocut(self):
 
     MSG_INFO(self, 'Configure nocut' )
-    self.hypo.ETthr          = same( self.etthr()*GeV, self.hypo)
+    self.hypo.ETthr          = self.etthr()*GeV
     self.hypo.dETACLUSTERthr = 9999.
     self.hypo.dPHICLUSTERthr = 9999.
 
   def noPid(self):
     
     MSG_INFO(self, 'Configure noPid' )
-    self.hypo.DoNoPid = True
-    self.hypo.ETthr          = same( self.etthr()*GeV, self.hypo)
+    self.hypo.DoNoPid        = True
+    self.hypo.ETthr          = self.etthr()*GeV
     # No other cuts applied
     self.hypo.dETACLUSTERthr = 9999.
     self.hypo.dPHICLUSTERthr = 9999.

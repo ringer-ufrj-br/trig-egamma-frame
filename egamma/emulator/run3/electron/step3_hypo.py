@@ -3,7 +3,9 @@ __all__ = []
 from egamma.core import Messenger
 from egamma.core.macros  import *
 from egamma.core import declareProperty, StatusCode
+from egamma.emulator import Accept
 from egamma import GeV
+
 
 import numpy as np
 import math
@@ -79,10 +81,10 @@ class PrecisionCalo( Messenger):
 
       if deta < self.dETACLUSTERthr:
         if dphi < self.dPHICLUSTERthr:        
-          if cl.et() > self.ETthr*GeV:
+          if cl.et() > self.ETthr:
             passed=True
 
-      bitAccept[el.getPos()] = passed
+      bitAccept[cl.getPos()] = passed
     # Loop over cluster
 
     clCont.setPos( current )

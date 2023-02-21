@@ -5,6 +5,7 @@ __all__ = ['L2Electron']
 from egamma.core import Messenger
 from egamma.core.macros  import *
 from egamma.core import declareProperty, StatusCode
+from egamma.emulator import Accept
 from egamma import GeV
 
 import numpy as np

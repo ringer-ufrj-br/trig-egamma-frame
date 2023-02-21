@@ -46,7 +46,7 @@ class CaloCluster_v2(EDM):
       Retrieve the Et information from Physval or SkimmedNtuple
     """
     if self._is_hlt:
-      return self._event.trig_EF_calo_et[self.getPos()]
+      return self._event.trig_EF_el_calo_et[self.getPos()]
     else:
       return self._event.el_calo_et
    
@@ -57,7 +57,7 @@ class CaloCluster_v2(EDM):
       Retrieve the Eta information from Physval or SkimmedNtuple
     """
     if self._is_hlt:
-      return self._event.trig_EF_calo_eta[self.getPos()]
+      return self._event.trig_EF_el_calo_eta[self.getPos()]
     else:
       return self._event.el_calo_eta
 
@@ -68,7 +68,7 @@ class CaloCluster_v2(EDM):
       Retrieve the Phi information from Physval or SkimmedNtuple
     """
     if self._is_hlt:
-      return self._event.trig_EF_calo_phi[self.getPos()]
+      return self._event.trig_EF_el_calo_phi[self.getPos()]
     else:
       return self._event.el_calo_phi
 
@@ -78,7 +78,7 @@ class CaloCluster_v2(EDM):
       Retrieve the EtaBE2 information from Physval or SkimmedNtuple
     """
     if self._is_hlt:
-      return self._event.trig_EF_calo_etaBE2[self.getPos()]
+      return self._event.trig_EF_el_calo_etaBE2[self.getPos()]
     else:
       return self._event.el_calo_etaBE2
 
@@ -88,7 +88,7 @@ class CaloCluster_v2(EDM):
       Retrieve the E information from Physval or SkimmedNtuple
     """
     if self._is_hlt:
-      return self._event.trig_EF_calo_e[self.getPos()]
+      return self._event.trig_EF_el_calo_e[self.getPos()]
     else:
       return self._event.el_calo_e
 
@@ -111,7 +111,7 @@ class CaloCluster_v2(EDM):
     	Retrieve the TrackParticle container size
     """
     if self._is_hlt:
-      return self.event.trig_EF_calo_eta.size()
+      return self.event.trig_EF_el_calo_eta.size()
     else:
       return 1
     

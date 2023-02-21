@@ -6,6 +6,7 @@ __all__ = []
 from egamma.core import Messenger
 from egamma.core.macros  import *
 from egamma.core import declareProperty, StatusCode
+from egamma.emulator import Accept
 from egamma.emulator.run3.electron import L2CaloCutMaps
 from egamma.emulator.run3.ringer import RingerSelector
 from egamma.emulator.run3.menu import electronFlags, treat_pidname
@@ -61,7 +62,7 @@ class L2Calo(Messenger):
     if self.UseRinger:
       MSG_INFO(self, f"Loading ringer models from {self.ConfigPath}")
       self.ringer = RingerSelector(ConfigPath=self.ConfigPath)
-      if self.ringer.initialize().IsFailure():
+      if self.ringer.initialize().isFailure():
         MSG_FATAL(self, "Its not possible to initialize the ringer selector.")
 
     return StatusCode.SUCCESS
@@ -236,11 +237,6 @@ class L2Calo(Messenger):
   def emulate_ringer(self, context):
 
     fc = context.getHandler("HLT__TrigEMClusterContainer")
-
-    avgmu = eventInfo.avgmu()
-    absEta = abs(fc.eta())
-
-    if eta>2.5: eta=2.5
     et = fc.et() # in GeV
 
     if self.AcceptAll:

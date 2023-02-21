@@ -32,3 +32,7 @@ from .algorithms import *
 from . import dumper
 __all__.extend(dumper.__all__)
 from .dumper import *
+
+from . import emulator
+__all__.extend(emulator.__all__)
+from .emulator import *

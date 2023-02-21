@@ -2,9 +2,10 @@
 __all__ = ["ElectronChain"]
 
 
-from egamma.core import Messenger
+from egamma.core import Messenger, StatusCode
 from egamma.core.macros  import *
 from egamma.emulator.run3.menu.ChainDict import get_chain_dict
+from egamma.emulator import Accept
 from pprint import pprint
 
 
@@ -16,12 +17,12 @@ class ElectronChain(Messenger):
     Messenger.__init__(self)
     self.trigName = trigName
     self.chainPart = get_chain_dict(self.trigName)
-    pprint(self.chainPart)
     self.sequences = self.prepareSequence()
-    print(self.sequences)
-
     self.compile()
 
+
+  def name(self):
+    return self.trigName
 
   # adapt from: https://gitlab.cern.ch/atlas/athena/-/blob/master/Trigger/TriggerCommon/TriggerMenuMT/python/HLT/Electron/ElectronChainConfiguration.py
   # ----------------------
@@ -132,11 +133,11 @@ class ElectronChain(Messenger):
 
 
   def compile(self):
-    hypos = []
+    self.hypos = []
     for name in self.sequences:
         hypo = getattr(self, name)()
         if hypo:
-          hypos.append(hypo)
+          self.hypos.append(hypo)
 
 
   #
@@ -144,7 +145,6 @@ class ElectronChain(Messenger):
   #
   def getL1Calo(self):
     from egamma.emulator.run3.electron.step0_hypo import configure
-
     name = "L1Calo__" + self.trigName
     hypo = configure( name , self.chainPart)
     return hypo
@@ -190,18 +190,44 @@ class ElectronChain(Messenger):
     return hypo
 
 
+  #
+  # Initialize all hypos
+  #
   def initialize(self):
     for hypo in self.hypos:
       if hypo.initialize().isFailure():
-        MSG_FATAL(self, f"Its not possible to initialize {hypo.name}")
+        MSG_ERROR(self, f"Its not possible to initialize {hypo.name}")
+        return StatusCode.FAILURE
 
+    return StatusCode.SUCCESS
+
+  #
+  # Finalize all hypos
+  #
   def finalize(self):
     for hypo in self.hypos:
       if hypo.finalize().isFailure():
-        MSG_FATAL(self, f"Its not possible to finalize {hypo.name}")
+        MSG_ERROR(self, f"Its not possible to finalize {hypo.name}")
+        return StatusCode.FAILURE
+
+    return StatusCode.SUCCESS
 
 
+  #
+  # Emulate the sequence
+  #
   def emulate(self, context):
+
+    answer = Accept(self.trigName, [(hypo.name, False) for hypo in self.hypos])
+    elCont = context.getHandler("HLT__ElectronContainer")
+    for hypo in self.hypos:
+      accept = hypo.accept(context)
+      answer.setCutResult( hypo.name, bool(accept))
+      if not bool(accept):
+        break
+
+    elCont.setDecor(self.trigName, answer)
+    return StatusCode.SUCCESS
 
 
 #
