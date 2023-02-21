@@ -62,9 +62,6 @@ args = parser.parse_args()
 
 try:
 
-    et_bins = [4.0,7.0,10.0, 15.0, 20.0, 30.0, 40.0, 50.0, 13000]
-    eta_bins = [0.0, 0.8, 1.37, 1.54, 2.37, 2.50]
-
 
     acc = ElectronLoop(  "EventATLASLoop",
                          inputFile  = args.inputFile,

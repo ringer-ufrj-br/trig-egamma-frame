@@ -26,7 +26,6 @@ class Menu_v1(EDM):
   # Initialize method
   #
   def initialize(self):
-
     if not ToolSvc.retrieve("Emulator"):
       MSG_FATAL( self, "The emulator tool is not in the ToolSvc" )
 

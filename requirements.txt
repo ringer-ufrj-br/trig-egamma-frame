@@ -39,4 +39,5 @@ tables
 colorlog
 pybeamer
 rootplotlib
+tf2onnx
 
