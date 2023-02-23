@@ -125,6 +125,11 @@ class PrecisionElectron( Messenger ):
     ptvarcone20 = el.ptvarcone20()
     relptvarcone20 = ptvarcone20/el.pt()
 
+    if self.RelPtConeCut < -100:
+      MSG_DEBUG(self, "not applying isolation. Returning NOW")
+      return True
+
+
     if relptvarcone20 > self.RelPtConeCut:
       return False
 

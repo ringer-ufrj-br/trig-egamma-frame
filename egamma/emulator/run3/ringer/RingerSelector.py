@@ -6,7 +6,7 @@ from egamma.core.macros  import *
 from egamma.core import declareProperty, StatusCode
 from egamma import GeV
 from ROOT import TEnv
-from egamma.emulator.run3.ringer import Model, Threshold
+from egamma.emulator.run3.ringer import Model, Threshold, half_rings_indexs
 from tensorflow import keras
 import numpy as np
 
@@ -46,7 +46,7 @@ class RingerSelector(Messenger):
     
     # Reading all models
     nmodels     = env.GetValue("Model__size", 0)
-    #barcode_list= treat_float( env, 'Model__barcode' )
+    barcode_list= treat_float( env, 'Model__barcode' )
     etmin_list  = treat_float( env, 'Model__etmin' )
     etmax_list  = treat_float( env, 'Model__etmax' )
     etamin_list = treat_float( env, 'Model__etamin' )
@@ -61,7 +61,7 @@ class RingerSelector(Messenger):
                                 etmax_list[idx],
                                 etamin_list[idx],
                                 etamax_list[idx],
-                                0,
+                                barcode_list[idx],
                                 ))
 
     # Reading all thresholds
@@ -126,11 +126,15 @@ class RingerSelector(Messenger):
 
     cl = context.getHandler("HLT__TrigEMClusterContainer")
     inputs = []
-
-    if barcode != 3:
+    if barcode == 0:
       rings = cl.ringsE() / abs(sum(cl.ringsE()))
       inputs.append(rings)
-    
+    elif barcode == 1:
+      rings = cl.ringsE() 
+      ref_rings = [rings[iring] for iring in half_rings_indexs]
+      ref_rings = ref_rings / abs(sum(ref_rings))
+      inputs.append(ref_rings)
+
     return np.array(inputs)
 
 

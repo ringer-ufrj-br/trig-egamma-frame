@@ -1,17 +1,39 @@
 
 
+__all__ = ["Efficiency"]
+
+
 from egamma import Algorithm
 from egamma import StatusCode
+from egamma import declareProperty
 from egamma.core.macros import *
 from egamma.emulator.run3.menu.ChainDict import get_chain_dict
+from egamma.algorithms.constants import etabins, zee_etbins, mubins
+from egamma import GeV
 
+from ROOT import TH1F,TH2F,TProfile, TProfile2D
+
+import numpy as np
+import array
 
 class Efficiency(Algorithm):
 
-  def __init__(self, name, **kw):
+  def __init__(self, name,  **kw):
     Algorithm.__init__(self, name)
-    declareProperty(self, kw, "BasePath", "Efficiency")
 
+
+    declareProperty(self, kw, "basepath"      , "Efficiency")
+    declareProperty(self, kw, "triggers"      , []          )
+    declareProperty(self, kw, "etbins"        , zee_etbins  )
+    declareProperty(self, kw, "etabins"       , etabins     )
+    declareProperty(self, kw, "mubins"        , mubins      )
+    declareProperty(self, kw, "applyOffline"  , True        )
+
+    self.triggers   = [get_chain_dict(trigName) for trigName in self.triggers]
+    self.etbins     = array.array('d',self.etbins) if not type(self.etbins) is array.array else self.etbins
+    self.etabins    = array.array('d',self.etabins) if not type(self.etabins) is array.array else self.etabins
+    self.mubins     = array.array('d',self.mubins) if not type(self.mubins) is array.array else self.mubins
+    #self.deltaRbins = array.array('d',deltaRbins) if not type(deltaRbins) is array.array else deltaRbins
 
 
   def __add__(self, trigName):
@@ -24,16 +46,10 @@ class Efficiency(Algorithm):
   #
   def initialize(self):
     
+    MSG_INFO(self, f"Initalizing {self.name()}...")
 
     sg = self.getStoreGateSvc()
     
-    #et_bins  = zee_etbins
-    eta_bins = default_etabins
-    nvtx_bins.extend(high_nvtx_bins)
-    #eta_bins = [0,0.6,0.8,1.15,1.37,1.52,1.81,2.01,2.37,2.47]
-    et_bins = jpsiee_etbins if doJpsiee else [4.,7.,10.,15.,20.,25.,30.,35.,40.,45.,50.,60.,80.,150.] 
-    
-
     for chainPart in self.triggers:
 
       signature = chainPart['signature']
@@ -48,25 +64,25 @@ class Efficiency(Algorithm):
 
       for dirname in triggerLevels:
 
-        sg.mkdir( self.BasePath +'/'+trigName+'/Efficiency/'+dirname )
-        sg.addHistogram(TH1F('et','E_{T} distribution;E_{T};Count', len(et_bins)-1, np.array(et_bins)))
-        sg.addHistogram(TH1F('eta','#eta distribution;#eta;Count', len(eta_bins)-1, np.array(eta_bins)))
-        sg.addHistogram(TH1F("phi", "#phi distribution; #phi ; Count", 20, -3.2, 3.2)
+        sg.mkdir( self.basepath +'/'+trigName+'/Efficiency/'+dirname )
+        sg.addHistogram(TH1F('et','E_{T} distribution;E_{T};Count', len(self.etbins)-1, np.array(self.etbins)))
+        sg.addHistogram(TH1F('eta','#eta distribution;#eta;Count', len(self.etabins)-1, np.array(self.etabins)))
+        sg.addHistogram(TH1F("phi", "#phi distribution; #phi ; Count", 20, -3.2, 3.2))
         sg.addHistogram(TH1F('mu' ,'<#mu> distribution;<#mu>;Count', 20, 0, 100))
-        sg.addHistogram(TH1F('nvtx' ,'N_{vtx} distribution;N_{vtx};Count', len(nvtx_bins)-1, np.array(nvtx_bins)))
-        sg.addHistogram(TH1F('match_et','E_{T} matched distribution;E_{T};Count', len(et_bins)-1, np.array(et_bins)))
-        sg.addHistogram(TH1F('match_eta','#eta matched distribution;#eta;Count', len(eta_bins)-1, np.array(eta_bins)))
-        sg.addHistogram(TH1F("match_phi", "#phi matched distribution; #phi ; Count", 20, -3.2, 3.2));
+        sg.addHistogram(TH1F('nvtx' ,'N_{vtx} distribution;N_{vtx};Count', len(self.mubins)-1, np.array(self.mubins)))
+        sg.addHistogram(TH1F('match_et','E_{T} matched distribution;E_{T};Count', len(self.etbins)-1, np.array(self.etbins)))
+        sg.addHistogram(TH1F('match_eta','#eta matched distribution;#eta;Count', len(self.etabins)-1, np.array(self.etabins)))
+        sg.addHistogram(TH1F("match_phi", "#phi matched distribution; #phi ; Count", 20, -3.2, 3.2))
         sg.addHistogram(TH1F('match_mu' ,'<#mu> matched distribution;<#mu>;Count', 20, 0, 100))
-        sg.addHistogram(TH1F('match_nvtx' ,'N_{vtx} matched distribution;N_{vtx};Count', len(nvtx_bins)-1, np.array(nvtx_bins)))
-        sg.addHistogram(TProfile("eff_et", "#epsilon(E_{T}); E_{T} ; Efficiency" , len(et_bins)-1, np.array(et_bins)))
-        sg.addHistogram(TProfile("eff_eta", "#epsilon(#eta); #eta ; Efficiency"  , len(eta_bins)-1,np.array(eta_bins)))
+        sg.addHistogram(TH1F('match_nvtx' ,'N_{vtx} matched distribution;N_{vtx};Count', len(self.mubins)-1, np.array(self.mubins)))
+        sg.addHistogram(TProfile("eff_et", "#epsilon(E_{T}); E_{T} ; Efficiency" , len(self.etbins)-1, np.array(self.etbins)))
+        sg.addHistogram(TProfile("eff_eta", "#epsilon(#eta); #eta ; Efficiency"  , len(self.etabins)-1,np.array(self.etabins)))
         sg.addHistogram(TProfile("eff_phi", "#epsilon(#phi); #phi ; Efficiency", 20, -3.2, 3.2))
         sg.addHistogram(TProfile("eff_mu", "#epsilon(<#mu>); <#mu> ; Efficiency", 20, 0, 100))
-        sg.addHistogram(TProfile("eff_nvtx", "#epsilon(N_{vtx}); N_{vtx} ; Efficiency", len(nvtx_bins)-1, np.array(nvtx_bins)));	
-        sg.addHistogram( TH2F('match_etVsEta', "Passed;E_{T};#eta;Count", len(et_bins)-1, np.array(et_bins), len(eta_bins)-1, np.array(eta_bins)) )
-        sg.addHistogram( TH2F('etVsEta' , "Total;E_{T};#eta;Count", len(et_bins)-1,  np.array(et_bins), len(eta_bins)-1, np.array(eta_bins)) )
-        sg.addHistogram( TProfile2D('eff_etVsEta' , "Total;E_{T};#eta;Count", len(et_bins)-1,  np.array(et_bins), len(eta_bins)-1, np.array(eta_bins)) )
+        sg.addHistogram(TProfile("eff_nvtx", "#epsilon(N_{vtx}); N_{vtx} ; Efficiency", len(self.mubins)-1, np.array(self.mubins)))
+        sg.addHistogram( TH2F('match_etVsEta', "Passed;E_{T};#eta;Count", len(self.etbins)-1, np.array(self.etbins), len(self.etabins)-1, np.array(self.etabins)) )
+        sg.addHistogram( TH2F('etVsEta' , "Total;E_{T};#eta;Count", len(self.etbins)-1,  np.array(self.etbins), len(self.etabins)-1, np.array(self.etabins)) )
+        sg.addHistogram( TProfile2D('eff_etVsEta' , "Total;E_{T};#eta;Count", len(self.etbins)-1,  np.array(self.etbins), len(self.etabins)-1, np.array(self.etabins)) )
 
         # for boosted analysis
         #deltaR_bins = np.arange(0, 5, step=0.1)
@@ -86,6 +102,7 @@ class Efficiency(Algorithm):
   def fillEfficiency( self, dirname, el, etthr, pidword, isPassed ):
   
     sg = self.getStoreGateSvc()
+
     pid = el.accept(pidword) if pidword else True
     eta = el.caloCluster().etaBE2()
     et = el.et()/GeV
@@ -94,6 +111,7 @@ class Efficiency(Algorithm):
     avgmu = evt.avgmu()
     nvtx = evt.nvtx()
     pw = 1
+
 
     #deltaR = el.deltaR()
     if pid: 
@@ -145,6 +163,7 @@ class Efficiency(Algorithm):
 
       signature = chainPart['signature']
       trigName  = chainPart['trigName']
+
       pidname   = chainPart['IDinfo']
       etthr     = chainPart['threshold']
 
@@ -160,10 +179,14 @@ class Efficiency(Algorithm):
         MSG_WARNING(self, 'Signature not supported')
         continue
 
+      # overwrite pidname to disable the cut
+      if not self.applyOffline:
+        pidname = None
+
       for eg in egCont:
         if eg.et()  < (etthr- 5)*GeV:  continue 
         if abs(eg.eta())>2.47: continue
-        dirname = basepath+'/'+trigName+'/Efficiency'
+        dirname = self.basepath+'/'+trigName+'/Efficiency'
         accept = dec.accept( trigName )
           
         for trigLevel in triggerLevels:
@@ -178,7 +201,6 @@ class Efficiency(Algorithm):
   #
   def finalize(self):
     
-
     sg = self.getStoreGateSvc()
     for chainPart in self.triggers:
       
@@ -195,7 +217,7 @@ class Efficiency(Algorithm):
       MSG_INFO( self, '{:-^78}'.format((' %s ')%(trigName)))
 
       for trigLevel in triggerLevels:
-        dirname = basepath+'/'+chain.name()+'/Efficiency/'+trigLevel
+        dirname = self.basepath+'/'+trigName+'/Efficiency/'+trigLevel
         total  = sg.histogram( dirname+'/eta' ).GetEntries()
         passed = sg.histogram( dirname+'/match_eta' ).GetEntries()
         eff = passed/float(total) * 100. if total>0 else 0

@@ -47,6 +47,18 @@ parser.add_argument('--mute', action='store_true',
 parser.add_argument('-j','--job_id', action='store',
     dest='job_id', required = False, default=0, type=int,
     help = "The job id for parallel processing.")
+
+parser.add_argument('-t','--triggers', action='store',
+    dest='triggers', required = True, default='', type=str,
+    help = "Triggers to be emulated separeted by ','")
+
+
+parser.add_argument('--ringerVersion', action='store',
+    dest='ringerVersion', required = False, default=None,
+    help = "The ringer tuning path")
+
+
+    
 #
 # event selection configuration
 #
@@ -62,9 +74,7 @@ args = parser.parse_args()
 
 try:
 
-    et_bins = [4.0,7.0,10.0, 15.0, 20.0, 30.0, 40.0, 50.0, 13000]
-    eta_bins = [0.0, 0.8, 1.37, 1.54, 2.37, 2.50]
-
+    jf17     = True if 'JF17' in args.inputFile else False
 
     acc = ElectronLoop(  "EventATLASLoop",
                          inputFile  = args.inputFile,
@@ -77,9 +87,9 @@ try:
                       )
 
 
-    class MyFilter:
-        def __init__ ( self, background=False):
-            self.background=background
+    class MonteCarloFilter:
+        def __init__ ( self, jf17=False):
+            self.jf17=jf17
 
         def __call__(self, ctx):
 
@@ -91,11 +101,9 @@ try:
             if not fc.isGoodRinger():
                 return False
 
-            #
             # Monte Carlo selection
-            #
             mc = ctx.getHandler("MonteCarloContainer")
-            if self.background:
+            if self.jf17:
                 if mc.isTruthElectronFromAny():
                     return False
             else:
@@ -108,34 +116,63 @@ try:
             return True
 
 
-    background = True if 'JF17' in args.inputFile else False
-    my_filter = MyFilter(background)
+    class OfflineFilter:
+        def __init__(self, pidname = '!el_lhvloose'):
+            self.pidname = pidname
+
+        def __call__(self, ctx):
+            elCont = ctx.getHandler( "ElectronContainer" )
+            pidname = self.pidname
+            veto = True if '!' in pidname else False
+            pidname = pidname.replace('!','')
+            passed = False
+            if veto and not elCont.accept(pidname):
+                passed = True
+            if not veto and elCont.accept(pidname):
+                passed = True
+            return passed
+
+
+
+    #
+    # Create event filters
+    #
+    mcFilter      = MonteCarloFilter( jf17=jf17 )
+    offlineFilter = OfflineFilter( pidname='!el_lhvloose' )
+
+    filters = [mcFilter]
+    if jf17: # append offline for JF17 samples
+        filters.append(offlineFilter)
 
 
     #
     # Initial filter
     #
-
     from egamma import Filter
-    filter = Filter( "Filter", [my_filter])
-    ToolSvc+=filter
+    ToolSvc+=Filter( "Filter", filters)
 
 
 
     from egamma.emulator.run3 import ElectronChain as Chain
-    from egamma.emulator import Emulator
+    from egamma.emulator import attach
 
-    triggers = [
-                 Chain("HLT_e28_lhtight_ivarloose_L1EM22VH"),
-               ]
+    if args.ringerVersion:
+        from egamma.emulator import electronFlags
+        electronFlags.ringerVersion = args.ringerVersion
 
-    emulator = Emulator()
-    
-    for chain in triggers:
-        emulator+=chain
 
-    ToolSvc+=emulator
+    triggers = args.triggers.split(',')
+    for trigName in triggers:
+        attach(Chain(trigName))
 
+
+    from egamma.algorithms import Efficiency
+    eff = Efficiency( "Efficiency", 
+                      triggers     = triggers, 
+                      applyOffline = not jf17,
+                    )
+
+    ToolSvc+=eff
 
     acc.run(args.nov)
     print('job done')

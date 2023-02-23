@@ -145,20 +145,20 @@ class ElectronChain(Messenger):
   #
   def getL1Calo(self):
     from egamma.emulator.run3.electron.step0_hypo import configure
-    name = "L1Calo__" + self.trigName
+    name = "L1Calo"
     hypo = configure( name , self.chainPart)
     return hypo
 
 
   def getFastCalo(self):
     from egamma.emulator.run3.electron.step1_hypo import configure
-    name = "L2Calo__" + self.trigName
+    name = "FastCalo"
     hypo = configure( name , self.chainPart)
     return hypo
 
   def getFastElectron(self):
     from egamma.emulator.run3.electron.step2_hypo import configure
-    name = "L2Electron__" + self.trigName
+    name = "FastElectron"
     hypo = configure( name , self.chainPart)
     return hypo
 
@@ -167,7 +167,7 @@ class ElectronChain(Messenger):
 
   def getPrecisionCaloElectron(self):
     from egamma.emulator.run3.electron.step3_hypo import configure
-    name = "PrecisionCalo__" + self.trigName
+    name = "PrecisionCalo"
     hypo = configure( name , self.chainPart)
     return hypo
 
@@ -179,13 +179,13 @@ class ElectronChain(Messenger):
 
   def getPrecisionGSFElectron(self):
     from egamma.emulator.run3.electron.step4_hypo import configure
-    name = "PrecisionElectron__" + self.trigName
+    name = "PrecisionElectron"
     hypo = configure( name , self.chainPart)
     return hypo
 
   def getPrecisionElectron(self):
     from egamma.emulator.run3.electron.step4_hypo import configure
-    name = "PrecisionElectron__" + self.trigName
+    name = "PrecisionElectron"
     hypo = configure( name , self.chainPart)
     return hypo
 
@@ -216,18 +216,15 @@ class ElectronChain(Messenger):
   #
   # Emulate the sequence
   #
-  def emulate(self, context):
+  def accept(self, context):
 
     answer = Accept(self.trigName, [(hypo.name, False) for hypo in self.hypos])
-    elCont = context.getHandler("HLT__ElectronContainer")
     for hypo in self.hypos:
       accept = hypo.accept(context)
       answer.setCutResult( hypo.name, bool(accept))
       if not bool(accept):
         break
-
-    elCont.setDecor(self.trigName, answer)
-    return StatusCode.SUCCESS
+    return answer
 
 
 #

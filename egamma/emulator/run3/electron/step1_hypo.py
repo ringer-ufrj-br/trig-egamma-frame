@@ -200,7 +200,8 @@ class L2Calo(Messenger):
     if(inCrack): energyRatio = -1; # Set default value in crack for monitoring.
 
     # ET_em
-    if ( eT_T2Calo*1e-3 < self.ETthr[etaBin]): return False
+    if ( eT_T2Calo < self.ETthr[etaBin]): return False
+
     PassedCuts+=1 # ET_em
 
     hadET_cut = 0.0
@@ -362,7 +363,7 @@ class L2CaloConfiguration(Messenger):
 
     MSG_INFO(self, 'Configure noringer' )
     self.hypo.UseRinger   = False
-    self.hypo.ETthr       = same( ( self.etthr()  - 3 )*GeV , self.hypo)
+    self.hypo.ETthr       = same( ( self.etthr()  - 3 )*GeV )
     self.hypo.HADETthr    = L2CaloCutMaps( self.etthr() ).MapsHADETthr[self.pidname()]
     self.hypo.CARCOREthr  = L2CaloCutMaps( self.etthr() ).MapsCARCOREthr[self.pidname()]
     self.hypo.CAERATIOthr = L2CaloCutMaps( self.etthr() ).MapsCAERATIOthr[self.pidname()]

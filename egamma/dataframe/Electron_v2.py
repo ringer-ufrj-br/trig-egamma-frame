@@ -244,9 +244,9 @@ class Electron_v2(EDM):
                           'trig_EF_el_dphiresc',
 
                           # selector branches
-                          #'trig_EF_el_dnnloose',
-                          #'trig_EF_el_dnnmedium',
-                          #'trig_EF_el_dnntight',
+                          'trig_EF_el_dnnloose',
+                          'trig_EF_el_dnnmedium',
+                          'trig_EF_el_dnntight',
                           'trig_EF_el_lhvloose',
                           'trig_EF_el_lhloose',
                           'trig_EF_el_lhmedium',

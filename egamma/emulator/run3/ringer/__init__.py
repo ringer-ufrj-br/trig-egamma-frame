@@ -1,6 +1,6 @@
 
 
-__all__ = ["Model", "Threshold"]
+__all__ = ["Model", "Threshold", "half_rings_indexs"]
 
 
 class Model:
@@ -33,6 +33,10 @@ class Threshold:
     if avgmu > self.avgmumax:
       avgmu=self.avgmumax
     return True if discr > avgmu*self.slope + self.offset else False 
+
+
+# for new training, we selected 1/2 of rings in each layer
+half_rings_indexs = [0, 1, 2, 3, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 72, 73, 74, 75, 80, 81, 82, 83, 88, 89, 92, 93, 96, 97]
 
 
 from . import RingerSelector
