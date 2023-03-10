@@ -143,7 +143,7 @@ class StoreGate( Messenger ) :
 	      if ( len(labels)>0 ):
 	        for i in range( min( len(labels), histo.GetNbinsX() ) ):
 	          bin = i+1;  histo.GetXaxis().SetBinLabel(bin, labels[i])
-          for i in range( histo.GetNbinsX(), min( len(labels), histo.GetNbinsX()+histo.GetNbinsY() ) ):
+	        for i in range( histo.GetNbinsX(), min( len(labels), histo.GetNbinsX()+histo.GetNbinsY() ) ):
 	          bin = i+1-histo.GetNbinsX();  histo.GetYaxis().SetBinLabel(bin, labels[i])
       except:
         MSG_FATAL(self, "Can not set the labels! abort.")
@@ -178,7 +178,7 @@ class StoreGate( Messenger ) :
         if key.IsFolder():
           if filterDirs and kname not in filterDirs: 
             continue
-          for i in self.restore(d.Get(kname), basepath+kname+"/"):
+          for i in self.__restore(d.Get(kname), basepath+kname+"/"):
             yield i
         else:
           yield basepath+kname, d.Get(kname)
