@@ -4,11 +4,12 @@ __all__ = ["Model", "Threshold", "half_rings_indexs"]
 
 
 class Model:
-  def __init__(self, model, etmin, etmax, etamin, etamax, barcode):
+  def __init__(self, model, etmin, etmax, etamin, etamax, barcode,path):
     self.model=model
     self.etmin=etmin; self.etmax=etmax
     self.etamin=etamin; self.etamax=etamax
     self.barcode=barcode
+    self.path = path
 
   #
   # Predict discriminant output
@@ -28,8 +29,8 @@ class Threshold:
   # Is passed?
   #
   def accept(self, discr, avgmu):
-    if avgmu < self.avgmumin:
-      avgmu=0
+    #if avgmu < self.avgmumin:
+    #  avgmu=0
     if avgmu > self.avgmumax:
       avgmu=self.avgmumax
     return True if discr > avgmu*self.slope + self.offset else False 

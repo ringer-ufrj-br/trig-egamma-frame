@@ -12,15 +12,18 @@ output_path = 'output/fitting/v1'
 os.makedirs(output_path,exist_ok=True)
 
 
-def load_data( path, etbin, etabin ):
+def load_data( path, etbin_edges, etabin_edges ):
 
+    GeV = 1000.
     pidname = 'el_lhmedium'
     df = pd.read_hdf(path)
+
+    # et and eta bin range
+    df = df.loc[ (df.trig_L2_cl_et >= etbin_edges[0]*GeV ) & (df.trig_L2_cl_et < etbin_edges[1]*GeV) ]
+    df = df.loc[ (abs(df.trig_L2_cl_eta) >= etabin_edges[0]) & (abs(df.trig_L2_cl_eta) < etabin_edges[1]) ]
+    # offline selection and target
     df = df.loc[ ((df[pidname]==True) & (df.target==1.0)) | ((df.target==0) & (df['el_lhvloose']==False) ) ]
     
-    
-
-  
     prefix = 'trig_L2_cl_ring_%i'
 
     # rings presmaple 
@@ -117,7 +120,7 @@ for op in op_names:
 #
 # Et/eta bins edges
 # 
-etbins = [3, 7, 10, 15, 20, 30, 40, 50, 1000000]
+etbins = [0, 7, 10, 15, 20, 30, 40, 50, 1000000]
 etabins = [0.0, 0.8, 1.37, 1.54, 2.37, 2.50]
 
 
@@ -128,12 +131,13 @@ cv    = crossval_table( tuned_info, etbins = etbins, etabins = etabins )
 cv.from_csv('output/crossval/table_run3_v1.csv')
 
 
-et_min = 0
-
 
 best_inits = cv.filter_inits("max_sp_val")
-best_inits = best_inits.loc[ (best_inits.model_idx==0) & (best_inits.et_bin >= et_min)] # select all rows with 5 neurons
+best_inits = best_inits.loc[ (best_inits.model_idx==0) ] # select all rows with 5 neurons
 best_sorts = cv.filter_sorts( best_inits , 'max_sp_op')
+
+
+
 
 
 #
@@ -146,7 +150,7 @@ paths = [ [datapath.format(et=et_bin, eta=eta_bin) for eta_bin in range(5)] for 
 #
 # Create references
 #
-ref_path = '/home/joao.pinto/public/cern_data/mc21_13p6TeV/files/data17_13TeV.AllPeriods.sgn.probes_lhvloose_EGAM1_EGAM2.bkg.vprobes_vlhvloose_EGAM7.GRL_v97.40bins.json'
+ref_path = '/home/joao.pinto/public/cern_data/mc21_13p6TeV/files/mc21_13p6TeV.801272.P8B_A14_CTEQ6L1_Jpsie.601189.PhPy8EG_AZNLO_Zee.801278.Py8EG_A14NNPDF23LO_perf_JF17.40bins.ref.json'
 refs = json.load(open(ref_path,'r'))
 ref_values = [[{} for _ in range(5)] for __ in range(8)]
 
@@ -156,6 +160,8 @@ for et_bin in range(8):
             pd_value = refs[et_bin][eta_bin][op_name]['det']['passed']/refs[et_bin][eta_bin][op_name]['det']['total']
             fa_value = refs[et_bin][eta_bin][op_name]['fake']['passed']/refs[et_bin][eta_bin][op_name]['fake']['total']
             ref_values[et_bin][eta_bin][op_name] = {'pd':pd_value, 'fa':fa_value, 'pd_epsilon':0.0}
+            #print(f"Et_{et_bin}, Eta_{eta_bin} , ref is %1.2f"%(100*pd_value))
+
 
 
 #
@@ -164,23 +170,96 @@ for et_bin in range(8):
 kf = StratifiedKFold(n_splits=10, random_state=512, shuffle=True)
 
 
+
+#
+# Add new bin inside of the threshold
+#
+
+# Add last bin (copy eT > 50 GeV references)
+ref_values.append(ref_values[-1])
+paths.append(paths[-1])
+
+etbins = [0, 7, 10, 15, 20, 30, 40, 50, 100, 1000000]
+etabins = [0.0, 0.8, 1.37, 1.54, 2.37, 2.50]
+
+best_sorts_last_bin = best_sorts.loc[ best_sorts.et_bin == 7 ]
+best_sorts_last_bin.et_bin = 8 
+best_sorts = pd.concat([best_sorts, best_sorts_last_bin])
+
+
 #
 # Fitting
 #
 fit = fit_table( etbins, etabins, kf )
 
-#
-best_sorts_refit = fit.fill( best_sorts , load_data, paths, ref_values, output_path=output_path ,
-                                min_avgmu=16, max_avgmu=70, xbin_size=0.05, 
-                                ybin_size=1,ymax=70)
+
+do_fit = False
+
+if do_fit:
+    best_sorts_et0_eta0  = fit.fill( best_sorts.loc[ (best_sorts.et_bin==0) & (best_sorts.eta_bin==0)] , load_data, paths, ref_values, output_path=output_path ,
+                                     min_avgmu=16, max_avgmu=70, xbin_size=0.05, ybin_size=2,ymax=70)
+    best_sorts_et0_eta1  = fit.fill( best_sorts.loc[ (best_sorts.et_bin==0) & (best_sorts.eta_bin==1)] , load_data, paths, ref_values, output_path=output_path ,
+                                     min_avgmu=16, max_avgmu=70, xbin_size=0.05, ybin_size=2,ymax=70)
+    best_sorts_et0_eta2  = fit.fill( best_sorts.loc[ (best_sorts.et_bin==0) & (best_sorts.eta_bin==2)] , load_data, paths, ref_values, output_path=output_path ,
+                                     min_avgmu=16, max_avgmu=100, xbin_size=0.05, ybin_size=2,ymax=70)
+    best_sorts_et0_eta3  = fit.fill( best_sorts.loc[ (best_sorts.et_bin==0) & (best_sorts.eta_bin==3)] , load_data, paths, ref_values, output_path=output_path ,
+                                     min_avgmu=16, max_avgmu=100, xbin_size=0.05, ybin_size=2,ymax=70)
+    best_sorts_et0_eta4  = fit.fill( best_sorts.loc[ (best_sorts.et_bin==0) & (best_sorts.eta_bin==4)] , load_data, paths, ref_values, output_path=output_path ,
+                                     min_avgmu=16, max_avgmu=100, xbin_size=0.05, ybin_size=2,ymax=70)
+
+    best_sorts_et1_eta0  = fit.fill( best_sorts.loc[ (best_sorts.et_bin==1) & (best_sorts.eta_bin==0)] , load_data, paths, ref_values, output_path=output_path ,
+                                     min_avgmu=16, max_avgmu=70, xbin_size=0.05, ybin_size=2,ymax=70)
+    best_sorts_et1_eta1  = fit.fill( best_sorts.loc[ (best_sorts.et_bin==1) & (best_sorts.eta_bin==1)] , load_data, paths, ref_values, output_path=output_path ,
+                                     min_avgmu=16, max_avgmu=70, xbin_size=0.05, ybin_size=4,ymax=70, do_slope=True )
+    best_sorts_et1_eta2  = fit.fill( best_sorts.loc[ (best_sorts.et_bin==1) & (best_sorts.eta_bin==2)] , load_data, paths, ref_values, output_path=output_path ,
+                                     min_avgmu=16, max_avgmu=100, xbin_size=0.05, ybin_size=4,ymax=70, do_slope=True)
+    best_sorts_et1_eta3  = fit.fill( best_sorts.loc[ (best_sorts.et_bin==1) & (best_sorts.eta_bin==3)] , load_data, paths, ref_values, output_path=output_path ,
+                                     min_avgmu=16, max_avgmu=100, xbin_size=0.05, ybin_size=1,ymax=70)
+    best_sorts_et1_eta4  = fit.fill( best_sorts.loc[ (best_sorts.et_bin==1) & (best_sorts.eta_bin==4)] , load_data, paths, ref_values, output_path=output_path ,
+                                     min_avgmu=16, max_avgmu=70, xbin_size=0.05, ybin_size=4,ymax=70, do_slope=True)
 
 
-best_sorts_refit.to_csv('output/fitting/v1/best_sorts_run3_v1.csv')
-#best_sorts_refit = pd.read_csv('output/fitting/v1/best_sorts_run3_v1.csv')
+    best_sorts_et2_eta0  = fit.fill( best_sorts.loc[ (best_sorts.et_bin==2) & (best_sorts.eta_bin==0)] , load_data, paths, ref_values, output_path=output_path ,
+                                     min_avgmu=16, max_avgmu=70, xbin_size=0.05, ybin_size=4,ymax=70, do_slope=True)
+    best_sorts_et2_eta1  = fit.fill( best_sorts.loc[ (best_sorts.et_bin==2) & (best_sorts.eta_bin==1)] , load_data, paths, ref_values, output_path=output_path ,
+                                     min_avgmu=16, max_avgmu=100, xbin_size=0.05, ybin_size=4,ymax=70, do_slope=True)
+    best_sorts_et2_eta2  = fit.fill( best_sorts.loc[ (best_sorts.et_bin==2) & (best_sorts.eta_bin==2)] , load_data, paths, ref_values, output_path=output_path ,
+                                     min_avgmu=16, max_avgmu=100, xbin_size=0.05, ybin_size=2,ymax=70, do_slope=True)
+    best_sorts_et2_eta3  = fit.fill( best_sorts.loc[ (best_sorts.et_bin==2) & (best_sorts.eta_bin==3)] , load_data, paths, ref_values, output_path=output_path ,
+                                     min_avgmu=16, max_avgmu=100, xbin_size=0.05, ybin_size=1,ymax=70)
+    best_sorts_et2_eta4  = fit.fill( best_sorts.loc[ (best_sorts.et_bin==2) & (best_sorts.eta_bin==4)] , load_data, paths, ref_values, output_path=output_path ,
+                                     min_avgmu=16, max_avgmu=100, xbin_size=0.05, ybin_size=4,ymax=70, do_slope=False)
+
+    best_sorts_et3_to_et8  = fit.fill( best_sorts.loc[ (best_sorts.et_bin>=3) ] , load_data, paths, ref_values, output_path=output_path ,
+                                       min_avgmu=16, max_avgmu=100, xbin_size=0.05, ybin_size=1,ymax=70)
+    best_sorts_refit = pd.concat(
+        [
+            best_sorts_et0_eta0,
+            best_sorts_et0_eta1,
+            best_sorts_et0_eta2,
+            best_sorts_et0_eta3,
+            best_sorts_et0_eta4,
+            best_sorts_et1_eta0,
+            best_sorts_et1_eta1,
+            best_sorts_et1_eta2,
+            best_sorts_et1_eta3,
+            best_sorts_et1_eta4,
+            best_sorts_et2_eta0,
+            best_sorts_et2_eta1,
+            best_sorts_et2_eta2,
+            best_sorts_et2_eta3,
+            best_sorts_et2_eta4,
+            best_sorts_et3_to_et8,
+        ]
+    )
+
+    best_sorts_refit.to_csv('output/fitting/v1/best_sorts_run3_v1.csv')
 
 
+
+best_sorts_refit = pd.read_csv('output/fitting/v1/best_sorts_run3_v1.csv')
 for op in op_names:
-    fit.dump_beamer_table( best_sorts_refit.loc[best_sorts_refit.op_name == op] ,                  
+    fit.dump_beamer_table( best_sorts_refit.loc[best_sorts_refit.op_name == op] , 
                               op+' Fitting (Run3 v1)', 'fitting_run3_v1_'+op)
 
 
@@ -201,8 +280,9 @@ for idx, op in enumerate( ['tight','medium','loose','vloose'] ):
                   to_onnx     = True,
                   remove_last = True,
                   barcode     = 1,
-                  min_avgmu   = 16,
-                  max_avgmu   = 100)
+                  #min_avgmu   = 16,
+                  #max_avgmu   = 100
+                  )
 
 
 os.system('mv models output/fitting/v1')

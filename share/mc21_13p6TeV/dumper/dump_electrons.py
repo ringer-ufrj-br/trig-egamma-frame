@@ -125,6 +125,9 @@ try:
 
 
     output = args.inputFile.split('/')[-1].replace('.root','')
+    et_bins = [3, 7, 10, 15, 20, 30, 40, 50, 1000000]
+    eta_bins = [0.0, 0.8, 1.37, 1.54, 2.37, 2.50]
+
 
     dumper = ElectronDumper(output, et_bins, eta_bins )
 

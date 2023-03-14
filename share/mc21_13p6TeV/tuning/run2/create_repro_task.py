@@ -11,9 +11,9 @@ for et in range(8):
 
     for eta in range(5):
 
-        ref    = home+'/mc21_13p6TeV/files/data17_13TeV.AllPeriods.sgn.probes_lhvloose_EGAM1_EGAM2.bkg.vprobes_vlhvloose_EGAM7.GRL_v97.40bins.json'
+        ref    = home+'/mc21_13p6TeV/files/mc21_13p6TeV.801272.P8B_A14_CTEQ6L1_Jpsie.601189.PhPy8EG_AZNLO_Zee.801278.Py8EG_A14NNPDF23LO_perf_JF17.40bins.ref.json'
         data   = home+f'/mc21_13p6TeV/files/mc21_13p6TeV.801272.P8B_A14_CTEQ6L1_Jpsie.601189.PhPy8EG_AZNLO_Zee.801278.Py8EG_A14NNPDF23LO_perf_JF17.40bins.et{et}_eta{eta}.h5'
-        inputs = home+f'/tunings/Run2/data17_13TeV/v8/r0/user.jodafons.data17_13TeV.AllPeriods.sgn.probes_lhmedium_EGAM1_EGAM2.bkg.VProbes_EGAM7.GRL_v97.Run2_v8.40bins_et{et}_eta{eta}.r0'
+        inputs = home+f'/tunings/Run2/v8/r0/user.jodafons.data17_13TeV.AllPeriods.sgn.probes_lhmedium_EGAM1_EGAM2.bkg.VProbes_EGAM7.GRL_v97.Run2_v8.40bins_et{et}_eta{eta}.r0'
         task   = f'user.jodafons.mc21_13p6TeV.801272.P8B_A14_CTEQ6L1_Jpsie.601189.PhPy8EG_AZNLO_Zee.801278.Py8EG_A14NNPDF23LO_perf_JF17.Run2_v8.40bins_et{et}_eta{eta}.r1'
 
 

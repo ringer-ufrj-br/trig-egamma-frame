@@ -168,6 +168,7 @@ try:
 
     from egamma.algorithms import Efficiency
     eff = Efficiency( "Efficiency", 
+                      basepath     = 'Trigger',
                       triggers     = triggers, 
                       applyOffline = not jf17,
                     )

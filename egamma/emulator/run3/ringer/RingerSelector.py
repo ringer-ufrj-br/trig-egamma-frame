@@ -62,6 +62,7 @@ class RingerSelector(Messenger):
                                 etamin_list[idx],
                                 etamax_list[idx],
                                 barcode_list[idx],
+                                basepath+'/'+path.replace('.onnx','.h5'),
                                 ))
 
     # Reading all thresholds
@@ -127,12 +128,17 @@ class RingerSelector(Messenger):
     cl = context.getHandler("HLT__TrigEMClusterContainer")
     inputs = []
     if barcode == 0:
-      rings = cl.ringsE() / abs(sum(cl.ringsE()))
+      rings = cl.ringsE()
+      energy = sum(rings)
+      if energy > 0:
+        rings = rings / energy
       inputs.append(rings)
     elif barcode == 1:
       rings = cl.ringsE() 
       ref_rings = [rings[iring] for iring in half_rings_indexs]
-      ref_rings = ref_rings / abs(sum(ref_rings))
+      energy = sum(ref_rings)
+      if energy > 0:
+        ref_rings = ref_rings / energy
       inputs.append(ref_rings)
 
     return np.array(inputs)
@@ -146,3 +152,20 @@ class RingerSelector(Messenger):
       return False
 
     return self.accept(context, discriminant)
+
+
+  def get_model(self, et, eta):
+    print(et)
+    print(eta)
+    for model in self.models:
+        if model.etmin*GeV < et <= model.etmax*GeV:
+            if model.etamin < abs(eta) <= model.etamax:
+                return model
+    return None
+
+  def get_cut(self, et, eta):
+    for config in self.cuts:
+        if config.etmin*GeV < et <= config.etmax*GeV:
+            if config.etamin < abs(eta) <= config.etamax:
+                return config
+    return None

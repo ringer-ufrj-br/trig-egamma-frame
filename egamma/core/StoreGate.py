@@ -9,6 +9,7 @@ from egamma.core.helpers import expand_path, ensure_extension
 
 from ROOT import TFile
 import numpy as np
+import traceback
 import os.path
 import gc
 
@@ -178,12 +179,13 @@ class StoreGate( Messenger ) :
         if key.IsFolder():
           if filterDirs and kname not in filterDirs: 
             continue
-          for i in self.__restore(d.Get(kname), basepath+kname+"/"):
+          for i in self.restore(d.Get(kname), basepath+kname+"/"):
             yield i
         else:
           yield basepath+kname, d.Get(kname)
     except AttributeError as e:
-      MSG_DEBUG(self, "Ignore reading object of type %s.",type(d))
+      traceback.print_exc()
+      MSG_FATAL(self, "Ignore reading object of type %s.",type(d))
 
 
 

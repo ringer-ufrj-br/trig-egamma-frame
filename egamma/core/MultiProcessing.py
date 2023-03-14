@@ -110,7 +110,7 @@ class Pool( Messenger ):
       continue
 
 
-  def merge(self, command):
+  def merge(self):
     command = "hadd -f "+self.__output
     for fname in self.__outputs:
       command += ' '+fname
