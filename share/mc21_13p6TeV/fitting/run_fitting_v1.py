@@ -154,13 +154,22 @@ ref_path = '/home/joao.pinto/public/cern_data/mc21_13p6TeV/files/mc21_13p6TeV.80
 refs = json.load(open(ref_path,'r'))
 ref_values = [[{} for _ in range(5)] for __ in range(8)]
 
+
+relax_value = 0.4
+
+def relax(pd_val, relax_param):
+    return pd_val + (relax_param*(1-pd_val))
+
+
+
 for et_bin in range(8):
     for eta_bin in range(5):
         for op_name in op_names:
             pd_value = refs[et_bin][eta_bin][op_name]['det']['passed']/refs[et_bin][eta_bin][op_name]['det']['total']
             fa_value = refs[et_bin][eta_bin][op_name]['fake']['passed']/refs[et_bin][eta_bin][op_name]['fake']['total']
+            pd_value = relax(pd_value, relax_value)
             ref_values[et_bin][eta_bin][op_name] = {'pd':pd_value, 'fa':fa_value, 'pd_epsilon':0.0}
-            #print(f"Et_{et_bin}, Eta_{eta_bin} , ref is %1.2f"%(100*pd_value))
+            print(f"Et_{et_bin}, Eta_{eta_bin} , ref is %1.2f"%(100*pd_value))
 
 
 
@@ -193,7 +202,7 @@ best_sorts = pd.concat([best_sorts, best_sorts_last_bin])
 fit = fit_table( etbins, etabins, kf )
 
 
-do_fit = False
+do_fit = True
 
 if do_fit:
     best_sorts_et0_eta0  = fit.fill( best_sorts.loc[ (best_sorts.et_bin==0) & (best_sorts.eta_bin==0)] , load_data, paths, ref_values, output_path=output_path ,

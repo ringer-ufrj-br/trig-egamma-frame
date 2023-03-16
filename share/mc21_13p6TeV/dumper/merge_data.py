@@ -59,13 +59,9 @@ for f in tqdm(args.inputFiles, 'Merging...'):
                 continue
         data.append(df)
     except:
-        #print('File corrupted: %s'%f)
         continue
 data = pd.concat(data, ignore_index=True)
-print(data.shape)
 print('Signal %d , Background %d'%(sgn_count,bkg_count))
 data.to_hdf(args.outputFile,key='data')
 
 
-
-print(args.inputFiles)

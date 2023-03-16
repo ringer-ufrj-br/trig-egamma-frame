@@ -19,7 +19,7 @@ for et_bin in range(8):
     for eta_bin in range(5):
 
 
-            command = 'python run_reference.py -i {data} --et {et} --eta {eta} -o {output} --ringerVersion {ringerVersion}'.format(
+            command = 'python dump_reference.py -i {data} --et {et} --eta {eta} -o {output} --ringerVersion {ringerVersion}'.format(
                 data = data.format(et=et_bin, eta=eta_bin),
                 et = et_bin,
                 eta = eta_bin,

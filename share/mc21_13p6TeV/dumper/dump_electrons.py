@@ -75,8 +75,8 @@ try:
 
 
     class MyFilter:
-        def __init__ ( self, background=False):
-            self.background=background
+        def __init__ ( self, jets=False):
+            self.jets=jets
 
         def __call__(self, ctx):
 
@@ -92,7 +92,7 @@ try:
             # Monte Carlo selection
             #
             mc = ctx.getHandler("MonteCarloContainer")
-            if self.background:
+            if self.jets:
                 if mc.isTruthElectronFromAny():
                     return False
             else:
@@ -105,8 +105,8 @@ try:
             return True
 
 
-    background = True if 'JF17' in args.inputFile else False
-    my_filter = MyFilter(background)
+    jets = True if 'JF17' in args.inputFile else False
+    my_filter = MyFilter(jets)
 
 
     #
@@ -114,16 +114,13 @@ try:
     #
 
     from egamma import Filter
-    filter = Filter( "Filter", [my_filter])
-    ToolSvc+=filter
+    ToolSvc+=Filter( "Filter", [my_filter])
 
 
     #
     # Electron dumper
     #
     from egamma.dumper import ElectronDumper_v2 as ElectronDumper
-
-
     output = args.inputFile.split('/')[-1].replace('.root','')
     et_bins = [3, 7, 10, 15, 20, 30, 40, 50, 1000000]
     eta_bins = [0.0, 0.8, 1.37, 1.54, 2.37, 2.50]
@@ -144,7 +141,7 @@ try:
         return mc.isTruthElectronFromJpsiPrompt()
     def target( ctx ):
         # get the target value from the sample
-        return 0 if background else 1 # signal (Zee or Jpsiee)
+        return 0 if jets else 1 # signal (Zee or Jpsiee)
 
 
     dumper.decorate( "mc_isTruthElectronFromZ"          , isZ_decorator   )

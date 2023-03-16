@@ -65,7 +65,6 @@ def norm1( data ):
     return data/norms[:,None]
 
 col_names= ['trig_L2_cl_ring_%d'%i for i in range(100)]
-
 df = pd.read_hdf(args.inputFile)
 
 
@@ -93,15 +92,11 @@ values = { pidname:{} for pidname in hypos.keys()}
 for pidname , hypo in hypos.items():
 
     df_filted = df.loc[(df.target==1) & (df.el_lhmedium==True)]
-    print(df_filted.shape)
-
     passed, total = calculate(df_filted, hypo)
     values[pidname]['det'] = {'total':total, 'passed':passed}
     print('et%d, eta%d , Pd = %1.4f (%s)'%(args.et,args.eta,passed/total,pidname))
- 
 
     df_filted = df.loc[(df.target==0) & (df.el_lhvloose==False)]
-    print(df_filted.shape)
     passed, total = calculate(df_filted, hypo)
     values[pidname]['fake'] = {'total':total, 'passed':passed}
     print('et%d, eta%d , Fa = %1.4f (%s)'%(args.et,args.eta,passed/total,pidname))

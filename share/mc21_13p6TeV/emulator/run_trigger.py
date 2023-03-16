@@ -5,6 +5,7 @@ from egamma import ToolSvc, GeV
 from egamma import ElectronLoop
 from egamma.enumerators import Dataframe as DataframeEnum
 from egamma.core import complete
+from egamma.core import expand_folders
 
 import argparse
 import sys,os
@@ -44,21 +45,21 @@ parser.add_argument('--mute', action='store_true',
     help = "Use this for production. quite output")
 
 
-parser.add_argument('-j','--job_id', action='store',
-    dest='job_id', required = False, default=0, type=int,
-    help = "The job id for parallel processing.")
-
-parser.add_argument('-t','--triggers', action='store',
-    dest='triggers', required = True, default='', type=str,
-    help = "Triggers to be emulated separeted by ','")
-
-
 parser.add_argument('--ringerVersion', action='store',
-    dest='ringerVersion', required = False, default=None,
-    help = "The ringer tuning path")
+    dest='ringerVersion', required = True,
+    help = "The ringer version")
 
 
+parser.add_argument('--cost', action='store_true',
+    dest='cost', required = False,
+    help = "Enable this flag to switch to fake rate measurements")
     
+
+parser.add_argument('--triggers', action='store',
+    dest='triggers', required = True,
+    help = "The triggers common separated")
+
+
 #
 # event selection configuration
 #
@@ -74,10 +75,9 @@ args = parser.parse_args()
 
 try:
 
-    jf17     = True if 'JF17' in args.inputFile else False
 
     acc = ElectronLoop(  "EventATLASLoop",
-                         inputFile  = args.inputFile,
+                         inputFile  = expand_folders(args.inputFile),
                          treePath   = args.path,
                          dataframe  = DataframeEnum.Run3,
                          outputFile = args.outputFile,
@@ -88,8 +88,8 @@ try:
 
 
     class MonteCarloFilter:
-        def __init__ ( self, jf17=False):
-            self.jf17=jf17
+        def __init__ ( self, cost=False):
+            self.cost=cost
 
         def __call__(self, ctx):
 
@@ -103,7 +103,7 @@ try:
 
             # Monte Carlo selection
             mc = ctx.getHandler("MonteCarloContainer")
-            if self.jf17:
+            if self.cost:
                 if mc.isTruthElectronFromAny():
                     return False
             else:
@@ -115,70 +115,32 @@ try:
                         return False
             return True
 
-
-    class OfflineFilter:
-        def __init__(self, pidname = '!el_lhvloose'):
-            self.pidname = pidname
-
-        def __call__(self, ctx):
-            elCont = ctx.getHandler( "ElectronContainer" )
-            pidname = self.pidname
-            veto = True if '!' in pidname else False
-            pidname = pidname.replace('!','')
-            passed = False
-            if veto and not elCont.accept(pidname):
-                passed = True
-            if not veto and elCont.accept(pidname):
-                passed = True
-            return passed
-
-
-
-    #
-    # Create event filters
-    #
-    mcFilter      = MonteCarloFilter( jf17=jf17 )
-    offlineFilter = OfflineFilter( pidname='!el_lhvloose' )
-
-    filters = [mcFilter]
-    if jf17: # append offline for JF17 samples
-        filters.append(offlineFilter)
-
-
     #
     # Initial filter
     #
     from egamma import Filter
-    ToolSvc+=Filter( "Filter", filters)
-
-
+    ToolSvc+=Filter( "Filter", [MonteCarloFilter(args.cost)])
 
     from egamma.emulator.run3 import ElectronChain as Chain
     from egamma.emulator import attach
-
-    if args.ringerVersion:
-        from egamma.emulator import electronFlags
-        electronFlags.ringerVersion = args.ringerVersion
+    from egamma.emulator import electronFlags
+    electronFlags.ringerVersion = args.ringerVersion
 
 
     triggers = args.triggers.split(',')
     for trigName in triggers:
         attach(Chain(trigName))
 
-
     from egamma.algorithms import Efficiency
     eff = Efficiency( "Efficiency", 
                       basepath     = 'Trigger',
                       triggers     = triggers, 
-                      applyOffline = not jf17,
+                      pidname      = '!el_lhvloose' if args.cost else None,
                     )
 
     ToolSvc+=eff
 
     acc.run(args.nov)
-    print('job done')
-    
-    complete(args.job_id)
     sys.exit(0)
 
 except  Exception as e:

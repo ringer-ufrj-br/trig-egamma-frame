@@ -8,8 +8,11 @@ from egamma import GeV
 from ROOT import TEnv
 from egamma.emulator.run3.ringer import Model, Threshold, half_rings_indexs
 from tensorflow import keras
+import tensorflow as tf
 import numpy as np
 
+
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 def treat_float( env, key ):
   return [float(value) for value in  env.GetValue(key, '').split('; ')]
@@ -34,7 +37,7 @@ class RingerSelector(Messenger):
   #
   def initialize(self):
     
-    MSG_INFO(self, f"Loading models from {self.ConfigPath}")
+    #MSG_INFO(self, f"Loading models from {self.ConfigPath}")
 
     basepath = '/'.join(self.ConfigPath.split('/')[:-1])
 

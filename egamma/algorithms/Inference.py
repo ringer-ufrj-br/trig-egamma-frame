@@ -1,6 +1,6 @@
 
 
-__all__ = ["ValidationTool"]
+__all__ = ["Inference"]
 
 
 from egamma import Algorithm
@@ -21,11 +21,11 @@ def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 
 
-class ValidationTool(Algorithm):
+class Inference(Algorithm):
     def __init__(self, name,  **kw):
         Algorithm.__init__(self, name)
 
-        declareProperty(self, kw, "basepath", "ValidationTool")
+        declareProperty(self, kw, "basepath", "Inference")
         declareProperty(self, kw, "hypos", [])
         declareProperty(self, kw, "etbins", [
                         2, 7, 10, 15, 20, 30, 40, 50, 1000000])

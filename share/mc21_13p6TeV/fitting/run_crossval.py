@@ -76,11 +76,11 @@ cv_v0    = crossval_table( tuned_info, etbins = etbins, etabins = etabins )
 cv_v1    = crossval_table( tuned_info, etbins = etbins, etabins = etabins )
 
 
-#cv_v0.fill( '/home/joao.pinto/public/cern_data/tunings/Run3/v0/r1/user.jodafons.mc21_13p6TeV*/*/*.pic', 'Run3-v0')
-#cv_v1.fill( '/home/joao.pinto/public/cern_data/tunings/Run3/v1/r1/user.jodafons.mc21_13p6TeV*/*/*.pic', 'Run3-v1')
+cv_v0.fill( '/home/joao.pinto/public/cern_data/tunings/Run3/v0/r1/user.jodafons.mc21_13p6TeV*/*/*.pic', 'Run3-v0')
+cv_v1.fill( '/home/joao.pinto/public/cern_data/tunings/Run3/v1/r1/user.jodafons.mc21_13p6TeV*/*/*.pic', 'Run3-v1')
 
-#cv_v0.to_csv(output_path+'/table_run3_v0.csv')
-#cv_v1.to_csv(output_path+'/table_run3_v1.csv')
+cv_v0.to_csv(output_path+'/table_run3_v0.csv')
+cv_v1.to_csv(output_path+'/table_run3_v1.csv')
 
 
 

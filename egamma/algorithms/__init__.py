@@ -11,8 +11,8 @@ from . import Efficiency
 __all__.extend(Efficiency.__all__)
 from .Efficiency import *
 
-from . import ValidationTool
-__all__.extend(ValidationTool.__all__)
-from .ValidationTool import *
+from . import Inference
+__all__.extend(Inference.__all__)
+from .Inference import *
 
 

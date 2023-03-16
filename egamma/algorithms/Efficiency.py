@@ -27,15 +27,13 @@ class Efficiency(Algorithm):
     declareProperty(self, kw, "etbins"        , zee_etbins  )
     declareProperty(self, kw, "etabins"       , etabins     )
     declareProperty(self, kw, "mubins"        , mubins      )
-    declareProperty(self, kw, "applyOffline"  , True        )
+    declareProperty(self, kw, "pidname"       , None        )
 
     self.triggers   = [get_chain_dict(trigName) for trigName in self.triggers]
     self.etbins     = array.array('d',self.etbins) if not type(self.etbins) is array.array else self.etbins
     self.etabins    = array.array('d',self.etabins) if not type(self.etabins) is array.array else self.etabins
     self.mubins     = array.array('d',self.mubins) if not type(self.mubins) is array.array else self.mubins
 
-    if not self.applyOffline:
-      MSG_WARNING(self, "Offline selection is turn-off")
 
   def __add__(self, trigName):
     chainPart = get_chain_dict(trigName)
@@ -80,7 +78,7 @@ class Efficiency(Algorithm):
         sg.addHistogram(TH1F('match_nvtx' ,'N_{vtx} matched distribution;N_{vtx};Count', len(self.mubins)-1, np.array(self.mubins)))
         sg.addHistogram(TProfile("eff_et", "#epsilon(E_{T}); E_{T} ; Efficiency" , len(self.etbins)-1, np.array(self.etbins)))
         sg.addHistogram(TProfile("eff_highet", "#epsilon(E_{T}); E_{T} ; Efficiency" , 40, 0, 500))
-        sg.addHistogram(TProfile("eff_eta", "#epsilon(#eta); #eta ; Efficiency"  , 40, 0, 500))
+        sg.addHistogram(TProfile("eff_eta", "#epsilon(#eta); #eta ; Efficiency"  , len(self.etabins)-1, np.array(self.etabins)))
         sg.addHistogram(TProfile("eff_phi", "#epsilon(#phi); #phi ; Efficiency", 20, -3.2, 3.2))
         sg.addHistogram(TProfile("eff_mu", "#epsilon(<#mu>); <#mu> ; Efficiency", 20, 0, 100))
         sg.addHistogram(TProfile("eff_nvtx", "#epsilon(N_{vtx}); N_{vtx} ; Efficiency", len(self.mubins)-1, np.array(self.mubins)))
@@ -100,8 +98,7 @@ class Efficiency(Algorithm):
   def fillEfficiency( self, dirname, el, etthr, pidword, isPassed ):
   
     sg = self.getStoreGateSvc()
-
-    pid = el.accept(pidword) if pidword else True
+    pid = not el.accept(pidword.replace('!','')) if '!' in pidword else  el.accept(pidword)
     eta = el.caloCluster().etaBE2()
     et = el.et()/GeV
     phi = el.phi()
@@ -135,7 +132,7 @@ class Efficiency(Algorithm):
           sg.histogram( dirname+'/match_phi' ).Fill(phi, pw)
           sg.histogram( dirname+'/match_mu' ).Fill(avgmu, pw)
           sg.histogram( dirname+'/match_nvtx' ).Fill(nvtx, pw)
-          
+
           sg.histogram( dirname+'/match_etVsEta' ).Fill(et,eta, pw)
           sg.histogram( dirname+'/eff_eta' ).Fill(eta,1, pw)
           sg.histogram( dirname+'/eff_phi' ).Fill(phi,1, pw)
@@ -165,7 +162,7 @@ class Efficiency(Algorithm):
       signature = chainPart['signature']
       trigName  = chainPart['trigName']
 
-      pidname   = chainPart['IDinfo']
+      pidname   = self.pidname if self.pidname else chainPart['IDinfo']
       etthr     = chainPart['threshold']
 
       if signature == "Electron":
@@ -179,10 +176,6 @@ class Efficiency(Algorithm):
       else:
         MSG_WARNING(self, 'Signature not supported')
         continue
-
-      # overwrite pidname to disable the cut
-      if not self.applyOffline:
-        pidname = None
 
       for eg in egCont:
         if eg.et()  < (etthr- 5)*GeV:  continue 
