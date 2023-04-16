@@ -1,15 +1,24 @@
 # trig-egamma-frame
 
 
-## Implemented Features:
+## Build Docker
 
-- Dumper (Only for Run 3 root files)
-- Python electron emulator
+```
+make
+make push
+```
+
+### Convert to Singularity:
+
+```
+make pull
+```
 
 
-## Next Steps:
+## Setup:
 
-- Python photon emulator
-- Dual usage between Run 2 and Run 3 code
-
-
+```
+singularity run root_base_latest.sif
+source /setup_envs.sh
+source setup_here.sh
+```
