@@ -20,7 +20,7 @@ import os
 from pprint import pprint
 from prettytable import PrettyTable
 from ROOT import TH1F
-
+import ROOT
 
 
 #
@@ -257,10 +257,14 @@ class ElectronDumper_v2( Algorithm ):
       df = pd.DataFrame(self.__dataframe)
       for key, (etBinIdx,etaBinIdx) in progressbar(self.__bins_stored.items(), prefix='Saving...'):
         df_bin = df.loc[(df.et_bin==etBinIdx) & (df.eta_bin==etaBinIdx)]
-        output = basepath+'/'+self.output+'.'+key+'.pic'
-        MSG_INFO(self, "Save dataframe into %s with (%d,%d)", output, df_bin.shape[0], df_bin.shape[1])
+        data   = {key : df_bin[key].values for key in self.features}
+        output = basepath+'/'+self.output+'.'+key+'.root'
+        rdf    = ROOT.RDF.MakeNumpyDataFrame(data)
+        MSG_INFO(self, "Save RDataFrame into %s with (%d,%d)", output, df_bin.shape[0], df_bin.shape[1])
+        rdf.Snapshot('tree', output)
+        
         #df_bin.to_hdf(output, key='data')
-        df_bin.to_pickle(output)
+        #df_bin.to_pickle(output)
     return StatusCode.SUCCESS
 
 
