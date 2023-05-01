@@ -25,9 +25,17 @@ parser.add_argument('-r','--ref', action='store',
     dest='ref', required = True,
     help = "The reference file.")
 
+parser.add_argument('-rn','--ref-name', action='store',
+    dest='ref_name', default="Ref",
+    help = "The reference file model name.")
+
 parser.add_argument('-t','--test', action='store',
     dest='test', required = False, default = None,
     help = "The test file")
+
+parser.add_argument('-tn','--test-name', action='store',
+    dest='test_name', default="Test",
+    help = "The test file model name")
 
 parser.add_argument('-d','--dirname', action='store',
     dest='dirname', required = False, default='report', type=str,
@@ -41,9 +49,20 @@ parser.add_argument('-o','--output', action='store',
     dest='output', required = False, default='trigger_report.pdf', 
     help = "The PDF output name")
 
+parser.add_argument('-rt','--report-title', action='store',
+    dest='report_title', required = False, default="Trigger Report", 
+    help = "The PDF report title")
+
 parser.add_argument('-p','--do_plots', action='store_true',
     dest='do_plots', required = False,
     help = "Do plots")
+
+parser.add_argument("-b", "--bkg", action="store_true")
+
+parser.add_argument("-c", "--chain-type", action="store",
+                   dest="chain_type", type=str,
+                   choices=["e", "g"],
+                   help='IF "e" reports on electron chain, if "g" reports on phton chain')
 
 if len(sys.argv)==1:
   parser.print_help()
@@ -70,31 +89,41 @@ class Reader:
         return self.store.histogram(self.basepath+'/'+trigger+'/Efficiency/'+step+'/'+var)
 
 
-def plot_eff(reader_ref, reader, trigger, step, var, label_var, basepath, legends = ['Ref', 'New'], label='Internal, pp MC21 #sqrt{s}= 13p6TeV'):
+def plot_eff(reader_ref, reader, trigger, step, var, label_var, basepath, legends = ['Ref', 'New'], label='Internal, pp MC21 #sqrt{s}= 13p6TeV',
+             is_bkg=False):
 
     colors = [kBlack,kBlue-4]
     markers = [23, 24]
-    hists = [
-                reader_ref.profile(trigger, step, var),
-                reader_test.profile(trigger, step, var),
-            ]
-    def add_legend(x, y, legends):
-        rpl.add_legend( legends,x,y,x+0.98,y+0.20,textsize=18, option='p' )
-    fig = rpl.create_canvas('my_canvas')
-    rpl.plot_profiles( hists, label_var, colors, markers )
+    hists = [reader_ref.profile(trigger, step, var),
+             reader_test.profile(trigger, step, var)]
+    
+    def add_legend(x, y, legends, pad=None):
+        rpl.add_legend( legends,x,y,x+0.98,y+0.20,textsize=18, option='p', pad=pad)
+    
+    fig = rpl.plot_profiles(hists=hists,
+                            xlabel=label_var,
+                            ylabel="Trigger Efficiency",
+                            ratio_label="Test/Ref",
+                            colors=colors,
+                            markers=markers,
+                            doRatioCanvas=True)
     rpl.set_atlas_label(0.2,0.88,label)
-    add_legend( 0.75,0.78, legends)
+    add_legend( 0.75,0.78, legends, pad="pad_top")
     rpl.add_text( 0.2, 0.8, trigger, textsize=0.04)
 
-    ymin, ymax = rpl.get_yaxis_ranges()
-    ymaxf=0;yminc=0;ymaxc=0
-    if abs(ymin-ymax) > 0.4:
-        ymaxf = 1.4
+    ymin_top, ymax_top = rpl.get_yaxis_ranges(pad="pad_top")
+    if is_bkg:
+        fig.set_yaxis_ranges(ymin, ymax_top*1.3, "pad_top")
     else:
-        ymaxf = 1.02
+        if abs(ymin_top - ymax_top) > 0.4:
+            ymax_top = 1.5
+        else:
+            ymax_top = 1.02
+        fig.set_yaxis_ranges(ymin_top, ymax_top, "pad_top")
+    
+    ymin_bot, ymax_bot = rpl.get_yaxis_ranges(pad="pad_bot")
+    fig.set_yaxis_ranges(0.7*ymin_bot, 1.3*ymax_bot, "pad_bot")
 
-
-    rpl.fix_yaxis_ranges( ignore_zeros=False, ignore_errors=False, ymaxf=ymaxf, yminc=yminc, ymaxc=ymaxc ) 
     figure_path = basepath + '/' + trigger + '_' + step + '_' + var + '.pdf'
     fig.savefig(figure_path)
     return figure_path     
@@ -137,20 +166,23 @@ var_labels = {
 # Slide maker
 with BeamerTexReportTemplate1( theme = 'Berlin'
                              , _toPDF = True
-                             , title = 'trigger report'
+                             , title = args.report_title
                              , outputFile = args.output
                              , font = 'structurebold' ):
            
 
     for trigger in triggers:
-
-
-            steps = ['L1Calo', 'FastCalo','FastElectron','PrecisionCalo', 'PrecisionElectron'] if 'HLT_e' in trigger else ['L1Calo', 'FastCalo','FastPhoton','PrecisionCalo', 'PrecisionPhoton']
+            
+            if args.chain_type == "e":
+                steps = ['L1Calo', 'FastCalo','FastElectron','PrecisionCalo', 'PrecisionElectron']
+            else:
+                steps = ['L1Calo', 'FastCalo','FastPhoton','PrecisionCalo', 'PrecisionPhoton']
 
             if args.do_plots:
                 for step in steps:
-                    legends = ['Ref', 'Test']
-                    figures = [ plot_eff(reader_ref, reader_test, trigger, step, var, var_labels[var], args.dirname, legends = legends, label=args.label) for var in var_names ]
+                    legends = [args.ref_name, args.test_name]
+                    figures = [ plot_eff(reader_ref, reader_test, trigger, step, var, var_labels[var], args.dirname, legends = legends, label=args.label,
+                                        is_bkg=args.bkg) for var in var_names ]
                     BeamerMultiFigureSlide( title = trigger.replace('_','\_') + ' (' +step+ ')'
                     , paths = figures
                     , nDivWidth = 2 # x
