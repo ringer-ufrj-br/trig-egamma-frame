@@ -22,7 +22,7 @@ parser = argparse.ArgumentParser()
 #
 
 parser.add_argument('-i','--inputFile', action='store',
-    dest='inputFile', required = True,
+    dest='inputFile', required = True, nargs="+", 
     help = "The input file.")
 
 parser.add_argument('-o','--outputFile', action='store',
@@ -76,22 +76,12 @@ args = parser.parse_args()
 
 try:
 
-    # inputFile = expand_folders(args.inputFile)
-    # print(inputFile)
-    # input("Press enter to continue")
-    # acc = ElectronLoop(  "EventATLASLoop",
-    #                      inputFile  = inputFile,
-    #                      treePath   = args.path,
-    #                      dataframe  = DataframeEnum.Run3,
-    #                      outputFile = args.outputFile,
-    #                      level      = getattr(LoggingLevel, args.level),
-    #                      mute       = args.mute,
-    #                      abort      = False,
-    #                   )
-    if args.inputFile.endswith(".root"):
-      inputFile = args.inputFile
-    else:
-      inputFile = glob.glob(os.path.join(args.inputFile, "**", "*.root"), recursive=True)
+    inputFile = list()
+    for path in args.inputFile:
+        if path.endswith(".root"):
+            inputFile.append(path)
+        else:
+            inputFile.extend(glob.glob(os.path.join(path, "**", "*.root"), recursive=True))
     
     acc = ElectronLoop(  "EventATLASLoop",
                      inputFile  = inputFile,
