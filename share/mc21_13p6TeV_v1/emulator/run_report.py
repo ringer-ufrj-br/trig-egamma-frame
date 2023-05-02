@@ -103,26 +103,28 @@ def plot_eff(reader_ref, reader, trigger, step, var, label_var, basepath, legend
     fig = rpl.plot_profiles(hists=hists,
                             xlabel=label_var,
                             ylabel="Trigger Efficiency",
-                            ratio_label="Test/Ref",
+                            ratio_label=f"{legends[1]}/{legends[0]}",
                             colors=colors,
                             markers=markers,
                             doRatioCanvas=True)
-    rpl.set_atlas_label(0.2,0.88,label)
-    add_legend( 0.75,0.78, legends, pad="pad_top")
+    rpl.set_atlas_label(0.2, 0.88, label)
+    add_legend(0.75, 0.78, legends, pad="pad_top")
     rpl.add_text( 0.2, 0.8, trigger, textsize=0.04)
 
     ymin_top, ymax_top = rpl.get_yaxis_ranges(pad="pad_top")
+    # fig.set_yaxis_ranges(0, 1.5, "pad_top")
     if is_bkg:
         fig.set_yaxis_ranges(ymin, ymax_top*1.3, "pad_top")
     else:
         if abs(ymin_top - ymax_top) > 0.4:
             ymax_top = 1.5
         else:
-            ymax_top = 1.02
+            ymin_top = 0.9*ymin_top
+            ymax_top = 1.3*ymax_top
         fig.set_yaxis_ranges(ymin_top, ymax_top, "pad_top")
     
     ymin_bot, ymax_bot = rpl.get_yaxis_ranges(pad="pad_bot")
-    fig.set_yaxis_ranges(0.7*ymin_bot, 1.3*ymax_bot, "pad_bot")
+    fig.set_yaxis_ranges(0.9*ymin_bot, 1.1*ymax_bot, "pad_bot")
 
     figure_path = basepath + '/' + trigger + '_' + step + '_' + var + '.pdf'
     fig.savefig(figure_path)
@@ -194,7 +196,7 @@ with BeamerTexReportTemplate1( theme = 'Berlin'
             lines = []
             lines += [ HLine(_contextManaged = False) ]
             lines += [ HLine(_contextManaged = False) ]
-            lines += [ TableLine( columns = ['step','Ref. [\%]','Test [\%]', 'Diff [\%]'], _contextManaged = False ) ]
+            lines += [ TableLine( columns = ['step',f'{args.ref_name} [\%]',f'{args.test_name} [\%]', 'Diff [\%]'], _contextManaged = False ) ]
             lines += [ HLine(_contextManaged = False) ]
             
             for step in steps:
