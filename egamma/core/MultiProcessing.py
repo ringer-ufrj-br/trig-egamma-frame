@@ -53,7 +53,7 @@ class Slot(object):
 
 class Pool( Messenger ):
 
-  def __init__(self, command, maxJobs, files, output ):
+  def __init__(self, command, maxJobs, files, output, batch_size=1):
     
     Messenger.__init__(self)
     self.__files = files
@@ -61,6 +61,7 @@ class Pool( Messenger ):
     self.__output  = output
     self.__slots = [Slot() for _ in range(maxJobs)]
     self.__outputs = []
+    self.batch_size = batch_size
 
 
   def getAvailable(self):
@@ -80,12 +81,19 @@ class Pool( Messenger ):
   def generate(self):
 
     idx = len(self.__files)
-    f = self.__files.pop()
+    batch_files = list()
+    for i in range(self.batch_size):
+        try:
+            f = self.__files.pop()
+            batch_files.append(f)
+        except IndexError:    # There are no more items to pop
+            break
+    command_files = " ".join(batch_files)
     output = self.__output + '.' + str(idx)
-    command = self.__command.replace('%IN', f)
+    command = self.__command.replace('%IN', command_files)
     command = command.replace('%OUT', output)
     command = command.replace('%JOB_ID', str(idx) )
-    print(command)
+    # print(command)
     return command, output, idx
 
 
@@ -97,9 +105,9 @@ class Pool( Messenger ):
 
       slot = self.getAvailable()
       if slot:
-        print(Back.RED + Fore.WHITE + 'running %d/%d'%(len(self.__files), total))
-        #time.sleep(1)
         command, output, idx = self.generate()
+        print(Back.RED + Fore.WHITE + 'running %d/%d'%(idx, total))
+        #time.sleep(1)
         if os.path.exists('.done.%d'%idx):
           MSG_WARNING(self, f"Skip job id {idx}")
           continue

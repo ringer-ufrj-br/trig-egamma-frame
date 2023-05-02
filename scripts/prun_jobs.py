@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+import glob
 from egamma import Slot, expand_folders
 from egamma import expand_folders, Pool
 import time, os
@@ -11,7 +11,7 @@ parser = argparse.ArgumentParser()
 
 
 parser.add_argument('-i', '--inputs', action='store', 
-    dest='inputs', required = False, default = None, 
+    dest='inputs', required = False, default = None, nargs="+",
     help = "The input files. Use %%IN to replace in command")
 
 parser.add_argument('-o','--output', action='store', 
@@ -30,17 +30,26 @@ parser.add_argument('-nt', '--numberOfThreads', action='store',
     dest='numberOfThreads', required = False, default = 1, type=int,
     help = "The number of threads.")
 
+parser.add_argument('-b', '--batch-size', action='store', 
+    dest='batch_size', required = False, default = 1, type=int,
+    help = "Number of files prossed by each job call")
+
 
 import sys,os
 if len(sys.argv)==1:
-  parser.print_help()
-  sys.exit(1)
+    parser.print_help()
+    sys.exit(1)
 
 args = parser.parse_args()
-
-files = expand_folders( args.inputs )
+files = list()
+for path in args.inputs:
+    if path.endswith(".root"):
+        files.append(path)
+    else:
+        files.extend(glob.glob(os.path.join(path, "**", "*.root"), recursive=True))
+# files = expand_folders( args.inputs )
 files.sort()
-prun = Pool( args.command, args.numberOfThreads, files, args.output)
+prun = Pool( args.command, args.numberOfThreads, files, args.output, args.batch_size)
 prun.run()
 if args.merge:
-  prun.merge()
+    prun.merge()
