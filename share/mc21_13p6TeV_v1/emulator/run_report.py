@@ -109,7 +109,7 @@ def plot_eff(reader_ref, reader, trigger, step, var, label_var, basepath, legend
                             doRatioCanvas=True)
     rpl.set_atlas_label(0.2, 0.88, label)
     add_legend(0.75, 0.78, legends, pad="pad_top")
-    rpl.add_text( 0.2, 0.8, trigger, textsize=0.04)
+    rpl.add_text( 0.2, 0.8, f"{step}_{trigger}", textsize=0.04)
 
     ymin_top, ymax_top = rpl.get_yaxis_ranges(pad="pad_top")
     # fig.set_yaxis_ranges(0, 1.5, "pad_top")
