@@ -20,7 +20,7 @@ import os
 from pprint import pprint
 from prettytable import PrettyTable
 from ROOT import TH1F
-
+import ROOT
 
 
 #
@@ -32,7 +32,7 @@ class ElectronDumper_v2( Algorithm ):
   #
   # constructor
   #
-  def __init__(self, output, etbins, etabins, **kw ):
+  def __init__(self, output, etbins, etabins, only_decorators=False, **kw ):
     
     Algorithm.__init__(self, "ElectronDumper")
 
@@ -44,6 +44,7 @@ class ElectronDumper_v2( Algorithm ):
     self.__extra_features = list()
     self.__dataframe = None
     self.__bins_stored = {}
+    self.__only_decorators= only_decorators
 
 
  
@@ -57,6 +58,9 @@ class ElectronDumper_v2( Algorithm ):
   def decorate( self, key , f):
     self.__decorators[key] = f
 
+  # specific method for trigger decoration
+  def decorate_trigger(self, key, f, chain_name, trig_level):
+    self.__decorators[key] = (f, chain_name, trig_level)
 
   #
   # Initialize dumper
@@ -71,8 +75,7 @@ class ElectronDumper_v2( Algorithm ):
     store.addHistogram(TH1F('et','E_{T} distribution;E_{T};Count', 100, 0, 150 ))
     store.addHistogram(TH1F('eta','#eta distribution;#eta;Count', 50, -2.5, 2.5))
 
-
-
+    
     self.features.extend(['et_bin', 'eta_bin'])
 
     #
@@ -80,54 +83,54 @@ class ElectronDumper_v2( Algorithm ):
     #
     self.features.extend( ['avgmu'] )
 
-    #
-    # Fast calo
-    #
-    self.features.extend( [
-                                'trig_L2_cl_et',
-                                'trig_L2_cl_eta',
-                                'trig_L2_cl_phi',
-                                'trig_L2_cl_reta',
-                                'trig_L2_cl_ehad1', 
-                                'trig_L2_cl_eratio',
-                                'trig_L2_cl_f1', 
-                                'trig_L2_cl_f3', 
-                                'trig_L2_cl_weta2', 
-                                'trig_L2_cl_wstot', 
-                                'trig_L2_cl_e2tsts1'
-                                ] )
+    if not self.__only_decorators:
+      #
+      # Fast calo
+      #
+      self.features.extend( [
+                                  'trig_L2_cl_et',
+                                  'trig_L2_cl_eta',
+                                  'trig_L2_cl_phi',
+                                  'trig_L2_cl_reta',
+                                  'trig_L2_cl_ehad1', 
+                                  'trig_L2_cl_eratio',
+                                  'trig_L2_cl_f1', 
+                                  'trig_L2_cl_f3', 
+                                  'trig_L2_cl_weta2', 
+                                  'trig_L2_cl_wstot', 
+                                  'trig_L2_cl_e2tsts1'
+                                  ] )
+      
+      # Add fast calo ringsE
+      self.features.extend( [ 'trig_L2_cl_ring_%d'%r for r in range(100) ] )
 
-    # Add fast calo ringsE
-    self.features.extend( [ 'trig_L2_cl_ring_%d'%r for r in range(100) ] )
-
-
-    #
-    # Fast electron
-    #
-    self.features.extend( [
-                                'trig_L2_el_hastrack',
-                                'trig_L2_el_trkClusDeta',
-                                'trig_L2_el_trkClusDphi',
-                                'trig_L2_el_etOverPt',
-                                'trig_L2_el_d0',
-                                ] )
+      #
+      # Fast electron
+      #
+      self.features.extend( [
+                                  'trig_L2_el_hastrack',
+                                  'trig_L2_el_trkClusDeta',
+                                  'trig_L2_el_trkClusDphi',
+                                  'trig_L2_el_etOverPt',
+                                  'trig_L2_el_d0',
+                                  ] )
+    
+      
+      self.features.extend( self.__extra_features )
 
     #
     # Offline variables
     #
     self.features.extend( [
-                                'el_lhtight',
-                                'el_lhmedium',
-                                'el_lhloose',
-                                'el_lhvloose',
-                                ] )
-
-
+                           'el_lhtight',
+                           'el_lhmedium',
+                           'el_lhloose',
+                           'el_lhvloose',
+                                  ] )
+    
     self.features.extend( self.__decorators.keys() )
-    self.features.extend( self.__extra_features )
 
     return StatusCode.SUCCESS
-
 
   #
   # fill current event
@@ -169,35 +172,38 @@ class ElectronDumper_v2( Algorithm ):
     event_row.append( etBinIdx )
     event_row.append( etaBinIdx )
     event_row.append( eventInfo.avgmu() )
-    event_row.append( fc.et()       )
-    event_row.append( fc.eta()      )
-    event_row.append( fc.phi()      )
-    event_row.append( fc.reta()     )
-    event_row.append( fc.ehad1()    )
-    event_row.append( fc.eratio()   )
-    event_row.append( fc.f1()       )
-    event_row.append( fc.f3()       )
-    event_row.append( fc.weta2()    )
-    event_row.append( fc.wstot()    )
-    event_row.append( fc.e2tsts1()  )
-    event_row.extend( fc.ringsE()   )
-   
-    #
-    # Fast electron features
-    #
-    # Save only the closest fast track object cluster-trk
-    fcElCont = context.getHandler("HLT__TrigElectronContainer" )
+    
+    # if we want only decorators
+    if not self.__only_decorators:
+      event_row.append( fc.et()       )
+      event_row.append( fc.eta()      )
+      event_row.append( fc.phi()      )
+      event_row.append( fc.reta()     )
+      event_row.append( fc.ehad1()    )
+      event_row.append( fc.eratio()   )
+      event_row.append( fc.f1()       )
+      event_row.append( fc.f3()       )
+      event_row.append( fc.weta2()    )
+      event_row.append( fc.wstot()    )
+      event_row.append( fc.e2tsts1()  )
+      event_row.extend( fc.ringsE()   )
+    
+      #
+      # Fast electron features
+      #
+      # Save only the closest fast track object cluster-trk
+      fcElCont = context.getHandler("HLT__TrigElectronContainer" )
 
-    hasFcTrack = True if fcElCont.size()>0 else False
-    if hasFcTrack:
-      fcElCont.setToBeClosestThanCluster()
-      event_row.append( True )
-      event_row.append( fcElCont.trkClusDeta() )  
-      event_row.append( fcElCont.trkClusDphi() )
-      event_row.append( fcElCont.etOverPt() )
-      event_row.append( fcElCont.d0() )
-    else:
-      event_row.extend( [False, -1.0, -1.0, -1.0, -1.0] )
+      hasFcTrack = True if fcElCont.size()>0 else False
+      if hasFcTrack:
+        fcElCont.setToBeClosestThanCluster()
+        event_row.append( int(True) )
+        event_row.append( fcElCont.trkClusDeta() )  
+        event_row.append( fcElCont.trkClusDphi() )
+        event_row.append( fcElCont.etOverPt() )
+        event_row.append( fcElCont.d0() )
+      else:
+        event_row.extend( [int(False), -1.0, -1.0, -1.0, -1.0] )
 
 
 
@@ -207,16 +213,19 @@ class ElectronDumper_v2( Algorithm ):
     elCont = context.getHandler( "ElectronContainer" )
 
     # Adding Offline PID LH decisions
-    event_row.append( elCont.accept( "el_lhtight"  ) )
-    event_row.append( elCont.accept( "el_lhmedium" ) )
-    event_row.append( elCont.accept( "el_lhloose"  ) )
-    event_row.append( elCont.accept( "el_lhvloose" ) )
+    event_row.append( int(elCont.accept( "el_lhtight"  )) )
+    event_row.append( int(elCont.accept( "el_lhmedium" )) )
+    event_row.append( int(elCont.accept( "el_lhloose"  )) )
+    event_row.append( int(elCont.accept( "el_lhvloose" )) )
  
     #
     # Decorate from external funcions by the client. Can be any type
     #
     for feature, func, in self.__decorators.items():
-      event_row.append( func(context) )
+      if isinstance(func, tuple):
+        event_row.append( func[0](context, func[1], func[2]))
+      else:
+        event_row.append( func(context) )
 
     #
     # Decorate with other decisions from emulator service
@@ -257,10 +266,14 @@ class ElectronDumper_v2( Algorithm ):
       df = pd.DataFrame(self.__dataframe)
       for key, (etBinIdx,etaBinIdx) in progressbar(self.__bins_stored.items(), prefix='Saving...'):
         df_bin = df.loc[(df.et_bin==etBinIdx) & (df.eta_bin==etaBinIdx)]
-        output = basepath+'/'+self.output+'.'+key+'.pic'
-        MSG_INFO(self, "Save dataframe into %s with (%d,%d)", output, df_bin.shape[0], df_bin.shape[1])
+        data   = {key : df_bin[key].values for key in self.features}
+        output = basepath+'/'+self.output+'.'+key+'.root'
+        rdf    = ROOT.RDF.MakeNumpyDataFrame(data)
+        MSG_INFO(self, "Save RDataFrame into %s with (%d,%d)", output, df_bin.shape[0], df_bin.shape[1])
+        rdf.Snapshot('tree', output)
+        
         #df_bin.to_hdf(output, key='data')
-        df_bin.to_pickle(output)
+        #df_bin.to_pickle(output)
     return StatusCode.SUCCESS
 
 
