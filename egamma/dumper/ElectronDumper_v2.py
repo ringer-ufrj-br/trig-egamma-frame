@@ -1,292 +1,259 @@
 
 __all__ = ["ElectronDumper_v2"]
 
-
-from egamma.dataframe import EgammaParameters
-
-from egamma.core import Algorithm
-from egamma.core import StatusCode
-from egamma.core import save, load, declareProperty, progressbar, mkdir_p
+from egamma.core import Algorithm, StatusCode, EventContext, EDM
 from egamma.core.macros import *
 from egamma.core.constants import GeV
+from egamma.emulator.run3 import ElectronChain as Chain
+from egamma.emulator import attach
+from egamma.emulator.run3.menu.ChainDict import get_chain_dict
+from egamma.emulator.run3.electron import ELECTRON_STEPS
+from egamma.emulator.run3.ringer import NUMBER_OF_RINGS
+from numbers import Number
+from typing import List, Dict, Tuple, Callable, Any, Sequence
+from itertools import product
 
-import pandas as pd
 import numpy as np
-import collections
-import math
-import gc
+from collections import OrderedDict
 import os
-
-from pprint import pprint
-from prettytable import PrettyTable
-from ROOT import TH1F
 import ROOT
 
-
-#
-# Electron
-#
 class ElectronDumper_v2( Algorithm ):
 
+    def __init__(self, output: str,
+                 etbins: Sequence[Number],
+                 etabins: Sequence[Number],
+                 only_decorators: bool=False,
+                 **kw):
+        """
+        Constructor
 
-  #
-  # constructor
-  #
-  def __init__(self, output, etbins, etabins, only_decorators=False, **kw ):
-    
-    Algorithm.__init__(self, "ElectronDumper")
-
-    self.__etbins  = etbins
-    self.__etabins = etabins
-    self.output    = output
-    self.features  = []
-    self.__decorators = collections.OrderedDict({})
-    self.__extra_features = list()
-    self.__dataframe = None
-    self.__bins_stored = {}
-    self.__only_decorators= only_decorators
-
-
- 
-  def __add__( self, key ):
-    if type(key) is str:
-      key = [key]
-    self.__extra_features.extend( key )
-    return self
-
-
-  def decorate( self, key , f):
-    self.__decorators[key] = f
-
-  # specific method for trigger decoration
-  def decorate_trigger(self, key, f, chain_name, trig_level):
-    self.__decorators[key] = (f, chain_name, trig_level)
-
-  #
-  # Initialize dumper
-  #
-  def initialize(self):
-
-    Algorithm.initialize(self)
-
-
-    store = self.getStoreGateSvc()
-    store.mkdir('sample')
-    store.addHistogram(TH1F('et','E_{T} distribution;E_{T};Count', 100, 0, 150 ))
-    store.addHistogram(TH1F('eta','#eta distribution;#eta;Count', 50, -2.5, 2.5))
-
-    
-    self.features.extend(['et_bin', 'eta_bin'])
-
-    #
-    # Event info
-    #
-    self.features.extend( ['avgmu'] )
-
-    if not self.__only_decorators:
-      #
-      # Fast calo
-      #
-      self.features.extend( [
-                                  'trig_L2_cl_et',
-                                  'trig_L2_cl_eta',
-                                  'trig_L2_cl_phi',
-                                  'trig_L2_cl_reta',
-                                  'trig_L2_cl_ehad1', 
-                                  'trig_L2_cl_eratio',
-                                  'trig_L2_cl_f1', 
-                                  'trig_L2_cl_f3', 
-                                  'trig_L2_cl_weta2', 
-                                  'trig_L2_cl_wstot', 
-                                  'trig_L2_cl_e2tsts1'
-                                  ] )
-      
-      # Add fast calo ringsE
-      self.features.extend( [ 'trig_L2_cl_ring_%d'%r for r in range(100) ] )
-
-      #
-      # Fast electron
-      #
-      self.features.extend( [
-                                  'trig_L2_el_hastrack',
-                                  'trig_L2_el_trkClusDeta',
-                                  'trig_L2_el_trkClusDphi',
-                                  'trig_L2_el_etOverPt',
-                                  'trig_L2_el_d0',
-                                  ] )
-    
-      
-      self.features.extend( self.__extra_features )
-
-    #
-    # Offline variables
-    #
-    self.features.extend( [
-                           'el_lhtight',
-                           'el_lhmedium',
-                           'el_lhloose',
-                           'el_lhvloose',
-                                  ] )
-    
-    self.features.extend( self.__decorators.keys() )
-
-    return StatusCode.SUCCESS
-
-  #
-  # fill current event
-  #
-  def fill( self, row ):
-    dataframe = {}
-    if self.__dataframe is None:
-      self.__dataframe = collections.OrderedDict({})
-      for idx, col in enumerate(self.features):
-        self.__dataframe[col] = [row[idx]]
-    else:
-      for idx, col in enumerate(self.features):
-        self.__dataframe[col].append(row[idx])
-
-
-  #
-  # execute 
-  #
-  def execute(self, context):
-
-    event_row = list()
-
-    #
-    # event info
-    #
-    eventInfo = context.getHandler( "EventInfoContainer" )
-
-    #
-    # Fast Calo features
-    #
-    fc = context.getHandler( "HLT__TrigEMClusterContainer" )
-
-    etBinIdx, etaBinIdx = self.__get_bin( fc.et()/GeV, abs(fc.eta()) )
-    if etBinIdx < 0 or etaBinIdx < 0:
-      return StatusCode.SUCCESS
-
-      
-
-    event_row.append( etBinIdx )
-    event_row.append( etaBinIdx )
-    event_row.append( eventInfo.avgmu() )
-    
-    # if we want only decorators
-    if not self.__only_decorators:
-      event_row.append( fc.et()       )
-      event_row.append( fc.eta()      )
-      event_row.append( fc.phi()      )
-      event_row.append( fc.reta()     )
-      event_row.append( fc.ehad1()    )
-      event_row.append( fc.eratio()   )
-      event_row.append( fc.f1()       )
-      event_row.append( fc.f3()       )
-      event_row.append( fc.weta2()    )
-      event_row.append( fc.wstot()    )
-      event_row.append( fc.e2tsts1()  )
-      event_row.extend( fc.ringsE()   )
-    
-      #
-      # Fast electron features
-      #
-      # Save only the closest fast track object cluster-trk
-      fcElCont = context.getHandler("HLT__TrigElectronContainer" )
-
-      hasFcTrack = True if fcElCont.size()>0 else False
-      if hasFcTrack:
-        fcElCont.setToBeClosestThanCluster()
-        event_row.append( int(True) )
-        event_row.append( fcElCont.trkClusDeta() )  
-        event_row.append( fcElCont.trkClusDphi() )
-        event_row.append( fcElCont.etOverPt() )
-        event_row.append( fcElCont.d0() )
-      else:
-        event_row.extend( [int(False), -1.0, -1.0, -1.0, -1.0] )
-
-
-
-    #
-    # Offline variables
-    #
-    elCont = context.getHandler( "ElectronContainer" )
-
-    # Adding Offline PID LH decisions
-    event_row.append( int(elCont.accept( "el_lhtight"  )) )
-    event_row.append( int(elCont.accept( "el_lhmedium" )) )
-    event_row.append( int(elCont.accept( "el_lhloose"  )) )
-    event_row.append( int(elCont.accept( "el_lhvloose" )) )
- 
-    #
-    # Decorate from external funcions by the client. Can be any type
-    #
-    for feature, func, in self.__decorators.items():
-      if isinstance(func, tuple):
-        event_row.append( func[0](context, func[1], func[2]))
-      else:
-        event_row.append( func(context) )
-
-    #
-    # Decorate with other decisions from emulator service
-    #
-    dec = context.getHandler("MenuContainer")
-    for feature in self.__extra_features:
-      passed = dec.accept(feature).getCutResult('Pass')
-      event_row.append( passed )
-
-    if len(event_row) != len( self.features ):
-      MSG_FATAL( "This event missing some column. We have some problem into the dumper code! please, verify it!")
-
-
-    bk = f'et{etBinIdx}_eta{etaBinIdx}'
-    if not bk in self.__bins_stored:
-      self.__bins_stored[bk] = (etBinIdx,etaBinIdx)
-
-    self.fill(event_row)
-
-    store = self.getStoreGateSvc()
-    store.histogram("sample/et").Fill(fc.et()/GeV)
-    store.histogram("sample/eta").Fill(fc.eta())
-
-    return StatusCode.SUCCESS
-
-
-
-  #
-  # Finalize method
-  #
-  def finalize( self ):
-    if self.__dataframe:
-
-      basepath = os.getcwd() + '/' + self.output
-
-      mkdir_p(basepath)
-
-      df = pd.DataFrame(self.__dataframe)
-      for key, (etBinIdx,etaBinIdx) in progressbar(self.__bins_stored.items(), prefix='Saving...'):
-        df_bin = df.loc[(df.et_bin==etBinIdx) & (df.eta_bin==etaBinIdx)]
-        data   = {key : df_bin[key].values for key in self.features}
-        output = basepath+'/'+self.output+'.'+key+'.root'
-        rdf    = ROOT.RDF.MakeNumpyDataFrame(data)
-        MSG_INFO(self, "Save RDataFrame into %s with (%d,%d)", output, df_bin.shape[0], df_bin.shape[1])
-        rdf.Snapshot('tree', output)
+        Parameters
+        ----------
+        output : str
+            Output directory path
+        etbins : Sequence[Number]
+            Sequence with the etbins edges
+        etabins : Sequence[Number]
+            Sequence with the etabins edges
+        only_decorators : bool, optional
+            If True computes only the decorators, by default False
+        """
         
-        #df_bin.to_hdf(output, key='data')
-        #df_bin.to_pickle(output)
-    return StatusCode.SUCCESS
+        Algorithm.__init__(self, "ElectronDumper")
+        
+        self.__buffer = np.empty((len(etbins)-1, len(etabins)-1), dtype=object)
 
+        self.__etbins  = etbins
+        self.__etabins = etabins
+        self.output    = output
+        self.features  = []
+        self.__decorators = OrderedDict()
+        self.__only_decorators= only_decorators
+        self.chains = OrderedDict()
 
+    def decorate(self, key: str , f: Callable[[EventContext], Number]):
+        self.__decorators[key] = f
 
+    # specific method for trigger decoration
+    def decorate_chain(self, chain_name: str):
+        self.chains[chain_name] = get_chain_dict(chain_name)
+        attach(Chain(chain_name))
+    
+    def get_decorators(self) -> Dict[str, Callable[[EventContext], Number]]:
+            return self.__decorators
 
-  def __get_bin(self,et,eta):
-    # Fix eta value if > 2.5
-    if eta > self.__etabins[-1]:  eta = self.__etabins[-1]
-    if et > self.__etbins[-1]:  et = self.__etbins[-1]
-    ### Loop over binnings
-    for etBinIdx in range(len(self.__etbins)-1):
-      if et >= self.__etbins[etBinIdx] and  et < self.__etbins[etBinIdx+1]:
-        for etaBinIdx in range(len(self.__etabins)-1):
-          if eta >= self.__etabins[etaBinIdx] and eta < self.__etabins[etaBinIdx+1]:
-            return etBinIdx, etaBinIdx
-    return -1, -1#
+    def make_buffer_dict(self) -> Dict[str, list]:
+        buffer_dict = {
+            'et_bin': [],
+            'eta_bin': [],
+            'avgmu': []
+        }
+        buffer_dict.update({decorator_name: [] for decorator_name in self.__decorators.keys()})
+        if self.__only_decorators:
+            return buffer_dict
+
+        buffer_dict.update({
+            'trig_L2_cl_et': [],
+            'trig_L2_cl_eta': [],
+            'trig_L2_cl_phi': [],
+            'trig_L2_cl_reta': [],
+            'trig_L2_cl_ehad1': [],
+            'trig_L2_cl_eratio': [],
+            'trig_L2_cl_f1': [],
+            'trig_L2_cl_f3': [],
+            'trig_L2_cl_weta2': [],
+            'trig_L2_cl_wstot': [],
+            'trig_L2_cl_e2tsts1': [],    
+        })
+        buffer_dict.update({f'trig_L2_cl_ring_{iring}': [] for iring in range(NUMBER_OF_RINGS)})
+        buffer_dict.update({
+            'trig_L2_el_hastrack': [],
+            'trig_L2_el_trkClusDeta': [],
+            'trig_L2_el_trkClusDphi': [],
+            'trig_L2_el_etOverPt': [],
+            'trig_L2_el_d0': [],
+            'el_lhtight': [],
+            'el_lhmedium': [],
+            'el_lhloose': [],
+            'el_lhvloose': []
+        })
+        buffer_dict.update({
+            f"{step_name}_{chain_name}": []
+            for chain_name, step_name in product(self.chains.keys(), ELECTRON_STEPS)
+        })
+
+        return buffer_dict
+
+    def get_buffer_dict_shape(self, buffer_dict: Dict[str, List[Number]]) -> Tuple[int, int]:
+        # for key, value in buffer_dict.items():
+        #     MSG_INFO(self, f"{key}: {len(value)}")
+        shape = (len(buffer_dict["et_bin"]), len(buffer_dict.keys()))
+        return shape
+
+    def initialize(self):
+
+        super().initialize()
+
+        store = self.getStoreGateSvc()
+        store.mkdir('sample')
+        store.addHistogram(ROOT.TH1F('et','E_{T} distribution;E_{T};Count', 100, 0, 150 ))
+        store.addHistogram(ROOT.TH1F('eta','#eta distribution;#eta;Count', 50, -2.5, 2.5))
+        
+        n, m = self.__buffer.shape
+        for etBinIdx, etaBinIdx in product(range(n), range(m)):
+            self.__buffer[etBinIdx, etaBinIdx] = self.make_buffer_dict()
+
+        return StatusCode.SUCCESS
+
+    def add_offline_decision(self, buffer_dict: Dict[str, List[Number]],
+                             context: EventContext):
+        elCont: EDM = context.getHandler("ElectronContainer")
+
+        # Adding Offline PID LH decisions
+        buffer_dict["el_lhtight"].append(np.int32(elCont.accept("el_lhtight")))
+        buffer_dict["el_lhmedium"].append(np.int32(elCont.accept("el_lhmedium")))
+        buffer_dict["el_lhloose"].append(np.int32(elCont.accept("el_lhloose")))
+        buffer_dict["el_lhvloose"].append(np.int32(elCont.accept("el_lhvloose")))
+    
+    def apply_decorators(self, buffer_dict: Dict[str, List[Number]],
+                         context: EventContext):
+        for feature, func, in self.__decorators.items():
+            buffer_dict[feature].append(func(context))
+
+    def apply_chain_decorators(self, buffer_dict: Dict[str, List[Number]],
+                               context: EventContext):
+        
+        for chain_name in self.chains.keys():
+            trig_menu: EDM = context.getHandler("MenuContainer")
+            chain_results = trig_menu.accept(chain_name)
+            for step_name in ELECTRON_STEPS:
+                step_chain_name = f"{step_name}_{chain_name}"
+                # Casting to int32 to be RDataFrame.MakeNumpyDataFrame compatible
+                # default bool neither numpy.bool_ work
+                buffer_dict[step_chain_name].append(np.int32(chain_results.getCutResult(step_name)))
+    
+    def add_fast_calo_info(self, buffer_dict: Dict[str, List[Number]],
+                           context: EventContext):
+        
+        fast_calo: EDM = context.getHandler( "HLT__TrigEMClusterContainer" )
+        buffer_dict['trig_L2_cl_et'].append(fast_calo.et())
+        buffer_dict['trig_L2_cl_eta'].append(fast_calo.eta())
+        buffer_dict['trig_L2_cl_phi'].append(fast_calo.phi())
+        buffer_dict['trig_L2_cl_reta'].append(fast_calo.reta())
+        buffer_dict['trig_L2_cl_ehad1'].append(fast_calo.ehad1())
+        buffer_dict['trig_L2_cl_eratio'].append(fast_calo.eratio())
+        buffer_dict['trig_L2_cl_f1'].append(fast_calo.f1())
+        buffer_dict['trig_L2_cl_f3'].append(fast_calo.f3())
+        buffer_dict['trig_L2_cl_weta2'].append(fast_calo.weta2())
+        buffer_dict['trig_L2_cl_wstot'].append(fast_calo.wstot())
+        buffer_dict['trig_L2_cl_e2tsts1'].append(fast_calo.e2tsts1())
+
+        ring_array = fast_calo.ringsE()
+        for iring in range(NUMBER_OF_RINGS):
+            buffer_dict[f'trig_L2_cl_ring_{iring}'].append(ring_array[iring])
+    
+    def add_tracking_info(self, buffer_dict: Dict[str, List[Number]],
+                          context: EventContext):
+        fcElCont = context.getHandler("HLT__TrigElectronContainer" )
+
+        hasFcTrack = True if fcElCont.size()>0 else False
+        if hasFcTrack:
+            fcElCont.setToBeClosestThanCluster()
+            buffer_dict['trig_L2_el_hastrack'].append(np.int32(True))
+            buffer_dict['trig_L2_el_trkClusDeta'].append(fcElCont.trkClusDeta())  
+            buffer_dict['trig_L2_el_trkClusDphi'].append(fcElCont.trkClusDphi())
+            buffer_dict['trig_L2_el_etOverPt'].append(fcElCont.etOverPt())
+            buffer_dict['trig_L2_el_d0'].append(fcElCont.d0())
+        else:
+            buffer_dict['trig_L2_el_hastrack'].append(np.int32(False))
+            buffer_dict['trig_L2_el_trkClusDeta'].append(-1.0)  
+            buffer_dict['trig_L2_el_trkClusDphi'].append(-1.0)
+            buffer_dict['trig_L2_el_etOverPt'].append(-1.0)
+            buffer_dict['trig_L2_el_d0'].append(-1.0)
+
+    def execute(self, context: EventContext):
+
+        fast_calo: EDM = context.getHandler( "HLT__TrigEMClusterContainer" )
+        
+        etBinIdx, etaBinIdx = self.__get_bin( fast_calo.et()/GeV, abs(fast_calo.eta()) )
+        if etBinIdx < 0 or etaBinIdx < 0:
+            return StatusCode.SUCCESS
+        buffer_dict = self.__buffer[etBinIdx, etaBinIdx]
+
+        buffer_dict["et_bin"].append(np.int32(etBinIdx))
+        buffer_dict["eta_bin"].append(np.int32(etaBinIdx))
+        eventInfo: EDM = context.getHandler( "EventInfoContainer" )
+        buffer_dict["avgmu"].append(eventInfo.avgmu())
+
+        self.add_offline_decision(buffer_dict, context)
+        self.apply_decorators(buffer_dict, context)        
+        self.apply_chain_decorators(buffer_dict, context)
+
+        store = self.getStoreGateSvc()
+        store.histogram("sample/et").Fill(fast_calo.et()/GeV)
+        store.histogram("sample/eta").Fill(fast_calo.eta())
+
+        if self.__only_decorators:
+            return StatusCode.SUCCESS
+
+        self.add_fast_calo_info(buffer_dict, context)
+        self.add_tracking_info(buffer_dict, context)
+
+        return StatusCode.SUCCESS
+
+    def finalize( self ):
+        
+        n, m = self.__buffer.shape
+        if not os.path.exists(self.output):
+            os.makedirs(self.output)
+        for etBinIdx, etaBinIdx in product(range(n), range(m)):
+            buffer_dict = self.__buffer[etBinIdx,etaBinIdx]
+            df_shape = self.get_buffer_dict_shape(buffer_dict)
+            # It is faster to append a list and convert to array than append to an array
+            # https://stackoverflow.com/questions/29839350/numpy-append-vs-python-append
+            to_df = {key: np.array(value) for key, value in buffer_dict.items()}
+            if df_shape[0] < 1:
+                MSG_INFO(self, "RDataFrame (etBinIdx, etaBinIdx) (%d, %d) into with (%d,%d) was empty",
+                         etBinIdx, etaBinIdx, df_shape[0], df_shape[1])
+                continue
+            rdf = ROOT.RDF.MakeNumpyDataFrame(to_df)
+
+            output_filepath = os.path.join(self.output, f"{self.output}_et{etBinIdx}_eta{etaBinIdx}.root")
+            MSG_INFO(self, "Save RDataFrame (etBinIdx, etaBinIdx) (%d, %d) into %s with (%d,%d)",
+                     etBinIdx, etaBinIdx, output_filepath, df_shape[0], df_shape[1])
+            rdf.Snapshot("tree", output_filepath)
+        
+        return StatusCode.SUCCESS
+
+    def __get_bin(self, et: Number, eta: Number):
+        # Fix eta value if > 2.5
+        if eta > self.__etabins[-1]:  eta = self.__etabins[-1]
+        if et > self.__etbins[-1]:  et = self.__etbins[-1]
+        ### Loop over binnings
+        for etBinIdx in range(len(self.__etbins)-1):
+            if et >= self.__etbins[etBinIdx] and  et < self.__etbins[etBinIdx+1]:
+                for etaBinIdx in range(len(self.__etabins)-1):
+                    if eta >= self.__etabins[etaBinIdx] and eta < self.__etabins[etaBinIdx+1]:
+                        return etBinIdx, etaBinIdx
+        return -1, -1#

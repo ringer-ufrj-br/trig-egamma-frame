@@ -2,6 +2,8 @@
 
 __all__ = ["Model", "Threshold", "half_rings_indexs"]
 
+NUMBER_OF_RINGS = 100
+
 
 class Model:
   def __init__(self, model, etmin, etmax, etamin, etamax, barcode,path):
