@@ -33,6 +33,7 @@ ElectronChainParts = {
     'caloInfo'       : [],
     'lhInfo'         : ['nod0', 'nopix'],
     'L2IDAlg'        : ['noringer'],
+    'rVersion'       : ['run2-v8', 'run3-v0', 'run3-v1'],
     'addInfo'        : [ 'etcut', 'etcut1step',"fwd",'nopid'],
     'sigFolder'     : ['Egamma'],
     'subSigs'       : ['Electron'],
@@ -183,8 +184,11 @@ if __name__ == "__main__":
 
     trigger_list = [
                     #'HLT_e26_lhtight_ivarloose_L1EM22VHI',
-                    'HLT_e28_lhtight_ivarloose_noringer_nogsg_lrtmedium_L1EM22VHI',
-                    #'HLT_e60_lhmedium_L1EM26M',
+                    #'HLT_e28_lhtight_ivarloose_noringer_nogsg_lrtmedium_L1EM22VHI',
+                    #'HLT_e60_lhmedium_run2-v8_L1EM26M',
+                    'HLT_e26_lhtight_ivarloose_run3-v0_L1EM22VHI',
+                    'HLT_e26_lhtight_ivarloose_run3-v1_L1EM22VHI',
+                    'HLT_e26_lhtight_ivarloose_noringer_L1EM22VHI'
                     ]
 
     for trigger in trigger_list:

@@ -280,12 +280,14 @@ class L2CaloConfiguration(Messenger):
 
   def __init__(self, name, cpart):
     Messenger.__init__(self)
-    self.__cand         = cpart['trigType']
-    self.__threshold    = cpart['threshold']
-    self.__sel          = 'ion' if 'ion' in cpart['extra'] else (cpart['addInfo'][0] if cpart['addInfo'] else cpart['IDinfo'])
-    self.__gsfinfo      = cpart['gsfInfo'] if cpart['trigType']=='e' and cpart['gsfInfo'] else ''
-    self.__idperfinfo   = cpart['idperfInfo'] if cpart['trigType']=='e' and cpart['idperfInfo'] else ''
-    self.__noringerinfo = cpart['L2IDAlg']
+
+    self.__cand          = cpart['trigType']
+    self.__threshold     = cpart['threshold']
+    self.__sel           = 'ion' if 'ion' in cpart['extra'] else (cpart['addInfo'][0] if cpart['addInfo'] else cpart['IDinfo'])
+    self.__gsfinfo       = cpart['gsfInfo'] if cpart['trigType']=='e' and cpart['gsfInfo'] else ''
+    self.__idperfinfo    = cpart['idperfInfo'] if cpart['trigType']=='e' and cpart['idperfInfo'] else ''
+    self.__noringerinfo  = cpart['L2IDAlg']
+    self.__ringerVersion = cpart['rVersion'] if 'rVersion' in cpart.keys() else None
 
     self.hypo = L2Calo(name)
     self.hypo.AcceptAll      = False
@@ -385,7 +387,7 @@ class L2CaloConfiguration(Messenger):
     }
 
     # setup the electron ringer abspath
-    path = electronFlags.ringerVersion + '/ElectronRinger{op}TriggerConfig.conf'.format(op=opnames[treat_pidname(self.pidname())])
+    path = electronFlags.ringerVersion[self.__ringerVersion] + '/ElectronRinger{op}TriggerConfig.conf'.format(op=opnames[treat_pidname(self.pidname())])
     # Configure ringer here
     self.hypo.ConfigPath = path
 
