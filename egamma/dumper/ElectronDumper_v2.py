@@ -346,6 +346,7 @@ class ElectronDumper_v2( Algorithm ):
         n, m = self.__buffer.shape
         if not os.path.exists(self.output):
             os.makedirs(self.output)
+        _, output_dirname = os.path.split(self.output)
         for etBinIdx, etaBinIdx in product(range(n), range(m)):
             buffer_dict = self.__buffer[etBinIdx,etaBinIdx]
             df_shape = self.__get_buffer_dict_shape(buffer_dict)
@@ -357,9 +358,8 @@ class ElectronDumper_v2( Algorithm ):
                          etBinIdx, etaBinIdx, df_shape[0], df_shape[1])
                 continue
             rdf = ROOT.RDF.MakeNumpyDataFrame(to_df)
-
-            output_filepath = os.path.join(self.output, f"{self.output}_et{etBinIdx}_eta{etaBinIdx}.root")
-            MSG_INFO(self, "Save RDataFrame (etBinIdx, etaBinIdx) (%d, %d) into %s with (%d,%d)",
+            output_filepath = os.path.join(self.output, f"{output_dirname}_et{etBinIdx}_eta{etaBinIdx}.root")
+            MSG_INFO(self, "Save RDataFrame (etBinIdx, etaBinIdx) (%d, %d) into %s with shape (%d,%d)",
                      etBinIdx, etaBinIdx, output_filepath, df_shape[0], df_shape[1])
             rdf.Snapshot("tree", output_filepath)
         

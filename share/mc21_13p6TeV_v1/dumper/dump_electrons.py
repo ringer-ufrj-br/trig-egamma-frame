@@ -91,6 +91,13 @@ parser.add_argument("--triggers", action="store",
 parser.add_argument("--jets", action="store_true",
                     help="If passed considers the input data as jets")
 
+parser.add_argument("--et-bins", type=float, dest="et_bins",
+                    help="Et bins edges sorted", nargs="+",
+                    default=[3., 7., 10., 15., 20., 30., 40., 50., 1000000.])
+
+parser.add_argument("--eta-bins", type=float, dest="eta_bins",
+                    help="Eta bins edges sorted", nargs="+",
+                    default=[0.0, 0.8, 1.37, 1.54, 2.37, 2.50])
 
 #
 # event selection configuration
@@ -125,11 +132,8 @@ try:
     # Electron dumper
     #
     from egamma.dumper import ElectronDumper_v2 as ElectronDumper
-    dumper_output = args.outputFile.replace('.root', f'_{args.job_id}')
-    et_bins = [3, 7, 10, 15, 20, 30, 40, 50, 1000000]
-    eta_bins = [0.0, 0.8, 1.37, 1.54, 2.37, 2.50]
-
-    dumper = ElectronDumper(dumper_output, et_bins, eta_bins)
+    dumper_output = args.outputFile.replace('.root', '')
+    dumper = ElectronDumper(dumper_output, args.et_bins, args.eta_bins)
 
     def isZ_decorator( ctx ):
         mc = ctx.getHandler("MonteCarloContainer")
@@ -152,7 +156,6 @@ try:
 
     ToolSvc+=dumper
     acc.run(args.nov)
-    print('job done')
     os.system('rm %s'%args.outputFile)
     # complete(args.job_id)
     sys.exit(0)

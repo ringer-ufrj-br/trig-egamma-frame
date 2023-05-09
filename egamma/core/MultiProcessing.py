@@ -89,7 +89,8 @@ class Pool( Messenger ):
         except IndexError:    # There are no more items to pop
             break
     command_files = " ".join(batch_files)
-    output = self.__output + '.' + str(idx)
+    # self.__output + '.' + str(idx)
+    output = self.__output.replace(".root", f"_{idx}.root")
     command = self.__command.replace('%IN', command_files)
     command = command.replace('%OUT', output)
     command = command.replace('%JOB_ID', str(idx) )
