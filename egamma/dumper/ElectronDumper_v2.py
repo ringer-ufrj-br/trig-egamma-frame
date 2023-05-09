@@ -1,3 +1,6 @@
+"""
+Implements the ElectronDumper class and its utilities to dump Electron data
+"""
 
 __all__ = ["ElectronDumper_v2"]
 
@@ -19,6 +22,10 @@ import os
 import ROOT
 
 class ElectronDumper_v2( Algorithm ):
+    """
+    Dumps Electron data into a root file into a tree named tree.
+    Can dump chain decisions and custom branches by using decorators.
+    """
 
     def __init__(self, output: str,
                  etbins: Sequence[Number],
@@ -53,17 +60,58 @@ class ElectronDumper_v2( Algorithm ):
         self.chains = OrderedDict()
 
     def decorate(self, key: str , f: Callable[[EventContext], Number]):
+        """
+        Decorates the root file with another variable
+
+        Parameters
+        ----------
+        key : str
+            Variable name for the given decorator
+        f : Callable[[EventContext], Number]
+            Callable that receives an event context and returns
+            a value for the variable
+        """
         self.__decorators[key] = f
 
-    # specific method for trigger decoration
     def decorate_chain(self, chain_name: str):
+        """
+        Decorates the dumper with a chain simulation.
+        As an example:
+        Given the following chain: e140_lhloose_L1EM22VHI, adds the
+        following branches:
+        - L1Calo_e140_lhloose_L1EM22VHI
+        - FastCalo_e140_lhloose_L1EM22VHI
+        - FastElectron_e140_lhloose_L1EM22VHI
+        - PrecisionCalo_e140_lhloose_L1EM22VHI
+        - PrecisionElectron_e140_lhloose_L1EM22VHI
+
+        Parameters
+        ----------
+        chain_name : str
+            The chain to decorate
+        """
         self.chains[chain_name] = get_chain_dict(chain_name)
         attach(Chain(chain_name))
     
     def get_decorators(self) -> Dict[str, Callable[[EventContext], Number]]:
-            return self.__decorators
+        """
+        Returns an OrderedDict instance with the key, f pairs passed to
+        decorate.
 
-    def make_buffer_dict(self) -> Dict[str, list]:
+        Returns
+        -------
+        Dict[str, Callable[[EventContext], Number]]
+        """
+        return self.__decorators
+
+    def __make_buffer_dict(self) -> Dict[str, list]:
+        """
+        Builds the buffer_dict inside each of self.buffer entries
+
+        Returns
+        -------
+        Dict[str, list]
+        """
         buffer_dict = {
             'et_bin': [],
             'eta_bin': [],
@@ -105,9 +153,20 @@ class ElectronDumper_v2( Algorithm ):
 
         return buffer_dict
 
-    def get_buffer_dict_shape(self, buffer_dict: Dict[str, List[Number]]) -> Tuple[int, int]:
-        # for key, value in buffer_dict.items():
-        #     MSG_INFO(self, f"{key}: {len(value)}")
+    def __get_buffer_dict_shape(self, buffer_dict: Dict[str, List[Number]]) -> Tuple[int, int]:
+        """
+        Returns the shape of the dataframe the given buffer_dict represents
+
+        Parameters
+        ----------
+        buffer_dict : Dict[str, List[Number]]
+            Dict to have its shape computated
+
+        Returns
+        -------
+        Tuple[int, int]
+            buffer_dict shape
+        """
         shape = (len(buffer_dict["et_bin"]), len(buffer_dict.keys()))
         return shape
 
@@ -122,27 +181,58 @@ class ElectronDumper_v2( Algorithm ):
         
         n, m = self.__buffer.shape
         for etBinIdx, etaBinIdx in product(range(n), range(m)):
-            self.__buffer[etBinIdx, etaBinIdx] = self.make_buffer_dict()
+            self.__buffer[etBinIdx, etaBinIdx] = self.__make_buffer_dict()
 
         return StatusCode.SUCCESS
 
-    def add_offline_decision(self, buffer_dict: Dict[str, List[Number]],
+    def __add_offline_decision(self, buffer_dict: Dict[str, List[Number]],
                              context: EventContext):
-        elCont: EDM = context.getHandler("ElectronContainer")
+        """
+        Appends the event's offline decision to buffer_dict.
+        Executed when only_decorators=True
 
-        # Adding Offline PID LH decisions
+        Parameters
+        ----------
+        buffer_dict : Dict[str, List[Number]]
+            buffer_dict to append
+        context : EventContext
+            Current EventContext instance
+        """
+        elCont: EDM = context.getHandler("ElectronContainer")
         buffer_dict["el_lhtight"].append(np.int32(elCont.accept("el_lhtight")))
         buffer_dict["el_lhmedium"].append(np.int32(elCont.accept("el_lhmedium")))
         buffer_dict["el_lhloose"].append(np.int32(elCont.accept("el_lhloose")))
         buffer_dict["el_lhvloose"].append(np.int32(elCont.accept("el_lhvloose")))
     
-    def apply_decorators(self, buffer_dict: Dict[str, List[Number]],
+    def __apply_decorators(self, buffer_dict: Dict[str, List[Number]],
                          context: EventContext):
+        """
+        Computes and appends the decorators results to buffer_dict.
+        Executed when only_decorators=True
+
+        Parameters
+        ----------
+        buffer_dict : Dict[str, List[Number]]
+            buffer_dict to append
+        context : EventContext
+            Current EventContext instance
+        """
         for feature, func, in self.__decorators.items():
             buffer_dict[feature].append(func(context))
 
-    def apply_chain_decorators(self, buffer_dict: Dict[str, List[Number]],
+    def __apply_chain_decorators(self, buffer_dict: Dict[str, List[Number]],
                                context: EventContext):
+        """
+        Computes and appends all the chains decisions to buffer_dict.
+        Executed when only_decorators=True
+
+        Parameters
+        ----------
+        buffer_dict : Dict[str, List[Number]]
+            buffer_dict to append
+        context : EventContext
+            Current EventContext instance
+        """
         
         for chain_name in self.chains.keys():
             trig_menu: EDM = context.getHandler("MenuContainer")
@@ -153,8 +243,19 @@ class ElectronDumper_v2( Algorithm ):
                 # default bool neither numpy.bool_ work
                 buffer_dict[step_chain_name].append(np.int32(chain_results.getCutResult(step_name)))
     
-    def add_fast_calo_info(self, buffer_dict: Dict[str, List[Number]],
+    def __add_fast_calo_info(self, buffer_dict: Dict[str, List[Number]],
                            context: EventContext):
+        """
+        Appends fast calo infos to buffer_dict.
+        Executed when only_decorators=False
+
+        Parameters
+        ----------
+        buffer_dict : Dict[str, List[Number]]
+            buffer_dict to append
+        context : EventContext
+            Current EventContext instance
+        """
         
         fast_calo: EDM = context.getHandler( "HLT__TrigEMClusterContainer" )
         buffer_dict['trig_L2_cl_et'].append(fast_calo.et())
@@ -173,8 +274,26 @@ class ElectronDumper_v2( Algorithm ):
         for iring in range(NUMBER_OF_RINGS):
             buffer_dict[f'trig_L2_cl_ring_{iring}'].append(ring_array[iring])
     
-    def add_tracking_info(self, buffer_dict: Dict[str, List[Number]],
+    def __add_tracking_info(self, buffer_dict: Dict[str, List[Number]],
                           context: EventContext):
+        """
+        Appends tracking variables from fast electron to buffer_dict.
+        Executed when only_decorators=False
+
+        Parameters
+        ----------
+        buffer_dict : Dict[str, List[Number]]
+            buffer_dict to append
+        context : EventContext
+            Current EventContext instance
+
+        Parameters
+        ----------
+        buffer_dict : Dict[str, List[Number]]
+            _description_
+        context : EventContext
+            _description_
+        """
         fcElCont = context.getHandler("HLT__TrigElectronContainer" )
 
         hasFcTrack = True if fcElCont.size()>0 else False
@@ -206,9 +325,9 @@ class ElectronDumper_v2( Algorithm ):
         eventInfo: EDM = context.getHandler( "EventInfoContainer" )
         buffer_dict["avgmu"].append(eventInfo.avgmu())
 
-        self.add_offline_decision(buffer_dict, context)
-        self.apply_decorators(buffer_dict, context)        
-        self.apply_chain_decorators(buffer_dict, context)
+        self.__add_offline_decision(buffer_dict, context)
+        self.__apply_decorators(buffer_dict, context)        
+        self.__apply_chain_decorators(buffer_dict, context)
 
         store = self.getStoreGateSvc()
         store.histogram("sample/et").Fill(fast_calo.et()/GeV)
@@ -217,8 +336,8 @@ class ElectronDumper_v2( Algorithm ):
         if self.__only_decorators:
             return StatusCode.SUCCESS
 
-        self.add_fast_calo_info(buffer_dict, context)
-        self.add_tracking_info(buffer_dict, context)
+        self.__add_fast_calo_info(buffer_dict, context)
+        self.__add_tracking_info(buffer_dict, context)
 
         return StatusCode.SUCCESS
 
@@ -229,7 +348,7 @@ class ElectronDumper_v2( Algorithm ):
             os.makedirs(self.output)
         for etBinIdx, etaBinIdx in product(range(n), range(m)):
             buffer_dict = self.__buffer[etBinIdx,etaBinIdx]
-            df_shape = self.get_buffer_dict_shape(buffer_dict)
+            df_shape = self.__get_buffer_dict_shape(buffer_dict)
             # It is faster to append a list and convert to array than append to an array
             # https://stackoverflow.com/questions/29839350/numpy-append-vs-python-append
             to_df = {key: np.array(value) for key, value in buffer_dict.items()}
@@ -246,7 +365,23 @@ class ElectronDumper_v2( Algorithm ):
         
         return StatusCode.SUCCESS
 
-    def __get_bin(self, et: Number, eta: Number):
+    def __get_bin(self, et: Number, eta: Number) -> Tuple[int, int]:
+        """
+        Retunrs an etBinIdx and etaBinIdx pair given
+        certain et and eta values.
+
+        Parameters
+        ----------
+        et : Number
+            Transverse energy value
+        eta : Number
+            Pseudorapidity value
+
+        Returns
+        -------
+        Tuple[int, int]
+            etBinIdx, etaBinIdx values
+        """
         # Fix eta value if > 2.5
         if eta > self.__etabins[-1]:  eta = self.__etabins[-1]
         if et > self.__etbins[-1]:  et = self.__etbins[-1]
@@ -256,4 +391,4 @@ class ElectronDumper_v2( Algorithm ):
                 for etaBinIdx in range(len(self.__etabins)-1):
                     if eta >= self.__etabins[etaBinIdx] and eta < self.__etabins[etaBinIdx+1]:
                         return etBinIdx, etaBinIdx
-        return -1, -1#
+        return -1, -1
