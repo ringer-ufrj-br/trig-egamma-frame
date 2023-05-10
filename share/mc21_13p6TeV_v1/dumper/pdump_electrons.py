@@ -61,6 +61,18 @@ parser.add_argument("--eta-bins", type=float, dest="eta_bins",
     help="Eta bins edges sorted", nargs="+",
     default=[0.0, 0.8, 1.37, 1.54, 2.37, 2.50])
 
+parser.add_argument(
+    "--ringer-versions", action="store", nargs="+",
+    dest="ringer_versions", required=True,
+    help="The ringer versions alias to be regitered, must be ordered with ringer-paths"
+)
+
+parser.add_argument(
+    "--ringer-paths", action="store", nargs="+",
+    dest="ringer_paths", required=True,
+    help="The ringer paths  to be regitered, must be ordered with ringer-versions"
+)
+
 
 args = parser.parse_args()
 input_files = list_files(args.inputs, "root")
@@ -78,6 +90,8 @@ command += f" --ringerVersion {args.ringerVersion}"
 command += f" --triggers {' '.join(args.triggers)}"
 command += f" --et-bins {' '.join([str(val) for val in args.et_bins])}"
 command += f" --eta-bins {' '.join([str(val) for val in args.eta_bins])}"
+command += f" --ringer-versions {' '.join([str(val) for val in args.ringer_versions])}"
+command += f" --ringer-paths {' '.join([str(val) for val in args.ringer_paths])}"
 if args.jets:
     command += " --jets"
 
@@ -99,8 +113,10 @@ if args.merge:
     for etBinIdx, etaBinIdx in product(range(nEtBins), range(nEtaBins)):
         bin_file_end = f"_et{etBinIdx}_eta{etaBinIdx}.root"
         files2merge = output_files[output_files.str.endswith(bin_file_end)]
+        if files2merge.empty:
+            continue
         joined_files2merge = ' '.join(files2merge)
-        output_filename = f"{output_dir_name}{bin_file_end}.root"
+        output_filename = f"{output_dir_name}{bin_file_end}"
         output_filepath = os.path.join(args.output, output_filename)
         hadd_command = f"hadd -f {output_filepath} {joined_files2merge}"
         os.system(hadd_command)

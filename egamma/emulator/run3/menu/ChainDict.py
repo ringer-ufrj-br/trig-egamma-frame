@@ -1,12 +1,12 @@
 
-__all__ = ["get_chain_dict", "treat_pidname"]
+__all__ = ["get_chain_dict", "treat_pidname", "ringer_versions"]
 
 from egamma.core import Messenger
 from egamma.core.macros  import *
 from pprint import pprint
 from copy import copy
 
-
+ringer_versions = ['run2v8', 'run3v0', 'run3v1']
 
 # Take from: https://gitlab.cern.ch/atlas/athena/-/blob/master/Trigger/TriggerCommon/TriggerMenuMT/python/HLT/Menu/SignatureDicts.py
 #==========================================================
@@ -33,7 +33,7 @@ ElectronChainParts = {
     'caloInfo'       : [],
     'lhInfo'         : ['nod0', 'nopix'],
     'L2IDAlg'        : ['noringer'],
-    'rVersion'       : ['run2-v8', 'run3-v0', 'run3-v1'],
+    'rVersion'       : ringer_versions,
     'addInfo'        : [ 'etcut', 'etcut1step',"fwd",'nopid'],
     'sigFolder'     : ['Egamma'],
     'subSigs'       : ['Electron'],
@@ -174,10 +174,6 @@ def get_chain_dict( trigger ):
     chain = ChainDict(trigger)
     chain.configure()
     return chain.args
-
-
-
-
     
 if __name__ == "__main__":
 

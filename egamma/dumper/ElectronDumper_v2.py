@@ -153,23 +153,6 @@ class ElectronDumper_v2( Algorithm ):
 
         return buffer_dict
 
-    def __get_buffer_dict_shape(self, buffer_dict: Dict[str, List[Number]]) -> Tuple[int, int]:
-        """
-        Returns the shape of the dataframe the given buffer_dict represents
-
-        Parameters
-        ----------
-        buffer_dict : Dict[str, List[Number]]
-            Dict to have its shape computated
-
-        Returns
-        -------
-        Tuple[int, int]
-            buffer_dict shape
-        """
-        shape = (len(buffer_dict["et_bin"]), len(buffer_dict.keys()))
-        return shape
-
     def initialize(self):
 
         super().initialize()
@@ -349,21 +332,39 @@ class ElectronDumper_v2( Algorithm ):
         _, output_dirname = os.path.split(self.output)
         for etBinIdx, etaBinIdx in product(range(n), range(m)):
             buffer_dict = self.__buffer[etBinIdx,etaBinIdx]
-            df_shape = self.__get_buffer_dict_shape(buffer_dict)
-            # It is faster to append a list and convert to array than append to an array
-            # https://stackoverflow.com/questions/29839350/numpy-append-vs-python-append
-            to_df = {key: np.array(value) for key, value in buffer_dict.items()}
+            df_shape, to_df_buffer = self.__validate_buffer_dict(buffer_dict)
             if df_shape[0] < 1:
                 MSG_INFO(self, "RDataFrame (etBinIdx, etaBinIdx) (%d, %d) into with (%d,%d) was empty",
                          etBinIdx, etaBinIdx, df_shape[0], df_shape[1])
                 continue
-            rdf = ROOT.RDF.MakeNumpyDataFrame(to_df)
+            rdf = ROOT.RDF.MakeNumpyDataFrame(to_df_buffer)
             output_filepath = os.path.join(self.output, f"{output_dirname}_et{etBinIdx}_eta{etaBinIdx}.root")
             MSG_INFO(self, "Save RDataFrame (etBinIdx, etaBinIdx) (%d, %d) into %s with shape (%d,%d)",
                      etBinIdx, etaBinIdx, output_filepath, df_shape[0], df_shape[1])
             rdf.Snapshot("tree", output_filepath)
         
         return StatusCode.SUCCESS
+
+    def __validate_buffer_dict(self, buffer_dict):
+        # It is faster to append a list and convert to array than append to an array
+        # https://stackoverflow.com/questions/29839350/numpy-append-vs-python-append
+        validated_buffer = dict()
+        buffer_len = None
+        for key, value in buffer_dict.items():
+            value = np.array(value)
+            if buffer_len is not None and buffer_len != len(value):
+                MSG_FATAL(self, f"Buffer has distinct col sizes. Size so far {buffer_len} size found at {key} {len(value)}")
+            elif str(value.dtype) == "object":
+                MSG_FATAL(self, f"{key} raised unsupported type {value.dtype}")
+            else:
+                MSG_DEBUG(self, f"{key} size {len(value)} dtype {value.dtype}")
+                validated_buffer[key] = value
+                buffer_len = len(value)
+        
+        buffer_shape = (buffer_len, len(validated_buffer.keys()))
+
+        return buffer_shape, validated_buffer
+
 
     def __get_bin(self, et: Number, eta: Number) -> Tuple[int, int]:
         """

@@ -13,7 +13,7 @@ from egamma.emulator.run3.menu import electronFlags, treat_pidname
 from egamma import GeV
 from ROOT import TEnv
 
-
+import os
 import numpy as np
 import math
 
@@ -387,7 +387,10 @@ class L2CaloConfiguration(Messenger):
     }
 
     # setup the electron ringer abspath
-    path = electronFlags.ringerVersion[self.__ringerVersion] + '/ElectronRinger{op}TriggerConfig.conf'.format(op=opnames[treat_pidname(self.pidname())])
+    path = os.path.join(
+      electronFlags.ringerVersion[self.__ringerVersion],
+      'ElectronRinger{op}TriggerConfig.conf'.format(op=opnames[treat_pidname(self.pidname())])
+    )
     # Configure ringer here
     self.hypo.ConfigPath = path
 
