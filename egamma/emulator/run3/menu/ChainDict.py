@@ -6,7 +6,7 @@ from egamma.core.macros  import *
 from pprint import pprint
 from copy import copy
 
-ringer_versions = ['run2v8', 'run3v0', 'run3v1']
+ringer_versions = ['run2_v8', 'run3_v0', 'run3_v1']
 
 # Take from: https://gitlab.cern.ch/atlas/athena/-/blob/master/Trigger/TriggerCommon/TriggerMenuMT/python/HLT/Menu/SignatureDicts.py
 #==========================================================
@@ -182,8 +182,8 @@ if __name__ == "__main__":
                     #'HLT_e26_lhtight_ivarloose_L1EM22VHI',
                     #'HLT_e28_lhtight_ivarloose_noringer_nogsg_lrtmedium_L1EM22VHI',
                     #'HLT_e60_lhmedium_run2-v8_L1EM26M',
-                    'HLT_e26_lhtight_ivarloose_run3-v0_L1EM22VHI',
-                    'HLT_e26_lhtight_ivarloose_run3-v1_L1EM22VHI',
+                    'HLT_e26_lhtight_ivarloose_run3_v0_L1EM22VHI',
+                    'HLT_e26_lhtight_ivarloose_run3_v1_L1EM22VHI',
                     'HLT_e26_lhtight_ivarloose_noringer_L1EM22VHI'
                     ]
 

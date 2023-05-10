@@ -13,9 +13,9 @@ class ElectronFlags:
         '''
         
         self.ringerVersion = {
-            'run2-v8' : "/cern_data/tunings/releases/Run2_20230227_v8/",
-            'run3-v0' : "/cern_data/tunings/releases/Run3_20230316_v0/",
-            'run3-v1' : "/cern_data/tunings/releases/Run3_20230316_v1/"
+            'run2_v8' : "/cern_data/tunings/releases/Run2_20230227_v8/",
+            'run3_v0' : "/cern_data/tunings/releases/Run3_20230316_v0/",
+            'run3_v1' : "/cern_data/tunings/releases/Run3_20230316_v1/"
             }
         
     def register_ringer_version(self, version: str, path: str):
