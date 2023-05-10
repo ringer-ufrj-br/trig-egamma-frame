@@ -1,5 +1,7 @@
 __all__ = ['L2CaloCutMaps', 'L2CaloPhotonCutMaps']
 
+ELECTRON_STEPS = ['L1Calo','FastCalo','FastElectron','PrecisionCalo','PrecisionElectron']
+
 # Copyright (C) 2002-2017 CERN for the benefit of the ATLAS collaboration
 
 # L2 Calo cut definitions for Electrons

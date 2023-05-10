@@ -10,23 +10,20 @@ __all__ = [ 'expand_folders',
             'list2stdvector', 
             'stdvector2list',
             'load', 
-            'save']
+            'save',
+            'list_files']
 
 
-import numpy as np
 import pickle as cPickle
 import gzip
-import tarfile
-import tempfile
 import os
-import sys
-import shutil
-import signal
 import inspect
 import numpy as np
+from typing import List, Union, Iterable
+import glob
+# from collections import Iterable
 
 from tqdm import tqdm
-from time import sleep, time
 
 try:
   basestring
@@ -97,6 +94,46 @@ def expand_folders( pathList, filters = None):
   sorted(retList)
   return retList
 
+def list_files(path: Union[Iterable[str], str], file_ext: str) -> List[str]:
+  """
+  Utility for checking input paths. If path is file of file_ext
+  returns a list contaning it.
+  If is a directory, lists all the files recursively with the
+  given file_ext
+
+  Parameters
+  ----------
+  path : Union[Iterable[str], str]
+    Iterable of directories and filepaths or just one path
+  file_ext : str
+    File extension to list
+
+  Returns
+  ------
+  List[str]
+    List with the filepaths
+
+  Raises
+  ------
+  RuntimeError
+    Raised if path doesn't exist
+  """
+  # Recursive case
+  if isinstance(path, Iterable) and (not isinstance(path, str)):
+    all_paths = []
+    for ipath in path:
+      all_paths.extend(list_files(ipath, file_ext))
+    return all_paths
+
+  # Base case
+  if os.path.isfile(path) and path.endswith(f".{file_ext}"):
+    return [path]
+  elif os.path.isdir(path):
+    modified_path = os.path.join(path, "**", f"*.{file_ext}")
+    glob_generator = glob.glob(modified_path, recursive=True)
+    return glob_generator
+  else:
+    raise RuntimeError(f"{path} does not exist {os.path.exists(path)}")
 
 
 def ensure_extension( filename, extension ):

@@ -2,6 +2,7 @@
 __all__ = ["electronFlags"]
 
 import os
+from egamma.emulator.run3.menu import ringer_versions
 
 class ElectronFlags:
     def __init__(self):
@@ -17,5 +18,19 @@ class ElectronFlags:
             'run3_v1' : "/cern_data/tunings/releases/Run3_20230316_v1/"
             }
         
+    def register_ringer_version(self, version: str, path: str):
+        """
+        registers a new ringer version with its path
+
+        Parameters
+        ----------
+        version : str
+            Ringer version
+        path : str
+            Directory path to the version files
+        """
+        ringer_versions.append(version)
+        self.ringerVersion[version] = path
+    
 
 electronFlags = ElectronFlags()
