@@ -1,5 +1,5 @@
 
-__all__ = ['ElectronLoop']
+__all__ = ['ElectronLoop','PhotonLoop']
 
 
 from egamma.core.macros      import *

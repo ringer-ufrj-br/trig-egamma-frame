@@ -1,7 +1,8 @@
 __all__ = ['L2CaloCutMaps', 'L2CaloPhotonCutMaps']
 # MISSING CHANGES HERE!!!
 
-PHOTON_STEPS = ['L1Calo','FastCalo','FastPhoton','PrecisionCalo','PrecisionPhoton']
+# PHOTON_STEPS = ['L1Calo','FastCalo','FastPhoton','PrecisionCalo','PrecisionPhoton']
+PHOTON_STEPS = ['L1Calo','FastCalo','PrecisionCalo','PrecisionPhoton']
 
 # Copyright (C) 2002-2017 CERN for the benefit of the ATLAS collaboration
 

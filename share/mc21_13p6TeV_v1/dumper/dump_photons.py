@@ -78,7 +78,7 @@ parser.add_argument(
 
 parser.add_argument(
     '-l','--level', action='store',
-    dest='level', required = False, type=str, default='INFO',
+    dest='level', required = False, type=str, default='DEBUG',
     help = "VERBOSE/INFO/DEBUG/WARNING/ERROR/FATAL"
 )
 
@@ -125,13 +125,13 @@ parser.add_argument(
 
 parser.add_argument(
     "--ringer-versions", action="store", nargs="+",
-    dest="ringer_versions", required=True,
+    dest="ringer_versions", required=False,
     help="The ringer versions alias to be regitered, must be ordered with ringer-paths"
 )
 
 parser.add_argument(
     "--ringer-paths", action="store", nargs="+",
-    dest="ringer_paths", required=True,
+    dest="ringer_paths", required=False,
     help="The ringer paths  to be regitered, must be ordered with ringer-versions"
 )
 
@@ -155,9 +155,9 @@ try:
                       )
 
     my_filter = MyFilter(args.jets)
-    from egamma.emulator import electronFlags
-    for version, path in zip(args.ringer_versions, args.ringer_paths):
-        electronFlags.register_ringer_version(version, path)
+    from egamma.emulator import photonFlags
+    # for version, path in zip(args.ringer_versions, args.ringer_paths):
+        # photonFlags.register_ringer_version(version, path)
 
     #
     # Initial filter

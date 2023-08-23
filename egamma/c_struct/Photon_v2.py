@@ -140,7 +140,7 @@ def Photon_v2():
 	    std::vector<float>               *trig_EF_ph_et;
 	    std::vector<float>               *trig_EF_ph_eta;
 	    std::vector<float>               *trig_EF_ph_phi;
-        std::vector<float>               *trig_EF_ph_ethad
+        std::vector<float>               *trig_EF_ph_ethad;
 	    std::vector<float>               *trig_EF_ph_ethad1;
 	    std::vector<float>               *trig_EF_ph_ehad1;
 	    std::vector<float>               *trig_EF_ph_f1;
