@@ -245,6 +245,44 @@ class L1Calo( Messenger ):
 
 
 
+class L1Calo_eFEX( Messenger ):
+  # TOFIX: NEED TO IMPLEMENT
+  #
+  # Constructor
+  #
+  def __init__(self, name, **kw):
+    
+    Messenger.__init__(self)
+    
+    #
+    # L1 configuration default parameters
+    #
+    declareProperty( self, kw, "L1Item"         , 'L1_EM3'                          )
+
+    self.name = name
+ 
+
+  #
+  # Initialize method
+  #
+  def initialize(self):
+    return StatusCode.SUCCESS
+
+
+  #
+  # Finalize method
+  #
+  def finalize(self):
+    return StatusCode.SUCCESS
+
+
+  #
+  # Accept method
+  #
+  def accept( self, context ):
+    #l1 = context.getHandler( "HLT__EmTauRoIContainer" )
+    #passed = self.emulate( l1, self.L1Item )
+    return Accept( self.name, [ ("Pass", True ) ] )
 
 
 
@@ -253,19 +291,22 @@ class L1Calo( Messenger ):
 #
 def configure( name, chainPart ):
 
+  from egamma.emulator import electronFlags
   l1item = chainPart['L1Threshold']
 
-  # L1 configuration parameters
-  hypo = L1Calo( name,
-                 WPNames        =  ['Tight','Medium','Loose'], # must be: ["T","M","L"] (Tight,Medium and Loose)
-                 HadCoreCutMin  =  [ 1.0   ,  1.0  ,  1.0  ,  1.0  ], # must be a list with for values: (default,tight,medium and loose)
-                 HadCoreCutOff  =  [-0.2   , -0,2  , -0.2  , -0.2  ],
-                 HadCoreSlope 	 = [ 1/23. ,  1/23.,  1/23.,  1/23.],
-                 EmIsolCutMin   = [ 2.0   ,  1.0  ,  1.0  ,  1.5  ],
-                 EmIsolCutOff   = [-1.8   , -2.6  , -2.0  , -1.8  ],
-                 EmIsolSlope    = [ 1/8.  ,  1/8. ,  1/8. ,  1/8. ],
-                 IsolCutMax     = 50,
-                 L1Item         = l1item )
-
+  if electronFlags.L1Legacy:
+    # L1 configuration parameters
+    hypo = L1Calo( name,
+                  WPNames        =  ['Tight','Medium','Loose'], # must be: ["T","M","L"] (Tight,Medium and Loose)
+                  HadCoreCutMin  =  [ 1.0   ,  1.0  ,  1.0  ,  1.0  ], # must be a list with for values: (default,tight,medium and loose)
+                  HadCoreCutOff  =  [-0.2   , -0,2  , -0.2  , -0.2  ],
+                  HadCoreSlope 	 = [ 1/23. ,  1/23.,  1/23.,  1/23.],
+                  EmIsolCutMin   = [ 2.0   ,  1.0  ,  1.0  ,  1.5  ],
+                  EmIsolCutOff   = [-1.8   , -2.6  , -2.0  , -1.8  ],
+                  EmIsolSlope    = [ 1/8.  ,  1/8. ,  1/8. ,  1/8. ],
+                  IsolCutMax     = 50,
+                  L1Item         = l1item )
+  else: 
+    hypo = L1Calo_eFEX( name, l1item)
   return hypo
 

@@ -17,7 +17,8 @@ class ElectronFlags:
             'run3_v0' : "/cern_data/tunings/releases/Run3_20230316_v0/",
             'run3_v1' : "/cern_data/tunings/releases/Run3_20230316_v1/"
             }
-        
+        self.L1Legacy = True
+    
     def register_ringer_version(self, version: str, path: str):
         """
         registers a new ringer version with its path
