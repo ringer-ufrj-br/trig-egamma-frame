@@ -79,6 +79,10 @@ class RingerSelector(Messenger):
     slopes      = treat_float( env, 'Threshold__slope' )
     offsets     = treat_float( env, 'Threshold__offset' )
 
+    if max_avgmu < min_avgmu:
+      print('Fixing avgmu boundaries... ')
+      a = max_avgmu; b = min_avgmu
+      max_avgmu = b; min_avgmu = a
     for idx in range(nhresholds):
       self.cuts.append( Threshold( 
                                     slopes[idx],
