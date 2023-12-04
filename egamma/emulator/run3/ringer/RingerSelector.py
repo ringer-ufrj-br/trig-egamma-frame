@@ -80,7 +80,8 @@ class RingerSelector(Messenger):
     offsets     = treat_float( env, 'Threshold__offset' )
 
     if max_avgmu < min_avgmu:
-      print('Fixing avgmu boundaries... ')
+      MSG_DEBUG(self, 'Fixing avgmu boundaries... ')
+      #print('Fixing avgmu boundaries... ')
       a = max_avgmu; b = min_avgmu
       max_avgmu = b; min_avgmu = a
     for idx in range(nhresholds):

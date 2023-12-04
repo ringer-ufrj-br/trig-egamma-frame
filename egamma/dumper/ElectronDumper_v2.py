@@ -4,22 +4,27 @@ Implements the ElectronDumper class and its utilities to dump Electron data
 
 __all__ = ["ElectronDumper_v2"]
 
+import os 
+import ROOT 
+
+import numpy as np
+
+from itertools import product
+from numbers import Number
+from collections import OrderedDict
+from typing import List, Dict, Tuple, Callable, Any, Sequence
+
 from egamma.core import Algorithm, StatusCode, EventContext, EDM
 from egamma.core.macros import *
 from egamma.core.constants import GeV
-from egamma.emulator.run3 import ElectronChain as Chain
+
 from egamma.emulator import attach
-from egamma.emulator.run3.menu.ChainDict import get_chain_dict
+from egamma.emulator import electronFlags
+from egamma.emulator.run3 import ElectronChain as Chain
+from egamma.emulator.run3 import RingerSelector
 from egamma.emulator.run3.electron import ELECTRON_STEPS
 from egamma.emulator.run3.ringer import NUMBER_OF_RINGS
-from numbers import Number
-from typing import List, Dict, Tuple, Callable, Any, Sequence
-from itertools import product
-
-import numpy as np
-from collections import OrderedDict
-import os
-import ROOT
+from egamma.emulator.run3.menu.ChainDict import get_chain_dict
 
 class ElectronDumper_v2( Algorithm ):
     """
@@ -31,6 +36,8 @@ class ElectronDumper_v2( Algorithm ):
                  etbins: Sequence[Number],
                  etabins: Sequence[Number],
                  only_decorators: bool=False,
+                 decorate_rings: bool=False,
+                 decorate_ringerVersion: bool=False,
                  **kw):
         """
         Constructor
@@ -50,14 +57,17 @@ class ElectronDumper_v2( Algorithm ):
         Algorithm.__init__(self, "ElectronDumper")
         
         self.__buffer = np.empty((len(etbins)-1, len(etabins)-1), dtype=object)
+        self.__models = None
 
         self.__etbins  = etbins
         self.__etabins = etabins
         self.output    = output
         self.features  = []
         self.__decorators = OrderedDict()
-        self.__only_decorators= only_decorators
+        self.__only_decorators = only_decorators
+        self.__decorate_rings = decorate_rings
         self.chains = OrderedDict()
+        self.__decorate_ringerVersions = decorate_ringerVersion
 
     def decorate(self, key: str , f: Callable[[EventContext], Number]):
         """
@@ -103,7 +113,28 @@ class ElectronDumper_v2( Algorithm ):
         Dict[str, Callable[[EventContext], Number]]
         """
         return self.__decorators
+    
+    def __make_models_dict(self) -> Dict[str, RingerSelector]:
+        """
+        Builds the models_dict inside each of self.buffer entries
 
+        Returns
+        -------
+        Dict[str, RingerSelector]
+        """
+        ringer_models_dict = {}
+        name_dict = {'Tight'     : 'tight',
+                     'Medium'    : 'medium',
+                     'Loose'     : 'loose',
+                     'VeryLoose' : 'vloose'}
+        
+        for iversion, ipath in electronFlags.ringerVersion.items():
+            for jop, jname in name_dict.items():
+                m = RingerSelector(ConfigPath=ipath+f'ElectronRinger{jop}TriggerConfig.conf')
+                m.initialize()
+                ringer_models_dict.update({f'{iversion}_{jname}'  : m})
+        return ringer_models_dict
+    
     def __make_buffer_dict(self) -> Dict[str, list]:
         """
         Builds the buffer_dict inside each of self.buffer entries
@@ -118,7 +149,22 @@ class ElectronDumper_v2( Algorithm ):
             'avgmu': []
         }
         buffer_dict.update({decorator_name: [] for decorator_name in self.__decorators.keys()})
+        buffer_dict.update({
+            'el_lhtight': [],
+            'el_lhmedium': [],
+            'el_lhloose': [],
+            'el_lhvloose': []
+        })
+        if self.__decorate_ringerVersions:
+            for iversion in electronFlags.ringerVersion.keys():
+                buffer_dict.update({f'{iversion}_output' : [],
+                                    f'{iversion}_tight'  : [],
+                                    f'{iversion}_medium' : [],
+                                    f'{iversion}_loose'  : [],
+                                    f'{iversion}_vloose' : []})
         if self.__only_decorators:
+            if self.__decorate_rings:
+                buffer_dict.update({f'trig_L2_cl_ring_{iring}': [] for iring in range(NUMBER_OF_RINGS)})
             return buffer_dict
 
         buffer_dict.update({
@@ -141,10 +187,6 @@ class ElectronDumper_v2( Algorithm ):
             'trig_L2_el_trkClusDphi': [],
             'trig_L2_el_etOverPt': [],
             'trig_L2_el_d0': [],
-            'el_lhtight': [],
-            'el_lhmedium': [],
-            'el_lhloose': [],
-            'el_lhvloose': []
         })
         buffer_dict.update({
             f"{step_name}_{chain_name}": []
@@ -165,6 +207,9 @@ class ElectronDumper_v2( Algorithm ):
         n, m = self.__buffer.shape
         for etBinIdx, etaBinIdx in product(range(n), range(m)):
             self.__buffer[etBinIdx, etaBinIdx] = self.__make_buffer_dict()
+        if self.__decorate_ringerVersions:
+            MSG_INFO(self, "Decorate Ringer Versions is True. Starting to load the models...")
+            self.__models = self.__make_models_dict()
 
         return StatusCode.SUCCESS
 
@@ -181,12 +226,35 @@ class ElectronDumper_v2( Algorithm ):
         context : EventContext
             Current EventContext instance
         """
+        
         elCont: EDM = context.getHandler("ElectronContainer")
         buffer_dict["el_lhtight"].append(np.int32(elCont.accept("el_lhtight")))
         buffer_dict["el_lhmedium"].append(np.int32(elCont.accept("el_lhmedium")))
         buffer_dict["el_lhloose"].append(np.int32(elCont.accept("el_lhloose")))
         buffer_dict["el_lhvloose"].append(np.int32(elCont.accept("el_lhvloose")))
     
+    def __add_ringer_decision(self, buffer_dict: Dict[str, List[Number]], 
+                               models_dict: Dict[str, RingerSelector],
+                               context: EventContext):
+        """
+        Appends the event's ringer decision to buffer_dict.
+        Executed when decorate_ringerVersion=True
+
+        Parameters
+        ----------
+        buffer_dict : Dict[str, List[Number]]
+            buffer_dict to append
+        models_dict : Dict[str, RingerSelector]
+            models_dict to be used for predict and get accept
+        context : EventContext
+            Current EventContext instance
+        """
+        for iversion in electronFlags.ringerVersion.keys():
+            buffer_dict[f'{iversion}_output'].append(models_dict[f'{iversion}_tight'].predict(context).numpy())
+            for iop in ['tight', 'medium', 'loose', 'vloose']:
+                buffer_dict[f'{iversion}_{iop}'].append(np.int32(models_dict[f'{iversion}_{iop}'].emulate(context)))
+            
+        
     def __apply_decorators(self, buffer_dict: Dict[str, List[Number]],
                          context: EventContext):
         """
@@ -226,6 +294,24 @@ class ElectronDumper_v2( Algorithm ):
                 # default bool neither numpy.bool_ work
                 buffer_dict[step_chain_name].append(np.int32(chain_results.getCutResult(step_name)))
     
+
+    def __add_fc_rings(self, buffer_dict: Dict[str, List[Number]],
+                       context: EventContext):
+        """
+        Appends the rings information from FastCalo
+
+        Parameters
+        ----------
+        buffer_dict : Dict[str, List[Number]]
+            buffer_dict to append
+        context : EventContext
+            Current EventContext instance
+        """           
+        fast_calo: EDM = context.getHandler( "HLT__TrigEMClusterContainer" )
+        ring_array = fast_calo.ringsE()
+        for iring in range(NUMBER_OF_RINGS):
+            buffer_dict[f'trig_L2_cl_ring_{iring}'].append(ring_array[iring])
+
     def __add_fast_calo_info(self, buffer_dict: Dict[str, List[Number]],
                            context: EventContext):
         """
@@ -311,12 +397,19 @@ class ElectronDumper_v2( Algorithm ):
         self.__add_offline_decision(buffer_dict, context)
         self.__apply_decorators(buffer_dict, context)        
         self.__apply_chain_decorators(buffer_dict, context)
-
+        if self.__decorate_ringerVersions:
+            MSG_INFO(self, "Decorate Ringer Versions is True. Adding information to buffer_dict")
+            models_dict = self.__models
+            self.__add_ringer_decision(buffer_dict, models_dict, context)
+            
         store = self.getStoreGateSvc()
         store.histogram("sample/et").Fill(fast_calo.et()/GeV)
         store.histogram("sample/eta").Fill(fast_calo.eta())
 
         if self.__only_decorators:
+            if self.__decorate_rings:
+                MSG_INFO(self, "Decorate Rings is True. Adding Rings information to buffer_dict")
+                self.__add_fc_rings(buffer_dict, context)
             return StatusCode.SUCCESS
 
         self.__add_fast_calo_info(buffer_dict, context)
@@ -333,6 +426,7 @@ class ElectronDumper_v2( Algorithm ):
         for etBinIdx, etaBinIdx in product(range(n), range(m)):
             buffer_dict = self.__buffer[etBinIdx,etaBinIdx]
             df_shape, to_df_buffer = self.__validate_buffer_dict(buffer_dict)
+            
             if df_shape[0] < 1:
                 MSG_INFO(self, "RDataFrame (etBinIdx, etaBinIdx) (%d, %d) into with (%d,%d) was empty",
                          etBinIdx, etaBinIdx, df_shape[0], df_shape[1])
