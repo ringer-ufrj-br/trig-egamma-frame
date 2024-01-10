@@ -10,12 +10,12 @@ from egamma.core import stdvector2list
 class EmTauRoI_v2(EDM):
 
     __eventBranches = [
-                'trig_L1_el_eta',
-                'trig_L1_el_phi',
-                'trig_L1_el_emClus',
-                'trig_L1_el_tauClus',
-                'trig_L1_el_emIso',
-                'trig_L1_el_hadCore',
+                #'trig_L1_el_eta',
+                #'trig_L1_el_phi',
+                #'trig_L1_el_emClus',
+                #'trig_L1_el_tauClus',
+                #'trig_L1_el_emIso',
+                #'trig_L1_el_hadCore',
                 ]
 
 
