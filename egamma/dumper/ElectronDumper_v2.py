@@ -208,7 +208,7 @@ class ElectronDumper_v2( Algorithm ):
         for etBinIdx, etaBinIdx in product(range(n), range(m)):
             self.__buffer[etBinIdx, etaBinIdx] = self.__make_buffer_dict()
         if self.__decorate_ringerVersions:
-            MSG_INFO(self, "Decorate Ringer Versions is True. Starting to load the models...")
+            MSG_DEBUG(self, "Decorate Ringer Versions is True. Starting to load the models...")
             self.__models = self.__make_models_dict()
 
         return StatusCode.SUCCESS
@@ -398,7 +398,7 @@ class ElectronDumper_v2( Algorithm ):
         self.__apply_decorators(buffer_dict, context)        
         self.__apply_chain_decorators(buffer_dict, context)
         if self.__decorate_ringerVersions:
-            MSG_INFO(self, "Decorate Ringer Versions is True. Adding information to buffer_dict")
+            MSG_DEBUG(self, "Decorate Ringer Versions is True. Adding information to buffer_dict")
             models_dict = self.__models
             self.__add_ringer_decision(buffer_dict, models_dict, context)
             
@@ -408,7 +408,7 @@ class ElectronDumper_v2( Algorithm ):
 
         if self.__only_decorators:
             if self.__decorate_rings:
-                MSG_INFO(self, "Decorate Rings is True. Adding Rings information to buffer_dict")
+                MSG_DEBUG(self, "Decorate Rings is True. Adding Rings information to buffer_dict")
                 self.__add_fc_rings(buffer_dict, context)
             return StatusCode.SUCCESS
 
@@ -431,7 +431,8 @@ class ElectronDumper_v2( Algorithm ):
                 MSG_INFO(self, "RDataFrame (etBinIdx, etaBinIdx) (%d, %d) into with (%d,%d) was empty",
                          etBinIdx, etaBinIdx, df_shape[0], df_shape[1])
                 continue
-            rdf = ROOT.RDF.MakeNumpyDataFrame(to_df_buffer)
+            #rdf = ROOT.RDF.MakeNumpyDataFrame(to_df_buffer)
+            rdf = ROOT.RDF.FromNumpy(to_df_buffer)
             output_filepath = os.path.join(self.output, f"{output_dirname}_et{etBinIdx}_eta{etaBinIdx}.root")
             MSG_INFO(self, "Save RDataFrame (etBinIdx, etaBinIdx) (%d, %d) into %s with shape (%d,%d)",
                      etBinIdx, etaBinIdx, output_filepath, df_shape[0], df_shape[1])

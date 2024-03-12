@@ -107,8 +107,8 @@ class ElectronLoop( TEventLoop ):
 
       # enable hlt property by the container key name
       if 'HLT' in key:
-        edm.is_hlt = True
-
+        edm._is_hlt = True
+          
       # set basepath into the root file
       if edm.useMetadataParams():
         edm.setMetadataParams( {'basepath':self._metadataInputFile[1].rsplit('/',1)[0],
