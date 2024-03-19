@@ -1,4 +1,7 @@
 
+import logging
+import logging.config
+
 LOGGING_CONFIG = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -27,3 +30,16 @@ LOGGING_CONFIG = {
         }
     }
 }
+
+
+def set_loggers() -> logging.Logger:
+    """
+    Set the loggers for the package and returns the root logger
+
+    Returns
+    -------
+    logging.Logger
+        The root logger
+    """
+    logging.config.dictConfig(LOGGING_CONFIG)
+    return logging.getLogger()
