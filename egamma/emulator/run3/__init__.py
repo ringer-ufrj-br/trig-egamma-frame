@@ -15,3 +15,7 @@ from .electron import *
 from . import photon
 __all__.extend(photon.__all__)
 from .photon import *
+
+from . import cutbased
+__all__.extend(cutbased.__all__)
+from .cutbased import *
