@@ -43,6 +43,12 @@ def parse_args():
         dest='n_files',
         help='The number of files to be created'
     )
+    parser.add_argument(
+        '--with-id',
+        action='store_true',
+        dest='with_id',
+        help='If passed, the id column is added to the dataset'
+    )
 
     args = parser.parse_args().__dict__
     logger = logging.getLogger(LOGGER_NAME)
@@ -62,7 +68,8 @@ def main(
         output_dir: str,
         column_list: List[str],
         n_entries: int,
-        n_files: int) -> None:
+        n_files: int,
+        with_id: bool) -> None:
 
     ROOT.EnableImplicitMT()
 
@@ -75,8 +82,9 @@ def main(
     )
     for i in iterator:
         output_path = os.path.join(output_dir, f'{i:06d}.root')
-        rdf = ROOT.RDataFrame(n_entries) \
-            .Define('id', f'rdfentry_ + {i*n_entries}')
+        rdf = ROOT.RDataFrame(n_entries)
+        if with_id:
+            rdf = rdf.Define('id', f'rdfentry_ + {i*n_entries}')
         for col in column_list:
             rdf = rdf.Define(col, "gRandom->Rndm()")
         rdf_columns = rdf.GetColumnNames()
