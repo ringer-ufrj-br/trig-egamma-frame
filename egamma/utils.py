@@ -241,3 +241,57 @@ def open_directories(
             )
         if dev and i > 0:
             break
+
+
+def dump_script_report(
+        files: Iterable[str],
+        filepath: str,
+        n_samples: int = None):
+    """
+    Dumps a report of the files processed by a script to a file
+
+    Parameters
+    ----------
+    files : Iterable[str]
+        Iterable with the files processed
+    filepath : str
+        Path to the file to dump the report
+    n_samples : int, optional
+        Number of samples processed, by default None
+    """
+    if not filepath.endswith('.txt'):
+        filepath += '.txt'
+    with open(filepath, 'w') as f:
+        if n_samples:
+            f.write(f'Number of samples: {n_samples}\n')
+        f.write('Files:\n')
+        n_files = 0
+        for file in files:
+            f.write(f'{file}\n')
+            n_files += 1
+        f.write(f'Number of files: {n_files}\n')
+
+
+def check_list_sizes(args: dict, lists2check: list):
+    """
+    Checks if the lists in a dictionary have the same length.
+    Helps if argument parsing inside scripts.
+
+    Parameters
+    ----------
+    args : dict
+        Dictionary with the lists to check
+    lists2check : list
+        List with the names of the lists to check
+
+    Raises
+    ------
+    ValueError
+        Raised if the lists do not have the same length
+    """
+    list_len = len(args[lists2check[0]])
+    for list_name in lists2check[1:]:
+        if len(args[list_name]) != list_len:
+            raise ValueError(
+                f'{", ".join(lists2check)} must have the same length'
+            )
