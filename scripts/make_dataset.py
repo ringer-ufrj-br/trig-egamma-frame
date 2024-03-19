@@ -3,19 +3,18 @@ import json
 import logging
 import logging.config
 from typing import Any, Dict, Iterator, List, Tuple
-from ringer.constants import LOGGING_CONFIG
 from argparse import ArgumentParser
-from ringer.dataset import dump_dataset_rdf
-from ringer.root import get_tchain
-from ringer.script_utils import check_list_sizes
-from ringer.utils import open_directories
+from egamma.dataset import dump_dataset_rdf
+from egamma.root import get_tchain
+from egamma.utils import check_list_sizes
+from egamma.utils import open_directories
+from egamma.logging import set_loggers
 from tqdm import tqdm
 import ROOT
 import numpy as np
 import pandas as pd
 
-LOGGER_NAME = 'ringer_debug'
-logging.config.dictConfig(LOGGING_CONFIG)
+LOGGER_NAME = 'trigger-egamma-frame-debug'
 
 
 def parse_args():
@@ -189,9 +188,9 @@ def main(filepaths: List[str], treepath: str, output_dir: str,
         col_names = col_names[col_names != rings_field_name]
         col_names = col_names.tolist()
 
-        new_ringer_field_name = rings_field_name.replace('rings', 'ring')
+        new_rings_field_name = rings_field_name.replace('rings', 'ring')
         for i in range(n_rings):
-            new_field_name = f'{new_ringer_field_name}_{i}'
+            new_field_name = f'{new_rings_field_name}_{i}'
             col_names.append(new_field_name)
             rdf = rdf.Define(
                 new_field_name,
@@ -215,6 +214,6 @@ def main(filepaths: List[str], treepath: str, output_dir: str,
 
 
 if __name__ == "__main__":
-    logging.config.dictConfig(LOGGING_CONFIG)
+    set_loggers()
     args = parse_args()
     main(**args)
