@@ -1,17 +1,16 @@
 import os
-import logging
-import logging.config
 from typing import Iterable, List
-from ringer.constants import LOGGING_CONFIG
 from argparse import ArgumentParser
 from joblib import Parallel, delayed
 from egamma.utils import open_directories
 from egamma.schema import Schema
+from egamma.logging import set_loggers
 from tqdm import tqdm
 import ROOT
+import logging
 
-LOGGER_NAME = 'ringer_debug'
-logging.config.dictConfig(LOGGING_CONFIG)
+set_loggers()
+LOGGER_NAME = 'trig-egamma-frame-debug'
 
 
 def to_tfrecord(
@@ -20,8 +19,8 @@ def to_tfrecord(
         output_path: str,
         column_list: List[str] = None):
 
-    from ringer.root import get_tchain
-    from ringer.converters import npy_dict_to_tfrecord
+    from egamma.root import get_tchain
+    from egamma.converters import npy_dict_to_tfrecord
 
     tchain = get_tchain(filepaths, treepath)
     rdf = ROOT.RDataFrame(tchain)
@@ -42,7 +41,7 @@ def to_parquet(
         column_list: List[str] = None):
 
     import pandas as pd
-    from ringer.root import get_tchain
+    from egamma.root import get_tchain
 
     tchain = get_tchain(filepaths, treepath)
     rdf = ROOT.RDataFrame(tchain)
@@ -61,7 +60,7 @@ def to_h5(
         column_list: List[str] = None):
 
     import pandas as pd
-    from ringer.root import get_tchain
+    from egamma.root import get_tchain
 
     tchain = get_tchain(filepaths, treepath)
     rdf = ROOT.RDataFrame(tchain)
