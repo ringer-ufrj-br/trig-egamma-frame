@@ -9,6 +9,7 @@ from egamma.utils import open_directories
 from egamma.logging import set_loggers
 from tqdm import tqdm
 import ROOT
+import numpy as np
 
 LOGGER_NAME = 'trigger-egamma-frame-debug'
 
@@ -61,10 +62,12 @@ def main(filepaths: List[str], treepath: str, output_dir: str,
          id_col_name: str):
 
     ROOT.EnableImplicitMT()
+    files = np.sort(list(open_directories(filepaths, 'root')))
 
     iterator = tqdm(
-        open_directories(filepaths, 'root'),
-        desc='Processing files:', unit='file'
+        files,
+        desc='Processing files:', unit='file',
+        total=len(files)
     )
     id_offset = 0
     for filepath in iterator:
