@@ -2,17 +2,14 @@ import os
 import json
 import logging
 import logging.config
-from typing import Any, Dict, Iterator, List, Tuple
+from typing import Iterator, List, Tuple
 from argparse import ArgumentParser
 from egamma.dataset import dump_dataset_rdf
-from egamma.root import get_tchain
-from egamma.utils import check_list_sizes
 from egamma.utils import open_directories
 from egamma.logging import set_loggers
 from tqdm import tqdm
 import ROOT
 import numpy as np
-import pandas as pd
 
 LOGGER_NAME = 'trigger-egamma-frame-debug'
 
@@ -41,39 +38,27 @@ def parse_args():
         help='Directory to save the exported dataset'
     )
     parser.add_argument(
-        '--targets',
-        required=True,
+        '--open-vectors',
+        required=False,
+        dest='open_vectors',
         nargs='+',
-        help='The target variable to be used in the'
-        ' dataset according to filepaths'
+        help='Field names of vector types in the file'
+        ' to open into separate columns with format: field_name_{{n}}'
     )
     parser.add_argument(
-        '--target-labels',
-        required=True,
+        '--size-vectors',
+        required=False,
+        dest='size_vectors',
         nargs='+',
-        dest='target_labels',
-        help='The target labels to be used in the dataset'
-        ' The labels are dumped in a .json file in the dataset dir'
-    )
-    parser.add_argument(
-        '--rings-field-name',
-        required=True,
-        dest='rings_field_name',
-        help='Name of the rings field in the root tree'
-        ' to open the vector`into separate columns'
-    )
-    parser.add_argument(
-        '--n-rings',
         type=int,
-        required=True,
-        dest='n_rings',
-        help='Number of the rings in the vector to open'
+        help='Size of the vectors to open into separate columns'
     )
     parser.add_argument(
         '--add-id',
         required=True,
         action='store_true',
-        help='If passed, adds an integer id column to the dataset'
+        help='If passed, adds an integer id column to the dataset. '
+        'The id is incremented for each file processed in alphabetical order'
     )
     parser.add_argument(
         '--id-offset',
@@ -86,7 +71,7 @@ def parse_args():
     parser.add_argument(
         '--filters', required=False, dest='filters',
         nargs='+',
-        help='Filters to apply to the tree'
+        help='Filters to apply to the exported tree'
     )
     parser.add_argument(
         '--definition-names', required=False, nargs='+',
@@ -100,6 +85,23 @@ def parse_args():
         ' according to definition-names'
     )
     parser.add_argument(
+        '--no-export-definitions',
+        action='store_true',
+        help='If passed, the defined columns will not be exported'
+    )
+    parser.add_argument(
+        '--new-filename',
+        action='store_true',
+        help='If passed, the output files will be named with a number '
+        'according to the order of the input files'
+    )
+    parser.add_argument(
+        '--table-name',
+        required=True,
+        dest='table_name',
+        help='Name of the dataset table to be exported'
+    )
+    parser.add_argument(
         '--mt', action='store_true',
         help='If passed uses ROOT multithreading'
     )
@@ -111,23 +113,6 @@ def parse_args():
     args = parser.parse_args().__dict__
     logger = logging.getLogger(LOGGER_NAME)
     logger.info(args)
-
-    check_list_sizes(args, ['filepaths', 'targets'])
-    if args['definition_names'] or args['definition_ops']:
-        check_list_sizes(args, ['definition_names', 'definition_ops'])
-
-    if args['target_labels']:
-        if len(args['target_labels']) % 2 > 0:
-            raise ValueError(
-                'The target_labels must have an even number of elements'
-                ' to be converted to a dictionary'
-            )
-        args['target_labels'] = dict(zip(
-            args['target_labels'][::2], args['target_labels'][1::2]
-        ))
-    else:
-        targets = np.unique(args['targets'])
-        args['target_labels'] = dict(zip(targets, targets))
 
     if not os.path.exists(args['output_dir']):
         os.makedirs(args['output_dir'])
@@ -149,32 +134,33 @@ def open_filepaths_with_targets(
 
 
 def main(filepaths: List[str], treepath: str, output_dir: str,
-         targets: List[str], rings_field_name: str, n_rings: int,
-         add_id: bool, filters: list, target_labels: Dict[Any, Any],
-         definition_names: list, definition_ops: list,
-         mt: bool, dev: bool, id_offset: int = 0):
+         open_vectors: List[str], size_vectors: List[int],
+         add_id: bool, filters: List[str],
+         definition_names: List[str], definition_ops: List[str],
+         no_export_definitions: bool, new_filename: bool,
+         mt: bool, dev: bool, table_name: str, id_offset: int = 0):
 
     if mt:
         ROOT.EnableImplicitMT()
 
-    file_target_df = pd.DataFrame(
-        {'filepaths': filepaths, 'targets': targets}
-    )
+    files = np.sort(list(open_directories(filepaths, 'root')))
     iterator = tqdm(
-        enumerate(file_target_df.groupby('targets')),
-        desc='Processing target', unit='target',
-        total=file_target_df['targets'].nunique()
+        enumerate(files),
+        desc='Processing files', unit='files',
+        total=len(files)
     )
-    for file_num, (target, target_df) in iterator:
+    for file_num, filepath in iterator:
+        if dev and file_num > 0:
+            break
 
-        # logger.info(f'Processing {filepath}')
-        _, chain = get_tchain(target_df['filepaths'].to_list(), treepath)
-        rdf = ROOT.RDataFrame(chain) \
-            .Define('target', str(target))
+        rdf = ROOT.RDataFrame(filepath, treepath)
+        col_names = list(rdf.GetColumnNames())
 
         if definition_names:
             for name, op in zip(definition_names, definition_ops):
                 rdf = rdf.Define(name, op)
+            if not no_export_definitions:
+                col_names += definition_names
 
         if filters:
             filter_str = ' && '.join(filters)
@@ -183,34 +169,31 @@ def main(filepaths: List[str], treepath: str, output_dir: str,
         if add_id:
             rdf = rdf.Define('id', f'rdfentry_ + {id_offset}')
             id_offset += rdf.Count().GetValue()
+            col_names.append('id')
 
-        col_names = np.array(rdf.GetColumnNames(), dtype=object)
-        col_names = col_names[col_names != rings_field_name]
-        col_names = col_names.tolist()
+        if open_vectors and size_vectors:
+            for field_name, size in zip(open_vectors, size_vectors):
+                for i in range(size):
+                    new_field_name = f'{field_name}_{i}'
+                    rdf = rdf.Define(
+                        new_field_name,
+                        f'{field_name}[{i}]'
+                    )
+                    col_names.append(new_field_name)
 
-        new_rings_field_name = rings_field_name.replace('rings', 'ring')
-        for i in range(n_rings):
-            new_field_name = f'{new_rings_field_name}_{i}'
-            col_names.append(new_field_name)
-            rdf = rdf.Define(
-                new_field_name,
-                f'{rings_field_name}[{i}]'
-            )
+        if new_filename:
+            export_filename = f'{file_num:06d}.root'
+        else:
+            export_filename = os.path.basename(filepath)
 
         dump_dataset_rdf(
             output_dir,
             rdf,
-            'data',
-            f'{file_num:06d}.root',
+            table_name,
+            export_filename,
             col_names
         )
         del rdf
-
-        if dev and file_num >= 100:
-            break
-
-    with open(os.path.join(output_dir, 'target_labels.json'), 'w') as f:
-        json.dump(target_labels, f, indent=4)
 
 
 if __name__ == "__main__":
