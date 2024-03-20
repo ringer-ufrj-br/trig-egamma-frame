@@ -10,12 +10,16 @@ from egamma.core import stdvector2list
 class EmTauRoI_v2(EDM):
 
     __eventBranches = [
-                #'trig_L1_el_eta',
-                #'trig_L1_el_phi',
-                #'trig_L1_el_emClus',
-                #'trig_L1_el_tauClus',
-                #'trig_L1_el_emIso',
-                #'trig_L1_el_hadCore',
+                'trig_L1eFex_el_eta',
+                'trig_L1eFex_el_phi',
+                'trig_L1eFex_el_roi_et',
+                'trig_L1eFex_el_wstot',
+                'trig_L1eFex_el_reta',
+                'trig_L1eFex_el_rhad'
+                #'trig_L1eFex_el_emClus',
+                #'trig_L1eFex_el_tauClus',
+                #'trig_L1eFex_el_emIso',
+                #'trig_L1eFex_el_hadCore',
                 ]
 
 
@@ -31,46 +35,46 @@ class EmTauRoI_v2(EDM):
       return StatusCode.SUCCESS
       
 
-    def emClus(self):
+    def wstot(self):
         """
-          Retrieve the L1 EmClus information from Physval or SkimmedNtuple
+          Retrieve the L1 wstot information from Physval or SkimmedNtuple
         """
-        return self._event.trig_L1_el_emClus
+        return self._event.trig_L1eFex_el_wstot
         
 
-    def tauClus(self):
+    def reta(self):
         """
-          Retrieve the L1 tauClus information from Physval or SkimmedNtuple
+          Retrieve the L1 reta information from Physval or SkimmedNtuple
         """
-        return self._event.trig_L1_el_tauClus
+        return self._event.trig_L1eFex_el_reta
        
 
-    def emIsol(self):
+    def rhad(self):
         """
-          Retrieve the L1 emIsol information from Physval or SkimmedNtuple
+          Retrieve the L1 rhad information from Physval or SkimmedNtuple
         """
-        return self._event.trig_L1_el_emIso
+        return self._event.trig_L1eFex_el_rhad
    
 
-    def hadCore(self):
+    def roi_et(self):
         """
-          Retrieve the L1 hadIsol information from Physval or SkimmedNtuple
+          Retrieve the L1 roi_et information from Physval or SkimmedNtuple
         """
-        return self._event.trig_L1_el_hadCore
+        return self._event.trig_L1eFex_el_roi_et
       
 
     def eta(self):
         """
           Retrieve the eta information from Physval or SkimmedNtuple
         """
-        return self._event.trig_L1_el_eta
+        return self._event.trig_L1eFex_el_eta
     
 
     def phi(self):
         """
         Retrieve the phi information from Physval or SkimmedNtuple
         """
-        return self._event.trig_L1_el_phi
+        return self._event.trig_L1eFex_el_phi
      
 
 

@@ -28,18 +28,20 @@ class CutBased( Messenger ):
     Messenger.__init__(self)
 
     declareProperty( self, kw, "EtaBins"        , [0.0, 0.6, 0.8, 1.15, 1.37, 1.52, 1.81, 2.01, 2.37, 2.47] )
-    declareProperty( self, kw, "F1thr"          , same(0.005)                         )
     declareProperty( self, kw, "ETthr"          , same(0)                             )
+    declareProperty( self, kw, "dETACLUSTERthr" , 0.1                                 )
+    declareProperty( self, kw, "dPHICLUSTERthr" , 0.1                                 )
+    declareProperty( self, kw, "F1thr"          , same(0.005)                         )
     declareProperty( self, kw, "ET2thr"         , same(90.0*GeV)                      )
     declareProperty( self, kw, "HADET2thr"      , same(999.0)                         )
     declareProperty( self, kw, "HADETthr"       , same(999.0)                         )
-    declareProperty( self, kw, "CARCOREthr"     , same(999.0)                         )
-    declareProperty( self, kw, "CAERATIOthr"    , same(999.0)                         )
-    declareProperty( self, kw, "dETACLUSTERthr" , 0.1                                 )
-    declareProperty( self, kw, "dPHICLUSTERthr" , 0.1                                 )
     declareProperty( self, kw, "WETA2thr"       , same(99999.)                        )
     declareProperty( self, kw, "WSTOTthr"       , same(99999.)                        )
     declareProperty( self, kw, "F3thr"          , same(99999.)                        )
+    declareProperty( self, kw, "CARCOREthr"     , same(999.0)                         )
+    declareProperty( self, kw, "CAERATIOthr"    , same(999.0)                         )
+    declareProperty( self, kw, "ConfigPath"     , None                                )
+    declareProperty( self, kw, "EtCut"          , -999                                )
 
   #
   # Initialize method
@@ -55,8 +57,8 @@ class CutBased( Messenger ):
     cl = context.getHandler("HLT__TrigEMClusterContainer")
     cuts = L2CaloCutMaps(cl.et()/GeV)
 
-    self.HADETthr       = cuts.MapsHADETthr[pidname],
-    self.CARCOREthr     = cuts.MapsCARCOREthr[pidname],
+    self.HADETthr       = cuts.MapsHADETthr[pidname]
+    self.CARCOREthr     = cuts.MapsCARCOREthr[pidname]
     self.CAERATIOthr    = cuts.MapsCAERATIOthr[pidname]
     passed = self.accept(context)
     return passed
@@ -91,7 +93,7 @@ class CutBased( Messenger ):
       absEta=self.EtaBins[-1]
     # get the corrct eta bin range
     for idx, value in enumerate(self.EtaBins):
-      if ( absEta > self.EtaBins[idx] and absEta < self.EtaBins[idx+1] ):
+      if ( absEta >= self.EtaBins[idx] and absEta < self.EtaBins[idx+1] ):
         etaBin = idx
 
     # Is in crack region?
