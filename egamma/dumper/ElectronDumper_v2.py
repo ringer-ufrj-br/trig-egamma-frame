@@ -56,9 +56,8 @@ class ElectronDumper_v2( Algorithm ):
         
         Algorithm.__init__(self, "ElectronDumper")
         
-        self.__buffer = np.empty((len(etbins)-1, len(etabins)-1), dtype=object)
         self.__models = None
-
+        self.__buffer = {}
         self.__etbins  = etbins
         self.__etabins = etabins
         self.output    = output
@@ -68,6 +67,7 @@ class ElectronDumper_v2( Algorithm ):
         self.__decorate_rings = decorate_rings
         self.chains = OrderedDict()
         self.__decorate_ringerVersions = decorate_ringerVersion
+        
 
     def decorate(self, key: str , f: Callable[[EventContext], Number]):
         """
@@ -204,9 +204,10 @@ class ElectronDumper_v2( Algorithm ):
         store.addHistogram(ROOT.TH1F('et','E_{T} distribution;E_{T};Count', 100, 0, 150 ))
         store.addHistogram(ROOT.TH1F('eta','#eta distribution;#eta;Count', 50, -2.5, 2.5))
         
-        n, m = self.__buffer.shape
-        for etBinIdx, etaBinIdx in product(range(n), range(m)):
-            self.__buffer[etBinIdx, etaBinIdx] = self.__make_buffer_dict()
+        self.__buffer = self.__make_buffer_dict()#np.empty((len(etbins)-1, len(etabins)-1), dtype=object)
+        #n, m = self.__buffer.shape
+        #for etBinIdx, etaBinIdx in product(range(n), range(m)):
+        #    self.__buffer[etBinIdx, etaBinIdx] = self.__make_buffer_dict()
         if self.__decorate_ringerVersions:
             MSG_DEBUG(self, "Decorate Ringer Versions is True. Starting to load the models...")
             self.__models = self.__make_models_dict()
@@ -387,7 +388,7 @@ class ElectronDumper_v2( Algorithm ):
         etBinIdx, etaBinIdx = self.__get_bin( fast_calo.et()/GeV, abs(fast_calo.eta()) )
         if etBinIdx < 0 or etaBinIdx < 0:
             return StatusCode.SUCCESS
-        buffer_dict = self.__buffer[etBinIdx, etaBinIdx]
+        buffer_dict = self.__buffer
 
         buffer_dict["et_bin"].append(np.int32(etBinIdx))
         buffer_dict["eta_bin"].append(np.int32(etaBinIdx))
@@ -419,24 +420,26 @@ class ElectronDumper_v2( Algorithm ):
 
     def finalize( self ):
         
-        n, m = self.__buffer.shape
-        if not os.path.exists(self.output):
-            os.makedirs(self.output)
-        _, output_dirname = os.path.split(self.output)
-        for etBinIdx, etaBinIdx in product(range(n), range(m)):
-            buffer_dict = self.__buffer[etBinIdx,etaBinIdx]
-            df_shape, to_df_buffer = self.__validate_buffer_dict(buffer_dict)
+        #if not os.path.exists(self.output):
+        #    os.makedirs(self.output)
+        #_, output_dirname = os.path.split(self.output)
+        
+        buffer_dict = self.__buffer
+        df_shape, to_df_buffer = self.__validate_buffer_dict(buffer_dict)
             
-            if df_shape[0] < 1:
-                MSG_INFO(self, "RDataFrame (etBinIdx, etaBinIdx) (%d, %d) into with (%d,%d) was empty",
-                         etBinIdx, etaBinIdx, df_shape[0], df_shape[1])
-                continue
-            #rdf = ROOT.RDF.MakeNumpyDataFrame(to_df_buffer)
-            rdf = ROOT.RDF.FromNumpy(to_df_buffer)
-            output_filepath = os.path.join(self.output, f"{output_dirname}_et{etBinIdx}_eta{etaBinIdx}.root")
-            MSG_INFO(self, "Save RDataFrame (etBinIdx, etaBinIdx) (%d, %d) into %s with shape (%d,%d)",
-                     etBinIdx, etaBinIdx, output_filepath, df_shape[0], df_shape[1])
-            rdf.Snapshot("tree", output_filepath)
+        #rdf = ROOT.RDF.MakeNumpyDataFrame(to_df_buffer)
+        rdf = ROOT.RDF.FromNumpy(to_df_buffer)
+        output_filepath = f"{self.output}.root"
+        MSG_INFO(self, "Save RDataFrame into %s with shape (%d,%d)", output_filepath, df_shape[0], df_shape[1])
+
+        rdf_columns = rdf.GetColumnNames()
+        options = ROOT.RDF.RSnapshotOptions()
+        options.fCompressionLevel = 9
+        rdf.Snapshot("tree", 
+                     output_filepath,
+                     rdf_columns,
+                     options
+                         )
         
         return StatusCode.SUCCESS
 
