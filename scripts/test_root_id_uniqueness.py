@@ -29,6 +29,12 @@ def parse_args():
         required=True,
         help='The path to the tree object inside the root file'
     )
+    parser.add_argument(
+        '--id-col-name',
+        default='id',
+        dest='id_col_name',
+        help='Name of the id column' 
+    )
 
     args = parser.parse_args().__dict__
     return args
@@ -36,13 +42,14 @@ def parse_args():
 
 def main(
         filepaths: List[str],
-        treepath: str) -> None:
+        treepath: str,
+        id_col_name: str) -> None:
 
     ROOT.EnableImplicitMT()
 
     _, chain = get_tchain(filepaths, treepath)
     rdf = ROOT.RDataFrame(chain)
-    id_col = rdf.AsNumpy(['id'])['id']
+    id_col = rdf.AsNumpy([id_col_name])[id_col_name]
     n_entries = rdf.Count().GetValue()
     n_unique_ids = len(np.unique(id_col))
     logger.info(f'Number of entries: {n_entries}')
