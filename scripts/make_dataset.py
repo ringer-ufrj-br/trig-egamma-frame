@@ -180,6 +180,9 @@ def main(filepaths: List[str], treepath: str, output_dir: str,
                         f'{field_name}[{i}]'
                     )
                     col_names.append(new_field_name)
+            col_names = list(filter(
+                lambda x: x not in open_vectors, col_names
+            ))
 
         if new_filename:
             export_filename = f'{file_num:06d}.root'
