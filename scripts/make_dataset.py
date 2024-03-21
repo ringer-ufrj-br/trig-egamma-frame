@@ -2,10 +2,10 @@ import os
 import json
 import logging
 import logging.config
-from typing import Iterator, List, Tuple
+from typing import Iterator, List, Tuple, Dict
 from argparse import ArgumentParser
 from egamma.dataset import dump_dataset_rdf
-from egamma.utils import dump_script_report, open_directories
+from egamma.utils import check_list_sizes, dump_script_report, open_directories
 from egamma.logging import set_loggers
 from tqdm import tqdm
 import ROOT
@@ -36,6 +36,22 @@ def parse_args():
         default='./',
         dest='output_dir',
         help='Directory to save the exported dataset'
+    )
+    parser.add_argument(
+        '--targets',
+        required=False,
+        nargs='+',
+        default=[],
+        help='The target variable to be used in the'
+        ' dataset according to filepaths'
+    )
+    parser.add_argument(
+        '--target-labels',
+        required=False,
+        nargs='+',
+        dest='target_labels',
+        help='The target labels to be used in the dataset'
+        ' The labels are dumped in a .json file in the dataset dir'
     )
     parser.add_argument(
         '--open-vectors',
@@ -122,6 +138,23 @@ def parse_args():
 
     if not os.path.exists(args['output_dir']):
         os.makedirs(args['output_dir'])
+    if args['targets']:
+        check_list_sizes(args, ['targets', 'filepaths'])
+        if args['target_labels']:
+            if len(args['target_labels']) % 2 > 0:
+                raise ValueError(
+                    'The target_labels must have an even number of elements'
+                    ' to be converted to a dictionary'
+                )
+            args['target_labels'] = dict(zip(
+                args['target_labels'][::2], args['target_labels'][1::2]
+            ))
+        else:
+            targets = np.unique(args['targets'])
+            args['target_labels'] = dict(zip(targets, targets))
+    else:
+        args['targets'] = [None for _ in args['filepaths']]
+        args['target_labels'] = dict()
 
     args_filepath = os.path.join(args['output_dir'], 'dataset_gen_args.json')
     with open(args_filepath, 'w') as f:
@@ -144,22 +177,25 @@ def main(filepaths: List[str], treepath: str, output_dir: str,
          add_id: bool, id_col_name: str, filters: List[str],
          definition_names: List[str], definition_ops: List[str],
          no_export_definitions: bool, new_filename: bool,
-         mt: bool, dev: bool, table_name: str, id_offset: int = 0):
+         mt: bool, dev: bool, table_name: str, id_offset: int,
+         targets: List[str], target_labels: Dict[str, str]):
 
     if mt:
         ROOT.EnableImplicitMT()
 
-    files = np.sort(list(open_directories(filepaths, 'root')))
+    files_target = list(open_filepaths_with_targets(filepaths, targets))
     iterator = tqdm(
-        enumerate(files),
+        enumerate(files_target),
         desc='Processing files', unit='files',
-        total=1 if dev else len(files)
+        total=1 if dev else len(files_target)
     )
-    for file_num, filepath in iterator:
+    for file_num, (filepath, target) in iterator:
         if dev and file_num > 0:
             break
 
         rdf = ROOT.RDataFrame(treepath, filepath)
+        if target:
+            rdf = rdf.Define('target', str(target))
         # the rdf method returns a cppyy object with uncompatible
         # python types, so we convert it to a list of strings
         col_names = [str(name) for name in rdf.GetColumnNames()]
@@ -206,7 +242,14 @@ def main(filepaths: List[str], treepath: str, output_dir: str,
         )
         del rdf
     filepath = os.path.join(output_dir, 'dataset_gen_report.txt')
-    dump_script_report(files, filepath, id_offset)
+    dump_script_report(
+        (file for file, _ in files_target),
+        filepath,
+        id_offset
+    )
+    if target_labels:
+        with open(os.path.join(output_dir, 'target_labels.json'), 'w') as f:
+            json.dump(target_labels, f, indent=4)
 
 
 if __name__ == "__main__":
