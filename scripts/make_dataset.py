@@ -5,7 +5,7 @@ import logging.config
 from typing import Iterator, List, Tuple
 from argparse import ArgumentParser
 from egamma.dataset import dump_dataset_rdf
-from egamma.utils import open_directories
+from egamma.utils import dump_script_report, open_directories
 from egamma.logging import set_loggers
 from tqdm import tqdm
 import ROOT
@@ -203,6 +203,7 @@ def main(filepaths: List[str], treepath: str, output_dir: str,
             col_names
         )
         del rdf
+    dump_script_report(files, output_dir, 'dataset_gen_report.txt', id_offset)
 
 
 if __name__ == "__main__":
