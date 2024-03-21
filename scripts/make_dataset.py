@@ -61,6 +61,12 @@ def parse_args():
         'The id is incremented for each file processed in alphabetical order'
     )
     parser.add_argument(
+        '--id-col-name',
+        default='id',
+        dest='id_col_name',
+        help='Name of the id column to be added to the dataset'
+    )
+    parser.add_argument(
         '--id-offset',
         required=False,
         type=int,
@@ -135,7 +141,7 @@ def open_filepaths_with_targets(
 
 def main(filepaths: List[str], treepath: str, output_dir: str,
          open_vectors: List[str], size_vectors: List[int],
-         add_id: bool, filters: List[str],
+         add_id: bool, id_col_name: str, filters: List[str],
          definition_names: List[str], definition_ops: List[str],
          no_export_definitions: bool, new_filename: bool,
          mt: bool, dev: bool, table_name: str, id_offset: int = 0):
@@ -167,7 +173,7 @@ def main(filepaths: List[str], treepath: str, output_dir: str,
             rdf = rdf.Filter(filter_str)
 
         if add_id:
-            rdf = rdf.Define('id', f'rdfentry_ + {id_offset}')
+            rdf = rdf.Define(id_col_name, f'rdfentry_ + {id_offset}')
             id_offset += rdf.Count().GetValue()
             col_names.append('id')
 
