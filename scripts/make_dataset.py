@@ -184,6 +184,16 @@ def main(filepaths: List[str], treepath: str, output_dir: str,
         ROOT.EnableImplicitMT()
 
     files_target = list(open_filepaths_with_targets(filepaths, targets))
+
+    # Check for file duplicates
+    files = [file for file, _ in files_target]
+    if not new_filename and (len(np.unique(files)) != len(files)):
+        raise RuntimeError(
+            "There are duplicate filenames. "
+            "Cannot build dataset without renaming the files"
+        )
+    del files
+
     iterator = tqdm(
         enumerate(files_target),
         desc='Processing files', unit='files',
