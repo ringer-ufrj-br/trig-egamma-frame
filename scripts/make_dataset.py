@@ -153,14 +153,16 @@ def main(filepaths: List[str], treepath: str, output_dir: str,
     iterator = tqdm(
         enumerate(files),
         desc='Processing files', unit='files',
-        total=len(files)
+        total=1 if dev else len(files)
     )
     for file_num, filepath in iterator:
         if dev and file_num > 0:
             break
 
-        rdf = ROOT.RDataFrame(filepath, treepath)
-        col_names = list(rdf.GetColumnNames())
+        rdf = ROOT.RDataFrame(treepath, filepath)
+        # the rdf method returns a cppyy object with uncompatible
+        # python types, so we convert it to a list of strings
+        col_names = [str(name) for name in rdf.GetColumnNames()]
 
         if definition_names:
             for name, op in zip(definition_names, definition_ops):
@@ -175,7 +177,7 @@ def main(filepaths: List[str], treepath: str, output_dir: str,
         if add_id:
             rdf = rdf.Define(id_col_name, f'rdfentry_ + {id_offset}')
             id_offset += rdf.Count().GetValue()
-            col_names.append('id')
+            col_names.append(id_col_name)
 
         if open_vectors and size_vectors:
             for field_name, size in zip(open_vectors, size_vectors):
@@ -203,7 +205,8 @@ def main(filepaths: List[str], treepath: str, output_dir: str,
             col_names
         )
         del rdf
-    dump_script_report(files, output_dir, 'dataset_gen_report.txt', id_offset)
+    filepath = os.path.join(output_dir, 'dataset_gen_report.txt')
+    dump_script_report(files, filepath, id_offset)
 
 
 if __name__ == "__main__":

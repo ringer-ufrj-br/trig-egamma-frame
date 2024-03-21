@@ -24,7 +24,7 @@ they can be joined.
 
 import os
 import ROOT
-from typing import List
+from typing import Iterable
 
 
 def dump_dataset_rdf(
@@ -32,7 +32,7 @@ def dump_dataset_rdf(
         rdf: ROOT.RDataFrame,
         table_name: str,
         filename: str,
-        column_list: List[str] = None):
+        column_list: Iterable[str] = None):
     """
     Dumps a RDataFrame to a ROOT file in a dataset_dir
     following the dataset file hierarchy rules.
@@ -47,8 +47,8 @@ def dump_dataset_rdf(
         Name of the table the dataframe represents
     filename : str
         Name of the file to save the rdf
-    column_list : List[str], optional
-        List of columns to save, by default saves all columns
+    column_list : Iterable[str], optional
+        Iterable of columns to save, by default saves all columns
     """
     options = ROOT.RDF.RSnapshotOptions()
     options.fCompressionLevel = 9
@@ -61,6 +61,8 @@ def dump_dataset_rdf(
         output_dir, filename)
     if not column_list:
         column_list = rdf.GetColumnNames()
+    else:
+        column_list = list(column_list)
     rdf.Snapshot(
         "tree",
         df_path,
