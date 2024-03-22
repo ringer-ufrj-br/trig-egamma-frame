@@ -4,9 +4,9 @@ import logging
 import logging.config
 from typing import List
 from argparse import ArgumentParser
-from egamma.root import get_tchain
-from egamma.utils import open_directories
-from egamma.logging import set_loggers
+from egamma.utils.root import get_tchain
+from egamma.utils.misc import open_directories
+from egamma.utils.logging import set_loggers
 from tqdm import tqdm
 import ROOT
 import numpy as np

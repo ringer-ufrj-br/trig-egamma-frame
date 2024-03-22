@@ -24,7 +24,9 @@ they can be joined.
 
 import os
 import ROOT
-from typing import Iterable
+from typing import Iterable, List
+
+from egamma.root import get_tchain
 
 
 def dump_dataset_rdf(
@@ -64,7 +66,7 @@ def dump_dataset_rdf(
     else:
         column_list = list(column_list)
     rdf.Snapshot(
-        "tree",
+        table_name,
         df_path,
         column_list,
         options)
@@ -87,3 +89,23 @@ def dataset_rdf_exists(dataset_dir: str, table_name: str) -> bool:
         True if the table exists, False otherwise
     """
     return os.path.exists(os.path.join(dataset_dir, table_name))
+
+
+def get_dataset_rdf(
+        dataset_dir: str,
+        table_names: List[str]) -> ROOT.RDataFrame:
+    base_table = table_names[0]
+    base_table_path = os.path.join(dataset_dir, base_table)
+    base_chain = get_tchain(base_table_path, base_table,
+                            title=base_table, sorted=True)
+    for extra_table in table_names[1:]:
+        if not dataset_rdf_exists(dataset_dir, extra_table):
+            raise ValueError(
+                f"Table {extra_table} does not exist in {dataset_dir}"
+            )
+        table_path = os.path.join(dataset_dir, extra_table)
+        extra_chain = get_tchain(table_path, extra_table,
+                                 title=extra_table, sorted=True)
+        base_chain.AddFriend(extra_chain)
+    rdf = ROOT.RDataFrame(base_chain)
+    return rdf

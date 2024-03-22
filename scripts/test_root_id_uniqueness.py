@@ -4,9 +4,9 @@ import logging
 import logging.config
 from typing import List
 from argparse import ArgumentParser
-from egamma.logging import set_loggers
+from egamma.utils.logging import set_loggers
 import ROOT
-from egamma.root import get_tchain
+from egamma.utils.root import get_tchain
 
 LOGGER_NAME = 'trig-egamma-frame-debug'
 

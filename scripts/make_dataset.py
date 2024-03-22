@@ -4,9 +4,13 @@ import logging
 import logging.config
 from typing import Iterator, List, Tuple, Dict
 from argparse import ArgumentParser
-from egamma.dataset import dump_dataset_rdf
-from egamma.utils import check_list_sizes, dump_script_report, open_directories
-from egamma.logging import set_loggers
+from egamma.utils.dataset import dump_dataset_rdf
+from egamma.utils.misc import (
+    check_list_sizes,
+    dump_script_report,
+    open_directories
+)
+from egamma.utils.logging import set_loggers
 from tqdm import tqdm
 import ROOT
 import numpy as np

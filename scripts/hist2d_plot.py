@@ -4,10 +4,10 @@ import json
 import logging
 import logging.config
 from argparse import ArgumentParser
-from egamma.histograms import hist2d
-from egamma.root import get_tchain
-from egamma.utils import dump_script_report
-from egamma.logging import set_loggers
+from egamma.utils.histograms import hist2d
+from egamma.utils.root import get_tchain
+from egamma.utils.misc import dump_script_report
+from egamma.utils.logging import set_loggers
 
 LOGGER_NAME = 'trig-egamma-frame-debug'
 

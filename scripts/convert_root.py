@@ -2,10 +2,10 @@ import os
 from typing import Iterable, List
 from argparse import ArgumentParser
 from joblib import Parallel, delayed
-from egamma.utils import check_list_sizes, open_directories
-from egamma.schema import Schema
-from egamma.logging import set_loggers
-from egamma.root import get_tchain
+from egamma.utils.misc import check_list_sizes, open_directories
+from egamma.utils.schema import Schema
+from egamma.utils.logging import set_loggers
+from egamma.utils.root import get_tchain
 from tqdm import tqdm
 import ROOT
 import logging
