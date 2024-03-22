@@ -1,3 +1,8 @@
+"""
+Converts a TTree in a group of root files to a desired file format.
+Supported formats can be seen with the --help flag.
+"""
+
 import os
 from typing import Iterable, List
 from argparse import ArgumentParser

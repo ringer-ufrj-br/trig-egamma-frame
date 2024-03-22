@@ -1,3 +1,28 @@
+"""
+This script is used to build a Machine Learning dataset from root files.
+It uses the ROOT RDataFrame to process the files and dump the dataset.
+The script receives the filepaths to the root files, the path to the tree
+object inside the root files, the output directory, the target variable
+to be used in the dataset, the filters to apply to the tree, the columns
+to define in the output files, the operations to apply to the defined columns,
+and the table name to be used in the dataset.
+
+Known Issues:
+Due to problems with C++ bindings in the ROOT RDataFrame, the rdf object
+is not properly deleted after the dump_dataset_rdf function is called.
+This causes a memory leak that can be seen in the memory usage of the
+machine running the script. This issue is not critical for the script
+execution, but it can be a problem for long running scripts.
+
+Raises
+------
+ValueError
+    If the target_labels list does not have an even number of elements
+RuntimeError
+    If there are duplicate filenames in the input files
+FileExistsError
+    If one of the output files already exists
+"""
 import os
 import json
 import logging
