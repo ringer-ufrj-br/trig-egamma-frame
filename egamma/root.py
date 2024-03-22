@@ -1,13 +1,15 @@
 from typing import Iterable, Tuple
 import ROOT
 from egamma.utils import open_directories
+import numpy as np
 
 
 def get_tchain(
         filepaths: Iterable[str],
         treepath: str,
-        dev: bool = False
-        ) -> Tuple[Iterable[str], ROOT.TChain]:
+        dev: bool = False,
+        sorted: bool = False,
+        title: str = 'tchain') -> Tuple[Iterable[str], ROOT.TChain]:
     """
     Receives an iterable of files and directories and returns a TChain with all
     the trees from the .root files contained in that Iterable
@@ -21,6 +23,10 @@ def get_tchain(
         Path for the tree inside the .root file
     dev : bool
         If true, loads only one file, for testing purposes only
+    sorted : bool
+        If true, the files are sorted before being added to the TChain
+    title: str
+        TChain title
 
     Returns
     -------
@@ -29,8 +35,15 @@ def get_tchain(
     ROOT.TChain
         The TChain contianing all the root files TTrees
     """
-    chain = ROOT.TChain(treepath)
-    for filepath in open_directories(filepaths, 'root'):
+    if isinstance(filepaths, str):
+        raise TypeError(
+            "filepaths should be an iterable of strings, not a string"
+        )
+    chain = ROOT.TChain(treepath, title)
+    files = open_directories(filepaths, 'root')
+    if sorted:
+        files = np.sort(list(files))
+    for filepath in files:
         chain.Add(filepath)
         if dev:
             single_file = filepath
@@ -38,4 +51,7 @@ def get_tchain(
     if dev:
         return [single_file], chain
     else:
-        return open_directories(filepaths, 'root'), chain
+        if sorted:
+            return files, chain
+        else:
+            return open_directories(filepaths, 'root'), chain
