@@ -239,7 +239,11 @@ def main(filepaths: List[str], treepath: str, output_dir: str,
             export_filename = f'{file_num:06d}.root'
         else:
             export_filename = os.path.basename(filepath)
-
+        if os.path.exists(export_filename):
+            raise FileExistsError(
+                f'The file {export_filename} already exists.'
+                ' Cannot overwrite files'
+            )
         dump_dataset_rdf(
             output_dir,
             rdf,
