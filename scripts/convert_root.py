@@ -44,7 +44,7 @@ def to_tfrecord(
         definition_names: List[str],
         definition_ops: List[str]):
 
-    from egamma.converters import npy_dict_to_tfrecord
+    from egamma.utils.converters import npy_dict_to_tfrecord
 
     _, tchain = get_tchain(filepaths, treepath)
     rdf = ROOT.RDataFrame(tchain)

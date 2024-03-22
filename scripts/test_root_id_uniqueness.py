@@ -33,7 +33,7 @@ def parse_args():
         '--id-col-name',
         default='id',
         dest='id_col_name',
-        help='Name of the id column' 
+        help='Name of the id column'
     )
 
     args = parser.parse_args().__dict__
