@@ -51,9 +51,19 @@ def main(
     rdf = ROOT.RDataFrame(chain)
     id_col = rdf.AsNumpy([id_col_name])[id_col_name]
     n_entries = rdf.Count().GetValue()
-    n_unique_ids = len(np.unique(id_col))
+    unique_ids = np.unique(id_col)
+    n_unique_ids = len(unique_ids)
     logger.info(f'Number of entries: {n_entries}')
     logger.info(f'Number of unique ids: {n_unique_ids}')
+    if n_entries == n_unique_ids:
+        logger.info('All ids are unique')
+    else:
+        raise ValueError('Some ids are repeated')
+    are_sequential = np.all(unique_ids[1:] - unique_ids[:-1] == 1)
+    if are_sequential:
+        logger.info('Ids are sequential')
+    else:
+        raise ValueError('Ids are not sequential')
 
 
 if __name__ == "__main__":
