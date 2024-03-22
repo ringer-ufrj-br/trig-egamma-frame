@@ -2,9 +2,10 @@ import os
 from typing import Iterable, List
 from argparse import ArgumentParser
 from joblib import Parallel, delayed
-from egamma.utils import open_directories
+from egamma.utils import check_list_sizes, open_directories
 from egamma.schema import Schema
 from egamma.logging import set_loggers
+from egamma.root import get_tchain
 from tqdm import tqdm
 import ROOT
 import logging
@@ -12,18 +13,48 @@ import logging
 set_loggers()
 LOGGER_NAME = 'trig-egamma-frame-debug'
 
+# For some reason, if you call preprocess_dataset inside other functions,
+# it will raise an error because the C++ object loses its reference.
+
+
+def preprocess_dataset(
+        filepaths: Iterable[str],
+        treepath: str,
+        filters: List[str],
+        definition_names: List[str],
+        definition_ops: List[str]):
+
+    _, tchain = get_tchain(filepaths, treepath)
+    rdf = ROOT.RDataFrame(tchain)
+    if definition_names and definition_ops:
+        for name, op in zip(definition_names, definition_ops):
+            rdf = rdf.Define(name, op)
+
+    if filters:
+        rdf = rdf.Filter(' && '.join(filters))
+    return rdf
+
 
 def to_tfrecord(
         filepaths: Iterable[str],
         treepath: str,
         output_path: str,
-        column_list: List[str] = None):
+        column_list: List[str],
+        filters: List[str],
+        definition_names: List[str],
+        definition_ops: List[str]):
 
-    from egamma.root import get_tchain
     from egamma.converters import npy_dict_to_tfrecord
 
-    tchain = get_tchain(filepaths, treepath)
+    _, tchain = get_tchain(filepaths, treepath)
     rdf = ROOT.RDataFrame(tchain)
+    if definition_names and definition_ops:
+        for name, op in zip(definition_names, definition_ops):
+            rdf = rdf.Define(name, op)
+
+    if filters:
+        rdf = rdf.Filter(' && '.join(filters))
+
     if column_list:
         numpy_dict = rdf.AsNumpy(column_list)
     else:
@@ -38,13 +69,22 @@ def to_parquet(
         filepaths: Iterable[str],
         treepath: str,
         output_path: str,
-        column_list: List[str] = None):
+        column_list: List[str],
+        filters: List[str],
+        definition_names: List[str],
+        definition_ops: List[str]):
 
     import pandas as pd
-    from egamma.root import get_tchain
 
-    tchain = get_tchain(filepaths, treepath)
+    _, tchain = get_tchain(filepaths, treepath)
     rdf = ROOT.RDataFrame(tchain)
+    if definition_names and definition_ops:
+        for name, op in zip(definition_names, definition_ops):
+            rdf = rdf.Define(name, op)
+
+    if filters:
+        rdf = rdf.Filter(' && '.join(filters))
+
     if column_list:
         numpy_dict = rdf.AsNumpy(column_list)
     else:
@@ -57,13 +97,21 @@ def to_h5(
         filepaths: Iterable[str],
         treepath: str,
         output_path: str,
-        column_list: List[str] = None):
+        column_list: List[str],
+        filters: List[str],
+        definition_names: List[str],
+        definition_ops: List[str]):
 
     import pandas as pd
-    from egamma.root import get_tchain
 
-    tchain = get_tchain(filepaths, treepath)
+    _, tchain = get_tchain(filepaths, treepath)
     rdf = ROOT.RDataFrame(tchain)
+    if definition_names and definition_ops:
+        for name, op in zip(definition_names, definition_ops):
+            rdf = rdf.Define(name, op)
+
+    if filters:
+        rdf = rdf.Filter(' && '.join(filters))
     if column_list:
         numpy_dict = rdf.AsNumpy(column_list)
     else:
@@ -134,10 +182,33 @@ def parse_args():
         'Meging the data requires to load all the data into memory. '
         'This could be problematic for low memory machines.'
     )
+    parser.add_argument(
+        '--filters', required=False, dest='filters',
+        nargs='+',
+        help='Filters to apply before converting the file.'
+        ' Useful when needing to convert just a subset of the data'
+    )
+    parser.add_argument(
+        '--definition-names', required=False, nargs='+',
+        dest='definition_names', default=[],
+        help='Column names to define in the output files'
+    )
+    parser.add_argument(
+        '--definition-ops', required=False, nargs='+',
+        dest='definition_ops', default=[],
+        help='Column defintiion operations to apply'
+        ' according to definition-names'
+    )
 
     args = parser.parse_args().__dict__
     logger = logging.getLogger(LOGGER_NAME)
     logger.info(args)
+
+    check_list_sizes(args, ['definition_names', 'definition_ops'])
+
+    if not os.path.exists(args['output_dir']):
+        os.makedirs(args['output_dir'])
+
     return args
 
 
@@ -152,8 +223,12 @@ def distributed_convert(
         treepath: str,
         output_dir: str,
         output_ext: str,
-        column_list: List[str]
+        column_list: List[str],
+        filters: List[str],
+        definition_names: List[str],
+        definition_ops: List[str]
         ):
+
     if args['n_jobs'] <= 0:
         pool = Parallel(backend='multiprocessing')
     else:
@@ -167,7 +242,10 @@ def distributed_convert(
         [filepath],
         treepath,
         get_output_path(filepath, output_dir, output_ext),
-        column_list)
+        column_list,
+        filters,
+        definition_names,
+        definition_ops)
         for filepath in tqdm(all_directories)
     )
 
@@ -182,12 +260,13 @@ if __name__ == "__main__":
         args['filepaths'],
         'root',
         True))[0]
-    rdf = ROOT.RDataFrame(args['treepath'], sample_filepath[0])
+    rdf = ROOT.RDataFrame(args['treepath'], sample_filepath)
     if args['column_list'] == 'all':
         args['column_list'] = rdf.GetColumnNames()
     schema = Schema.from_numpy_dict(rdf.AsNumpy())
     schema.to_json(
-        os.path.join(args['output_dir'], 'schema.json')
+        os.path.join(args['output_dir'], 'schema.json'),
+        exist_ok=True
     )
     logger = logging.getLogger(LOGGER_NAME)
     logger.info('Starting conversion')
@@ -199,13 +278,21 @@ if __name__ == "__main__":
             get_output_path(
                 'converted.root',
                 args['output_dir'],
-                args['output_ext'])
+                args['output_ext']),
+            args['column_list'],
+            args['filters'],
+            args['definition_names'],
+            args['definition_ops']
         )
     else:
         distributed_convert(
             args['filepaths'],
             args['treepath'],
             args['output_dir'],
-            args['output_ext']
+            args['output_ext'],
+            args['column_list'],
+            args['filters'],
+            args['definition_names'],
+            args['definition_ops']
         )
     logger.info('Finished all files')
