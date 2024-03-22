@@ -1,6 +1,6 @@
 from typing import Iterable, Tuple
 import ROOT
-from egamma.utils import open_directories
+from egamma.utils.misc import open_directories
 import numpy as np
 
 

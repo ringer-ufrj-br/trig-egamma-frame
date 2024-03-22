@@ -1,5 +1,5 @@
 from tqdm import tqdm
-from ringer.schema import Schema
+from egamma.utils.schema import Schema
 from collections import OrderedDict
 
 

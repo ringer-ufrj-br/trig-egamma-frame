@@ -26,7 +26,7 @@ import os
 import ROOT
 from typing import Iterable, List
 
-from egamma.root import get_tchain
+from egamma.utils.root import get_tchain
 
 
 def dump_dataset_rdf(
