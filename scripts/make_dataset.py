@@ -124,10 +124,6 @@ def parse_args():
         help='Name of the dataset table to be exported'
     )
     parser.add_argument(
-        '--mt', action='store_true',
-        help='If passed uses ROOT multithreading'
-    )
-    parser.add_argument(
         '--dev', action='store_true',
         help='If true parses only the first file found for testing'
     )
@@ -177,11 +173,8 @@ def main(filepaths: List[str], treepath: str, output_dir: str,
          add_id: bool, id_col_name: str, filters: List[str],
          definition_names: List[str], definition_ops: List[str],
          no_export_definitions: bool, new_filename: bool,
-         mt: bool, dev: bool, table_name: str, id_offset: int,
+         dev: bool, table_name: str, id_offset: int,
          targets: List[str], target_labels: Dict[str, str]):
-
-    if mt:
-        ROOT.EnableImplicitMT()
 
     files_target = list(open_filepaths_with_targets(filepaths, targets))
 

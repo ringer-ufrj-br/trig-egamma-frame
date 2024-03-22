@@ -49,6 +49,12 @@ def parse_args():
         dest='with_id',
         help='If passed, the id column is added to the dataset'
     )
+    parser.add_argument(
+        '--tree-name',
+        default='tree',
+        dest='tree_name',
+        help='The name of the tree to be created'
+    )
 
     args = parser.parse_args().__dict__
     logger = logging.getLogger(LOGGER_NAME)
@@ -69,9 +75,8 @@ def main(
         column_list: List[str],
         n_entries: int,
         n_files: int,
-        with_id: bool) -> None:
-
-    ROOT.EnableImplicitMT()
+        with_id: bool,
+        tree_name: str) -> None:
 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -91,7 +96,7 @@ def main(
         options = ROOT.RDF.RSnapshotOptions()
         options.fCompressionLevel = 9
         rdf.Snapshot(
-            'tree',
+            tree_name,
             output_path,
             rdf_columns,
             options
