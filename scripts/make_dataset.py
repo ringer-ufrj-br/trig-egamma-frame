@@ -39,6 +39,7 @@ from egamma.utils.logging import set_loggers
 from tqdm import tqdm
 import ROOT
 import numpy as np
+import pandas as pd
 
 LOGGER_NAME = 'trigger-egamma-frame-debug'
 
@@ -205,25 +206,34 @@ def main(filepaths: List[str], treepath: str, output_dir: str,
          dev: bool, table_name: str, id_offset: int,
          targets: List[str], target_labels: Dict[str, str]):
 
-    files_target = list(open_filepaths_with_targets(filepaths, targets))
-
     # Check for file duplicates
-    files = [file for file, _ in files_target]
-    if not new_filename and (len(np.unique(files)) != len(files)):
-        raise RuntimeError(
-            "There are duplicate filenames. "
-            "Cannot build dataset without renaming the files"
-        )
-    del files
+    files_target = {'filpaths': [], 'targets': []}
+    for filepath, target in open_filepaths_with_targets(filepaths, targets):
+        files_target['filepaths'].append(filepath)
+        files_target['targets'].append(target)
+
+    if not new_filename:
+        n_unique = files_target['filepaths'].nunique()
+        n = len(files_target['filepaths'])
+        if (n_unique != n):
+            raise RuntimeError(
+                "There are duplicate filenames. "
+                "Cannot build dataset without renaming the files"
+            )
+    files_target = pd.DataFrame(files_target) \
+        .sort_values('filepaths', ignore_index=True)
 
     iterator = tqdm(
-        enumerate(files_target),
+        files_target.iterrows(),
         desc='Processing files', unit='files',
         total=1 if dev else len(files_target)
     )
-    for file_num, (filepath, target) in iterator:
+    for file_num, row in iterator:
         if dev and file_num > 0:
             break
+
+        filepath = row['filepaths']
+        target = row['targets']
 
         rdf = ROOT.RDataFrame(treepath, filepath)
         if target:
