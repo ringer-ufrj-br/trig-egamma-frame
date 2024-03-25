@@ -4,7 +4,7 @@ Supported formats can be seen with the --help flag.
 """
 
 import os
-from typing import Iterable, List
+from typing import Iterable, List, Union
 from argparse import ArgumentParser
 from joblib import Parallel, delayed
 from egamma.utils.misc import check_list_sizes, open_directories
@@ -27,12 +27,12 @@ def preprocess_dataset(
         treepath: str,
         filters: List[str],
         definition_names: List[str],
-        definition_ops: List[str]):
+        definition_exprs: List[str]):
 
     _, tchain = get_tchain(filepaths, treepath)
     rdf = ROOT.RDataFrame(tchain)
-    if definition_names and definition_ops:
-        for name, op in zip(definition_names, definition_ops):
+    if definition_names and definition_exprs:
+        for name, op in zip(definition_names, definition_exprs):
             rdf = rdf.Define(name, op)
 
     if filters:
@@ -47,14 +47,14 @@ def to_tfrecord(
         column_list: List[str],
         filters: List[str],
         definition_names: List[str],
-        definition_ops: List[str]):
+        definition_exprs: List[str]):
 
     from egamma.utils.converters import npy_dict_to_tfrecord
 
     _, tchain = get_tchain(filepaths, treepath)
     rdf = ROOT.RDataFrame(tchain)
-    if definition_names and definition_ops:
-        for name, op in zip(definition_names, definition_ops):
+    if definition_names and definition_exprs:
+        for name, op in zip(definition_names, definition_exprs):
             rdf = rdf.Define(name, op)
 
     if filters:
@@ -77,14 +77,14 @@ def to_parquet(
         column_list: List[str],
         filters: List[str],
         definition_names: List[str],
-        definition_ops: List[str]):
+        definition_exprs: List[str]):
 
     import pandas as pd
 
     _, tchain = get_tchain(filepaths, treepath)
     rdf = ROOT.RDataFrame(tchain)
-    if definition_names and definition_ops:
-        for name, op in zip(definition_names, definition_ops):
+    if definition_names and definition_exprs:
+        for name, op in zip(definition_names, definition_exprs):
             rdf = rdf.Define(name, op)
 
     if filters:
@@ -105,14 +105,14 @@ def to_h5(
         column_list: List[str],
         filters: List[str],
         definition_names: List[str],
-        definition_ops: List[str]):
+        definition_exprs: List[str]):
 
     import pandas as pd
 
     _, tchain = get_tchain(filepaths, treepath)
     rdf = ROOT.RDataFrame(tchain)
-    if definition_names and definition_ops:
-        for name, op in zip(definition_names, definition_ops):
+    if definition_names and definition_exprs:
+        for name, op in zip(definition_names, definition_exprs):
             rdf = rdf.Define(name, op)
 
     if filters:
@@ -152,7 +152,7 @@ def parse_args():
     )
     parser.add_argument(
         '--output-dir',
-        default='./',
+        required=True,
         dest='output_dir',
         help='Directory to save the resulting file'
     )
@@ -162,6 +162,13 @@ def parse_args():
         dest='output_ext',
         choices=list(function_dict.keys()),
         help='Extension of the output file'
+    )
+    parser.add_argument(
+        '--output-name',
+        default=None,
+        dest='output_name',
+        help='The name of the output file'
+        'If merge is not passed adds the file number to the end.'
     )
     parser.add_argument(
         '--column-list',
@@ -199,8 +206,8 @@ def parse_args():
         help='Column names to define in the output files'
     )
     parser.add_argument(
-        '--definition-ops', required=False, nargs='+',
-        dest='definition_ops', default=[],
+        '--definition-exprs', required=False, nargs='+',
+        dest='definition_exprs', default=[],
         help='Column defintiion operations to apply'
         ' according to definition-names'
     )
@@ -209,7 +216,7 @@ def parse_args():
     logger = logging.getLogger(LOGGER_NAME)
     logger.info(args)
 
-    check_list_sizes(args, ['definition_names', 'definition_ops'])
+    check_list_sizes(args, ['definition_names', 'definition_exprs'])
 
     if not os.path.exists(args['output_dir']):
         os.makedirs(args['output_dir'])
@@ -217,10 +224,14 @@ def parse_args():
     return args
 
 
-def get_output_path(filepath: str, output_dir: str, output_ext: str):
-    filename = os.path.basename(filepath)
-    filename = '.'.join(filename.split('.')[:-1])
-    return os.path.join(output_dir, f'{filename}.{output_ext}')
+def get_output_path(
+        output_name: Union[str, None],
+        output_dir: str,
+        output_ext: str
+        ):
+    if not output_name.endswith(output_ext):
+        output_name = f'{output_name}.{output_ext}'
+    return os.path.join(output_dir, output_name)
 
 
 def distributed_convert(
@@ -228,10 +239,11 @@ def distributed_convert(
         treepath: str,
         output_dir: str,
         output_ext: str,
+        output_name: str,
         column_list: List[str],
         filters: List[str],
         definition_names: List[str],
-        definition_ops: List[str]
+        definition_exprs: List[str]
         ):
 
     if args['n_jobs'] <= 0:
@@ -246,12 +258,18 @@ def distributed_convert(
     pool(delayed(func)(
         [filepath],
         treepath,
-        get_output_path(filepath, output_dir, output_ext),
+        get_output_path(
+            (os.path.basename(filepath) if
+                output_name is None else
+                f'{output_name}_{i:06d}.{output_ext}'),
+            output_dir,
+            output_ext
+        ),
         column_list,
         filters,
         definition_names,
-        definition_ops)
-        for filepath in tqdm(all_directories)
+        definition_exprs)
+        for i, filepath in tqdm(enumerate(all_directories))
     )
 
 
@@ -281,13 +299,14 @@ if __name__ == "__main__":
             args['filepaths'],
             args['treepath'],
             get_output_path(
-                'converted.root',
+                (os.path.basename(args['output_name']) if
+                    args['output_name'] is None else args['output_name']),
                 args['output_dir'],
                 args['output_ext']),
             args['column_list'],
             args['filters'],
             args['definition_names'],
-            args['definition_ops']
+            args['definition_exprs']
         )
     else:
         distributed_convert(
@@ -298,6 +317,6 @@ if __name__ == "__main__":
             args['column_list'],
             args['filters'],
             args['definition_names'],
-            args['definition_ops']
+            args['definition_exprs']
         )
     logger.info('Finished all files')
