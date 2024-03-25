@@ -50,6 +50,12 @@ def parse_args():
         help='If passed, the id column is added to the dataset'
     )
     parser.add_argument(
+        '--id-col-name',
+        default='id',
+        dest='id_col_name',
+        help='The name of the id column'
+    )
+    parser.add_argument(
         '--tree-name',
         default='tree',
         dest='tree_name',
@@ -76,22 +82,23 @@ def main(
         n_entries: int,
         n_files: int,
         with_id: bool,
-        tree_name: str) -> None:
+        tree_name: str,
+        id_col_name: str) -> None:
 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     iterator = tqdm(
         range(n_files),
         desc='Creating fake ntuples',
-        unit='file'
+        unit='files'
     )
     for i in iterator:
         output_path = os.path.join(output_dir, f'{i:06d}.root')
         rdf = ROOT.RDataFrame(n_entries)
         if with_id:
-            rdf = rdf.Define('id', f'rdfentry_ + {i*n_entries}')
+            rdf = rdf.Define(id_col_name, f'rdfentry_ + {i*n_entries}')
         for col in column_list:
-            rdf = rdf.Define(col, "gRandom->Rndm()")
+            rdf = rdf.Define(col, "gRandom->Gaus(0, 1)")
         rdf_columns = rdf.GetColumnNames()
         options = ROOT.RDF.RSnapshotOptions()
         options.fCompressionLevel = 9
