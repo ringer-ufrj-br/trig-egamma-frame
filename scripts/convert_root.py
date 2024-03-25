@@ -4,10 +4,10 @@ Supported formats can be seen with the --help flag.
 """
 
 import os
-from typing import Iterable, List, Union
+from typing import Iterable, List, Union, Dict
 from argparse import ArgumentParser
 from joblib import Parallel, delayed
-from egamma.utils.misc import check_list_sizes, open_directories
+from egamma.utils.misc import open_directories
 from egamma.utils.schema import Schema
 from egamma.utils.logging import set_loggers
 from egamma.utils.root import get_tchain
@@ -26,13 +26,12 @@ def preprocess_dataset(
         filepaths: Iterable[str],
         treepath: str,
         filters: List[str],
-        definition_names: List[str],
-        definition_exprs: List[str]):
+        definitions: Dict[str, str]):
 
     _, tchain = get_tchain(filepaths, treepath, sorted=True)
     rdf = ROOT.RDataFrame(tchain)
-    if definition_names and definition_exprs:
-        for name, op in zip(definition_names, definition_exprs):
+    if definitions:
+        for name, op in definitions.items():
             rdf = rdf.Define(name, op)
 
     if filters:
@@ -46,15 +45,14 @@ def to_tfrecord(
         output_path: str,
         column_list: List[str],
         filters: List[str],
-        definition_names: List[str],
-        definition_exprs: List[str]):
+        definitions: Dict[str, str]):
 
     from egamma.utils.converters import npy_dict_to_tfrecord
 
     _, tchain = get_tchain(filepaths, treepath, sorted=True)
     rdf = ROOT.RDataFrame(tchain)
-    if definition_names and definition_exprs:
-        for name, op in zip(definition_names, definition_exprs):
+    if definitions:
+        for name, op in definitions.items():
             rdf = rdf.Define(name, op)
 
     if filters:
@@ -76,15 +74,14 @@ def to_parquet(
         output_path: str,
         column_list: List[str],
         filters: List[str],
-        definition_names: List[str],
-        definition_exprs: List[str]):
+        definitions: Dict[str, str]):
 
     import pandas as pd
 
     _, tchain = get_tchain(filepaths, treepath, sorted=True)
     rdf = ROOT.RDataFrame(tchain)
-    if definition_names and definition_exprs:
-        for name, op in zip(definition_names, definition_exprs):
+    if definitions:
+        for name, op in definitions.items():
             rdf = rdf.Define(name, op)
 
     if filters:
@@ -104,15 +101,14 @@ def to_h5(
         output_path: str,
         column_list: List[str],
         filters: List[str],
-        definition_names: List[str],
-        definition_exprs: List[str]):
+        definitions: Dict[str, str]):
 
     import pandas as pd
 
     _, tchain = get_tchain(filepaths, treepath, sorted=True)
     rdf = ROOT.RDataFrame(tchain)
-    if definition_names and definition_exprs:
-        for name, op in zip(definition_names, definition_exprs):
+    if definitions:
+        for name, op in definitions.items():
             rdf = rdf.Define(name, op)
 
     if filters:
@@ -201,15 +197,12 @@ def parse_args():
         ' Useful when needing to convert just a subset of the data'
     )
     parser.add_argument(
-        '--definition-names', required=False, nargs='+',
-        dest='definition_names', default=[],
-        help='Column names to define in the output files'
-    )
-    parser.add_argument(
-        '--definition-exprs', required=False, nargs='+',
-        dest='definition_exprs', default=[],
-        help='Column defintiion operations to apply'
-        ' according to definition-names'
+        '--definitions',
+        required=False,
+        nargs='+',
+        default={},
+        help='Defines columns on the dataframe. '
+        'Should be on the form <definition_name> <definition_expr> ...'
     )
     parser.add_argument(
         '--dev', action='store_true',
@@ -220,7 +213,14 @@ def parse_args():
     logger = logging.getLogger(LOGGER_NAME)
     logger.info(args)
 
-    check_list_sizes(args, ['definition_names', 'definition_exprs'])
+    if len(args['definitions']) % 2 != 0:
+        raise ValueError(
+            'The definitions flag must have an even number of elements'
+            ' to be converted to a dictionary'
+        )
+    args['definitions'] = dict(zip(
+        args['definitions'][::2], args['definitions'][1::2]
+    ))
 
     if not os.path.exists(args['output_dir']):
         os.makedirs(args['output_dir'])
@@ -246,8 +246,7 @@ def distributed_convert(
         output_name: str,
         column_list: List[str],
         filters: List[str],
-        definition_names: List[str],
-        definition_exprs: List[str],
+        definitions: Dict[str, str],
         dev: bool
         ):
 
@@ -274,8 +273,7 @@ def distributed_convert(
         ),
         column_list,
         filters,
-        definition_names,
-        definition_exprs)
+        definitions)
         for i, filepath in tqdm(enumerate(all_directories))
     )
 
@@ -286,14 +284,19 @@ if __name__ == "__main__":
     if not os.path.exists(args['output_dir']):
         os.makedirs(args['output_dir'])
 
-    sample_filepath = list(open_directories(
+    sample_filepath = next(open_directories(
         args['filepaths'],
         'root',
-        True))[0]
+        True))
     rdf = ROOT.RDataFrame(args['treepath'], sample_filepath)
-    if args['column_list'] == 'all':
+    if args['column_list'] == 'all' or len(args['column_list']) == 0:
         args['column_list'] = rdf.GetColumnNames()
-    schema = Schema.from_numpy_dict(rdf.AsNumpy())
+    if args['definitions']:
+        for name, op in args['definitions'].items():
+            rdf = rdf.Define(name, op)
+    if args['filters']:
+        rdf = rdf.Filter(' && '.join(args['filters']))
+    schema = Schema.from_numpy_dict(rdf.AsNumpy(args['column_list']))
     schema.to_json(
         os.path.join(args['output_dir'], 'schema.json'),
         exist_ok=True
@@ -306,6 +309,12 @@ if __name__ == "__main__":
         else:
             filepaths = args['filepaths']
         convert_func = function_dict[args['output_ext']]
+        out_path = get_output_path(
+                (os.path.basename(args['output_name']) if
+                    args['output_name'] is None else args['output_name']),
+                args['output_dir'],
+                args['output_ext'])
+        logger.info(f"Dumping at {out_path}")
         convert_func(
             filepaths,
             args['treepath'],

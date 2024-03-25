@@ -126,15 +126,12 @@ def parse_args():
         help='Filters to apply to the exported tree'
     )
     parser.add_argument(
-        '--definition-names', required=False, nargs='+',
-        dest='definition_names', default=[],
-        help='Column names to define in the output files'
-    )
-    parser.add_argument(
-        '--definition-ops', required=False, nargs='+',
-        dest='definition_ops', default=[],
-        help='Column defintiion operations to apply'
-        ' according to definition-names'
+        '--definitions',
+        required=False,
+        nargs='+',
+        default={},
+        help='Defines columns on the dataframe. '
+        'Should be on the form <definition_name> <definition_expr> ...'
     )
     parser.add_argument(
         '--no-export-definitions',
@@ -182,6 +179,15 @@ def parse_args():
         args['targets'] = [None for _ in args['filepaths']]
         args['target_labels'] = dict()
 
+    if len(args['definitions']) % 2 != 0:
+        raise ValueError(
+            'The definitions flag must have an even number of elements'
+            ' to be converted to a dictionary'
+        )
+    args['definitions'] = dict(zip(
+        args['definitions'][::2], args['definitions'][1::2]
+    ))
+
     args_filepath = os.path.join(args['output_dir'], 'dataset_gen_args.json')
     with open(args_filepath, 'w') as f:
         json.dump(args, f, indent=4)
@@ -201,7 +207,7 @@ def open_filepaths_with_targets(
 def main(filepaths: List[str], treepath: str, output_dir: str,
          open_vectors: List[str], size_vectors: List[int],
          add_id: bool, id_col_name: str, filters: List[str],
-         definition_names: List[str], definition_ops: List[str],
+         definitions: Dict[str, str],
          no_export_definitions: bool, new_filename: bool,
          dev: bool, table_name: str, id_offset: int,
          targets: List[str], target_labels: Dict[str, str]):
@@ -243,11 +249,11 @@ def main(filepaths: List[str], treepath: str, output_dir: str,
         # python types, so we convert it to a list of strings
         col_names = [str(name) for name in rdf.GetColumnNames()]
 
-        if definition_names:
-            for name, op in zip(definition_names, definition_ops):
+        if definitions:
+            for name, op in definitions.items():
                 rdf = rdf.Define(name, op)
             if not no_export_definitions:
-                col_names += definition_names
+                col_names += list(definitions.keys())
 
         if filters:
             filter_str = ' && '.join(filters)
