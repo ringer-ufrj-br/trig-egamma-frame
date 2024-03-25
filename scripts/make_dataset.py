@@ -207,10 +207,13 @@ def main(filepaths: List[str], treepath: str, output_dir: str,
          targets: List[str], target_labels: Dict[str, str]):
 
     # Check for file duplicates
-    files_target = {'filpaths': [], 'targets': []}
+    files_target = {'filepaths': [], 'targets': []}
     for filepath, target in open_filepaths_with_targets(filepaths, targets):
         files_target['filepaths'].append(filepath)
         files_target['targets'].append(target)
+
+    files_target = pd.DataFrame(files_target) \
+        .sort_values('filepaths', ignore_index=True)
 
     if not new_filename:
         n_unique = files_target['filepaths'].nunique()
@@ -220,8 +223,6 @@ def main(filepaths: List[str], treepath: str, output_dir: str,
                 "There are duplicate filenames. "
                 "Cannot build dataset without renaming the files"
             )
-    files_target = pd.DataFrame(files_target) \
-        .sort_values('filepaths', ignore_index=True)
 
     iterator = tqdm(
         files_target.iterrows(),
@@ -289,7 +290,7 @@ def main(filepaths: List[str], treepath: str, output_dir: str,
         del rdf
     filepath = os.path.join(output_dir, 'dataset_gen_report.txt')
     dump_script_report(
-        (file for file, _ in files_target),
+        files_target['filepaths'],
         filepath,
         id_offset
     )
