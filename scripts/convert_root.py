@@ -29,7 +29,7 @@ def preprocess_dataset(
         definition_names: List[str],
         definition_exprs: List[str]):
 
-    _, tchain = get_tchain(filepaths, treepath)
+    _, tchain = get_tchain(filepaths, treepath, sorted=True)
     rdf = ROOT.RDataFrame(tchain)
     if definition_names and definition_exprs:
         for name, op in zip(definition_names, definition_exprs):
@@ -51,7 +51,7 @@ def to_tfrecord(
 
     from egamma.utils.converters import npy_dict_to_tfrecord
 
-    _, tchain = get_tchain(filepaths, treepath)
+    _, tchain = get_tchain(filepaths, treepath, sorted=True)
     rdf = ROOT.RDataFrame(tchain)
     if definition_names and definition_exprs:
         for name, op in zip(definition_names, definition_exprs):
@@ -81,7 +81,7 @@ def to_parquet(
 
     import pandas as pd
 
-    _, tchain = get_tchain(filepaths, treepath)
+    _, tchain = get_tchain(filepaths, treepath, sorted=True)
     rdf = ROOT.RDataFrame(tchain)
     if definition_names and definition_exprs:
         for name, op in zip(definition_names, definition_exprs):
@@ -109,7 +109,7 @@ def to_h5(
 
     import pandas as pd
 
-    _, tchain = get_tchain(filepaths, treepath)
+    _, tchain = get_tchain(filepaths, treepath, sorted=True)
     rdf = ROOT.RDataFrame(tchain)
     if definition_names and definition_exprs:
         for name, op in zip(definition_names, definition_exprs):
@@ -211,6 +211,10 @@ def parse_args():
         help='Column defintiion operations to apply'
         ' according to definition-names'
     )
+    parser.add_argument(
+        '--dev', action='store_true',
+        help='If true parses only the first file found for testing'
+    )
 
     args = parser.parse_args().__dict__
     logger = logging.getLogger(LOGGER_NAME)
@@ -243,7 +247,8 @@ def distributed_convert(
         column_list: List[str],
         filters: List[str],
         definition_names: List[str],
-        definition_exprs: List[str]
+        definition_exprs: List[str],
+        dev: bool
         ):
 
     if args['n_jobs'] <= 0:
@@ -255,6 +260,8 @@ def distributed_convert(
         filepaths,
         'root'
     )
+    if dev:
+        all_directories = [next(all_directories)]
     pool(delayed(func)(
         [filepath],
         treepath,
@@ -294,9 +301,13 @@ if __name__ == "__main__":
     logger = logging.getLogger(LOGGER_NAME)
     logger.info('Starting conversion')
     if args['merge']:
+        if args['dev']:
+            filepaths = [next(open_directories(args['filepaths'], 'root'))]
+        else:
+            filepaths = args['filepaths']
         convert_func = function_dict[args['output_ext']]
         convert_func(
-            args['filepaths'],
+            filepaths,
             args['treepath'],
             get_output_path(
                 (os.path.basename(args['output_name']) if
