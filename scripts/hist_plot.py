@@ -70,6 +70,14 @@ def parse_args():
         help='Filters to apply to the tree'
     )
     parser.add_argument(
+        '--definitions',
+        required=False,
+        nargs='+',
+        default={},
+        help='Defines columns on the dataframe. '
+        'Should be on the form <definition_name> <definition_expr> ...'
+    )
+    parser.add_argument(
         '--mt', action='store_true',
         help='If passed uses ROOT multithreading'
     )
@@ -79,6 +87,16 @@ def parse_args():
     )
 
     args = parser.parse_args().__dict__
+
+    if len(args['definitions']) % 2 != 0:
+        raise ValueError(
+            'The definitions flag must have an even number of elements'
+            ' to be converted to a dictionary'
+        )
+    args['definitions'] = dict(zip(
+        args['definitions'][::2], args['definitions'][1::2]
+    ))
+
     if not args.get('densities'):
         args['densities'] = [False for _ in range(len(args['var_names']))]
     logger = logging.getLogger(LOGGER_NAME)
@@ -129,6 +147,7 @@ def main(
         var_highs,
         densities,
         filters,
+        definitions,
         mt,
         dev) -> int:
     import os
@@ -142,11 +161,12 @@ def main(
     logger = logging.getLogger(LOGGER_NAME)
 
     files, chain = get_tchain(filepaths, treepath, dev)
-    # Hack for using eta
-    # eta_field_name = 'trig_L2_calo_eta'
-    # rdf = ROOT.RDataFrame(chain) \
-    #     .Define(f'abs_{eta_field_name}', f'abs({eta_field_name})')
     rdf = ROOT.RDataFrame(chain)
+
+    if definitions:
+        for name, expr in definitions.items():
+            rdf = rdf.Define(name, expr)
+
     if filters:
         filter_str = ' && '.join(filters)
         rdf = rdf.Filter(filter_str)
