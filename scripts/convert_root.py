@@ -325,8 +325,7 @@ if __name__ == "__main__":
                 args['output_ext']),
             args['column_list'],
             args['filters'],
-            args['definition_names'],
-            args['definition_exprs']
+            args['definitions']
         )
     else:
         distributed_convert(
@@ -336,7 +335,6 @@ if __name__ == "__main__":
             args['output_ext'],
             args['column_list'],
             args['filters'],
-            args['definition_names'],
-            args['definition_exprs']
+            args['definitions']
         )
     logger.info('Finished all files')
