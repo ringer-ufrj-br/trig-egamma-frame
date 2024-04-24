@@ -213,14 +213,15 @@ def parse_args():
     logger = logging.getLogger(LOGGER_NAME)
     logger.info(args)
 
-    if len(args['definitions']) % 2 != 0:
-        raise ValueError(
-            'The definitions flag must have an even number of elements'
-            ' to be converted to a dictionary'
-        )
-    args['definitions'] = dict(zip(
-        args['definitions'][::2], args['definitions'][1::2]
-    ))
+    if args['definitions']:
+        if len(args['definitions']) % 2 != 0:
+            raise ValueError(
+                'The definitions flag must have an even number of elements'
+                ' to be converted to a dictionary'
+            )
+        args['definitions'] = dict(zip(
+            args['definitions'][::2], args['definitions'][1::2]
+        ))
 
     if not os.path.exists(args['output_dir']):
         os.makedirs(args['output_dir'])
@@ -333,8 +334,10 @@ if __name__ == "__main__":
             args['treepath'],
             args['output_dir'],
             args['output_ext'],
+            args['output_name'],
             args['column_list'],
             args['filters'],
-            args['definitions']
+            args['definitions'],
+            args['dev']
         )
     logger.info('Finished all files')
