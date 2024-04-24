@@ -88,14 +88,15 @@ def parse_args():
 
     args = parser.parse_args().__dict__
 
-    if len(args['definitions']) % 2 != 0:
-        raise ValueError(
-            'The definitions flag must have an even number of elements'
-            ' to be converted to a dictionary'
-        )
-    args['definitions'] = dict(zip(
-        args['definitions'][::2], args['definitions'][1::2]
-    ))
+    if args['definitions']:  # Arg is not empty
+        if len(args['definitions']) % 2 != 0:
+            raise ValueError(
+                'The definitions arg must have an even number of elements'
+                ' to be converted to a dictionary'
+            )
+        args['definitions'] = dict(zip(
+            args['definitions'][::2], args['definitions'][1::2]
+        ))
 
     if not args.get('densities'):
         args['densities'] = [False for _ in range(len(args['var_names']))]

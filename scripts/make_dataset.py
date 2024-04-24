@@ -41,6 +41,7 @@ import ROOT
 import numpy as np
 import pandas as pd
 
+set_loggers()
 LOGGER_NAME = 'trigger-egamma-frame-debug'
 
 
@@ -306,6 +307,5 @@ def main(filepaths: List[str], treepath: str, output_dir: str,
 
 
 if __name__ == "__main__":
-    set_loggers()
     args = parse_args()
     main(**args)
