@@ -180,14 +180,15 @@ def parse_args():
         args['targets'] = [None for _ in args['filepaths']]
         args['target_labels'] = dict()
 
-    if len(args['definitions']) % 2 != 0:
-        raise ValueError(
-            'The definitions flag must have an even number of elements'
-            ' to be converted to a dictionary'
-        )
-    args['definitions'] = dict(zip(
-        args['definitions'][::2], args['definitions'][1::2]
-    ))
+    if args['defintions']:
+        if len(args['definitions']) % 2 != 0:
+            raise ValueError(
+                'The definitions flag must have an even number of elements'
+                ' to be converted to a dictionary'
+            )
+        args['definitions'] = dict(zip(
+            args['definitions'][::2], args['definitions'][1::2]
+        ))
 
     args_filepath = os.path.join(args['output_dir'], 'dataset_gen_args.json')
     with open(args_filepath, 'w') as f:
