@@ -91,7 +91,7 @@ def to_parquet(
         numpy_dict = rdf.AsNumpy(column_list)
     else:
         numpy_dict = rdf.AsNumpy()
-    pdf = pd.DataFrame.from_dict(numpy_dict)
+    pdf = pd.DataFrame.from_dict(numpy_dict).infer_objects()
     pdf.to_parquet(output_path)
 
 
@@ -117,7 +117,7 @@ def to_h5(
         numpy_dict = rdf.AsNumpy(column_list)
     else:
         numpy_dict = rdf.AsNumpy()
-    pdf = pd.DataFrame.from_dict(numpy_dict)
+    pdf = pd.DataFrame.from_dict(numpy_dict).infer_objects()
     pdf.to_hdf(output_path, key='df')
 
 
