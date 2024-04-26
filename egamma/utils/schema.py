@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 import json
 import os
+from ROOT import RDataFrame
 
 
 class Schema(UserDict):
@@ -217,3 +218,25 @@ class Schema(UserDict):
         with open(json_path, 'w') as file:
             json.dump(self.data, file, indent=4)
         return True
+
+
+def get_rdf_schema(rdf: RDataFrame) -> Dict[str, str]:
+    """
+    Returns the schema of a ROOT RDataFrame
+    as a dictionary.
+
+    Parameters
+    ----------
+    rdf : RDataFrame
+        The RDataFrame to get the schema from
+
+    Returns
+    -------
+    Dict[str, str]
+        The schema of the RDataFrame
+    """
+    schema = {}
+    columns = rdf.GetColumnNames()
+    for column in columns:
+        schema[column] = rdf.GetColumnType(column)
+    return schema
