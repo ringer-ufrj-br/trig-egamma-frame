@@ -59,10 +59,15 @@ def main(
         logger.info('All ids are unique')
     else:
         raise ValueError('Some ids are repeated')
-    are_sequential = np.all(unique_ids[1:] - unique_ids[:-1] == 1)
+    equality = unique_ids[1:] - unique_ids[:-1] == 1
+    are_sequential = np.all(equality)
     if are_sequential:
         logger.info('Ids are sequential')
     else:
+        logger.error('Ids are not sequential')
+        not_equal = np.logical_not(equality)
+        for left, right in zip(unique_ids[1:][not_equal], unique_ids[:-1][not_equal]):
+            logger.info(f'{(left, right)}\n')
         raise ValueError('Ids are not sequential')
 
 
