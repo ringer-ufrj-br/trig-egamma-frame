@@ -132,6 +132,11 @@ def parse_args():
         help='Name of the dataset table to be exported'
     )
     parser.add_argument(
+        '--allow-rewrite',
+        dest='allow_rewrite',
+        action='store_true'
+    )
+    parser.add_argument(
         '--dev', action='store_true',
         help='If true parses only the first file found for testing'
     )
@@ -163,7 +168,7 @@ def parse_args():
 def main(filepaths: List[str], treepath: str, output_dir: str,
          open_vectors: List[str], size_vectors: List[int],
          add_id: bool, id_col_name: str, filters: List[str],
-         definitions: Dict[str, str],
+         definitions: Dict[str, str], allow_rewrite: bool,
          no_export_definitions: bool, new_filename: bool,
          dev: bool, table_name: str, id_offset: int):
 
@@ -171,7 +176,7 @@ def main(filepaths: List[str], treepath: str, output_dir: str,
     filepaths = list(open_directories(filepaths, 'root'))
     filepaths = np.sort(filepaths)
 
-    if not new_filename:
+    if (not new_filename) and (not allow_rewrite):
         # Checks if there are duplicate filenames
         for filepath in filepaths:
             filename = os.path.basename(filepath)
