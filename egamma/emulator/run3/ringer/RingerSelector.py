@@ -163,8 +163,6 @@ class RingerSelector(Messenger):
 
 
   def get_model(self, et, eta):
-    print(et)
-    print(eta)
     for model in self.models:
         if model.etmin*GeV < et <= model.etmax*GeV:
             if model.etamin < abs(eta) <= model.etamax:

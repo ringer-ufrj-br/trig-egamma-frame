@@ -394,7 +394,7 @@ class ElectronDumper_v2( Algorithm ):
         buffer_dict["eta_bin"].append(np.int32(etaBinIdx))
         eventInfo: EDM = context.getHandler( "EventInfoContainer" )
         buffer_dict["avgmu"].append(eventInfo.avgmu())
-
+        
         self.__add_offline_decision(buffer_dict, context)
         self.__apply_decorators(buffer_dict, context)        
         self.__apply_chain_decorators(buffer_dict, context)

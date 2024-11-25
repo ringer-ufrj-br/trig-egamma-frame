@@ -12,6 +12,7 @@ class EventInfo_v2(EDM):
             'avgmu',
             #'LumiBlock',
             #'el_nPileupPrimaryVtx'
+            #'sample_id'
             ]
 
             
@@ -44,7 +45,13 @@ class EventInfo_v2(EDM):
         return self._event.avgmu
         #return -1
         
-
+    def sample_id(self):
+        """
+          Retrieve the avgmu information from Physval or SkimmedNtuple
+        """
+        return self._event.sample_id
+        #return -1
+        
     def RunNumber(self):
         """
           Retrieve the avgmu information from Physval or SkimmedNtuple
