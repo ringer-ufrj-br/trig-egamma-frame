@@ -5,7 +5,7 @@ from egamma.core import Messenger
 from egamma.core.macros  import *
 from egamma.core import declareProperty, StatusCode
 from egamma import GeV
-from ROOT import TEnv
+from ROOT import TEnv, kEnvUser
 from egamma.emulator.run3.ringer import Model, Threshold, half_rings_indexs
 from tensorflow import keras
 import tensorflow as tf
@@ -42,7 +42,8 @@ class RingerSelector(Messenger):
     basepath = '/'.join(self.ConfigPath.split('/')[:-1])
 
     # Load configuration file
-    env = TEnv( self.ConfigPath )
+    env = TEnv( '' )
+    env.ReadFile( self.ConfigPath, kEnvUser )
     version = env.GetValue("__version__", '')
     self.cuts = []
     self.models = []
