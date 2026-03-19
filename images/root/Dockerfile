@@ -15,9 +15,7 @@ graphviz-dev libavahi-compat-libdnssd-dev \
 libldap2-dev python3-dev python3-numpy libxml2-dev libkrb5-dev \
 libgsl0-dev qtwebengine5-dev nlohmann-json3-dev
 
-COPY trig-egamma-frame/images/root_no_gpu/requirements.txt .
 
 RUN pip install --upgrade pip
-RUN pip install --no-cache-dir -r requirements.txt
-
+RUN pip install virtualenv
 CMD ["/bin/bash"]

@@ -1,2 +1,0 @@
-export PATH=$PATH:$PWD/scripts
-export PYTHONPATH=$PYTHONPATH:$PWD
