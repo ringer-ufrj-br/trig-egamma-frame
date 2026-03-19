@@ -1,8 +1,8 @@
 
 __all__ = ['MonteCarlo_v2']
 
-from egamma.core import EDM
-from egamma.core import StatusCode
+from trig_egamma_frame.kernel import EDM
+from trig_egamma_frame import StatusCode
 
 
 class MonteCarlo_v2(EDM):
@@ -20,12 +20,15 @@ class MonteCarlo_v2(EDM):
                     ]
 
 
-  def __init__(self):
+  def __init__(self) -> None:
+    """
+    Initialize the MonteCarlo_v2 object
+    """
     EDM.__init__(self)
 
 
 
-  def initialize(self):
+  def initialize(self) -> StatusCode:
     """
     Initialize all branches
     """
@@ -33,47 +36,65 @@ class MonteCarlo_v2(EDM):
     return StatusCode.SUCCESS
 
 
-  def isTruthElectronFromZ(self):
+  def isTruthElectronFromZ(self) -> bool:
+    """
+    Retrieve whether true electron is from Z
+    """
     return self._event.mc_isTruthElectronFromZ
    
 
-  def isTruthElectronFromW(self):
+  def isTruthElectronFromW(self) -> bool:
+    """
+    Retrieve whether true electron is from W
+    """
     return self._event.mc_isTruthElectronFromW
     
 
-  def isTruthElectronFromJpsiPrompt(self):
+  def isTruthElectronFromJpsiPrompt(self) -> bool:
+    """
+    Retrieve whether true electron is from JpsiPrompt
+    """
     return self._event.mc_isTruthElectronFromJpsiPrompt
    
 
-  def isTruthElectronFromAny(self):
+  def isTruthElectronFromAny(self) -> bool:
+    """
+    Retrieve whether true electron is from Any
+    """
     return self._event.mc_isTruthElectronAny
     
 
-  def isTruthJetFromAny(self):
+  def isTruthJetFromAny(self) -> bool:
+    """
+    Retrieve whether true jet is from Any
+    """
     return self._event.mc_isTruthJetFromAny
    
 
-  def isTruthPhotonFromAny(self):
+  def isTruthPhotonFromAny(self) -> bool:
+    """
+    Retrieve whether true photon is from Any
+    """
     return self._event.mc_isTruthPhotonFromAny
    
   
-  def isMC(self):
+  def isMC(self) -> bool:
     """
-      Retrieve the Et information from Physval or SkimmedNtuple
+      Retrieve the isMC information
     """
     return bool(self._event.mc_hasMC)
    
 
-  def type(self):
+  def type(self) -> int:
     """
-      Retrieve the Et information from Physval or SkimmedNtuple
+      Retrieve the MC type information
     """
     return self._event.mc_type
     
 
-  def origin(self):
+  def origin(self) -> int:
     """
-      Retrieve the Et information from Physval or SkimmedNtuple
+      Retrieve the MC origin information
     """
     return self._event.mc_origin
     

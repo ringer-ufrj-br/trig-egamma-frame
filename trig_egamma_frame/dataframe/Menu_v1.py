@@ -2,12 +2,11 @@
 __all__ = ["Menu_v1"]
 
 
-from egamma import EDM
-from egamma import ToolSvc
-from egamma import StatusCode
-from egamma.core.macros import *
-from egamma.dataframe import AcceptType
-from egamma.emulator  import Accept
+from loguru import logger
+from trig_egamma_frame.kernel import EDM
+from trig_egamma_frame import StatusCode
+from trig_egamma_frame.dataframe import AcceptType
+from trig_egamma_frame.emulator import Accept
 
 
 #
@@ -18,16 +17,22 @@ class Menu_v1(EDM):
   #
   # Constructor
   #
-  def __init__(self):
+  def __init__(self) -> None:
+    """
+      Initialize the Menu_v1 object
+    """
     EDM.__init__(self)
 
 
   #
   # Initialize method
   #
-  def initialize(self):
+  def initialize(self) -> StatusCode:
+    """
+      Initialize the Menu_v1 object
+    """
     if not ToolSvc.retrieve("Emulator"):
-      MSG_FATAL( self, "The emulator tool is not in the ToolSvc" )
+      logger.fatal( "the emulator tool is not in the ToolSvc" )
 
     return StatusCode.SUCCESS
 
@@ -35,7 +40,10 @@ class Menu_v1(EDM):
   #
   # Execute method
   #
-  def execute(self):
+  def execute(self) -> StatusCode:
+    """
+      Execute method
+    """
     MSG_DEBUG( self, "Clear all decorations..." )
     self.clearDecorations()
     return StatusCode.SUCCESS
@@ -44,14 +52,20 @@ class Menu_v1(EDM):
   #
   # Finalize method
   #
-  def finalize(self):
+  def finalize(self) -> StatusCode:
+    """
+      Finalize method
+    """
     return StatusCode.SUCCESS
 
 
   #
   # Accept method
   #
-  def accept( self, key ):
+  def accept( self, key: str ) -> Any:
+    """
+      Accept method mapping
+    """
 
     # is in cache?
     if key in self.decorations():
@@ -81,6 +95,6 @@ class Menu_v1(EDM):
         self.setDecor( key, accept )
         return accept
       else:
-        MSG_FATAL( self, "It's is not possble to interpreter the key: %s.", key )
+        logger.fatal( f"it's is not possble to interpreter the key: {key}." )
 
 

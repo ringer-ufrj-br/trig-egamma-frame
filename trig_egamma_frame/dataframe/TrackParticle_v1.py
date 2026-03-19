@@ -1,13 +1,17 @@
 
-__all__ = ["TrackCaloMatchType","SummaryType","TrackParticle_v1"]
+__all__ = [
+  "TrackCaloMatchType",
+  "SummaryType",
+  "TrackParticle_v1"
+  ]
 
-
-from egamma.core import EDM
-from egamma.core import StatusCode, EnumStringification
+from enum import Enum
+from trig_egamma_frame.kernel import EDM
+from trig_egamma_frame import StatusCode
 import numpy as np
 
 
-class TrackCaloMatchType(EnumStringification):
+class TrackCaloMatchType(Enum):
 
   # brief difference between the cluster eta (presampler) and
   # the eta of the track extrapolated to the presampler
@@ -48,7 +52,7 @@ class TrackCaloMatchType(EnumStringification):
 # Enumerates the different types of information stored in Summary.
 # Please note that the values have specific types - i.e. some are float # whilst most are uint8_t.
 # When adding a new transient information type # please make sure to increase numberOfTrackSummaryTypes.*/
-class SummaryType(EnumStringification):
+class SummaryType(Enum):
 
   numberOfBLayerHits                            =  0 #  //!< these are the hits in the first pixel layer, i.e. b-layer [unit8_t].
   numberOfBLayerOutliers                        =  1 #  //!< number of blayer outliers [unit8_t].
@@ -149,7 +153,7 @@ class TrackParticle_v1(EDM):
     EDM.__init__(self)
 
 
-  def initialize(self):
+  def initialize(self) -> StatusCode:
     """
       Link all branches
     """
@@ -158,7 +162,7 @@ class TrackParticle_v1(EDM):
     return StatusCode.SUCCESS
 
 
-  def pt(self):
+  def pt(self) -> float:
     """
       Retrieve the Eta information from Physval or SkimmedNtuple
     """
@@ -168,7 +172,7 @@ class TrackParticle_v1(EDM):
       return self._event.el_trk_pt
    
 
-  def eta(self):
+  def eta(self) -> float:
     """
       Retrieve the Eta information from Physval or SkimmedNtuple
     """
@@ -179,7 +183,7 @@ class TrackParticle_v1(EDM):
     
 
 
-  def charge(self):
+  def charge(self) -> int:
     """
       Retrieve the charge information from Physval or SkimmedNtuple
     """
@@ -197,7 +201,7 @@ class TrackParticle_v1(EDM):
  
 
 
-  def d0significance(self):
+  def d0significance(self) -> float:
     if self._is_hlt:
       return self._event.trig_EF_el_trk_d0significance[self.getPos()]
     else:
@@ -205,42 +209,42 @@ class TrackParticle_v1(EDM):
     
 
 
-  def sigd0(self):
+  def sigd0(self) -> float:
     if self._is_hlt:
       return self._event.trig_EF_el_trk_sigd0[self.getPos()]
     else:
       return self._event.el_trk_sigd0
     
 
-  def eProbabilityHT(self):
+  def eProbabilityHT(self) -> float:
     if self._is_hlt:
       return self._event.trig_EF_el_trk_eProbabilityHT[self.getPos()]
     else:
       return self._event.el_trk_eProbabilityHT
    
 
-  def trans_TRT_PID(self):
+  def trans_TRT_PID(self) -> float:
     if self._is_hlt:
       return self._event.trig_EF_el_trk_transformed_eProbabilityHT[self.getPos()]
     else:
       return self._event.el_trk_transformed_eProbabilityHT
   
 
-  def DeltaPOverP(self):
+  def DeltaPOverP(self) -> float:
     if self._is_hlt:
       return self._event.trig_EF_el_trk_deltaPOverP[self.getPos()]
     else:
       return self._event.el_trk_deltaPOverP
     
 
-  def qOverP(self):
+  def qOverP(self) -> float:
     if self._is_hlt:
       return self._event.trig_EF_el_trk_qOverP[self.getPos()]
     else:
       return self._event.el_trk_qOverP
   
 
-  def summaryValue( self, summaryType ):
+  def summaryValue( self, summaryType: SummaryType ) -> int:
     """
       Helper method:
         Retrieve the summary track value from the ntuple
@@ -259,66 +263,64 @@ class TrackParticle_v1(EDM):
       else:
         return ord(self._event.el_trk_summaryValues.at(summaryType))
     
-
-
-  def numberOfBLayerHits(self):
+  def numberOfBLayerHits(self) -> int:
     return self.summaryValue( SummaryType.numberOfBLayerHits )
 
-  def numberOfBLayerOutliers(self):
+  def numberOfBLayerOutliers(self) -> int:
     return self.summaryValue( SummaryType.numberOfBLayerOutliers )
 
-  def numberOfPixelHits(self):
+  def numberOfPixelHits(self) -> int:
     return self.summaryValue( SummaryType.numberOfPixelHits )
 
-  def numberOfPixOutliers(self):
+  def numberOfPixOutliers(self) -> int:
     return self.summaryValue( SummaryType.numberOfPixOutliers )
 
-  def numberOfSCTHits(self):
+  def numberOfSCTHits(self) -> int:
     return self.summaryValue( SummaryType.numberOfSCTHits )
 
-  def numberOfSCTOutliers(self):
+  def numberOfSCTOutliers(self) -> int:
     return self.summaryValue( SummaryType.numberOfSCTOutliers )
 
-  def numberOfTRTHits(self):
+  def numberOfTRTHits(self) -> int:
     return self.summaryValue( SummaryType.numberOfTRTHits )
 
-  def numberOfTRTOutliers(self):
+  def numberOfTRTOutliers(self) -> int:
     return self.summaryValue(  SummaryType.numberOfTRTOutliers )
 
-  def numberOfTRTHighThresholdHits(self):
+  def numberOfTRTHighThresholdHits(self) -> int:
     return self.summaryValue( SummaryType.numberOfTRTHighThresholdHits )
 
-  def numberOfTRTHighThresholdOutliers(self):
+  def numberOfTRTHighThresholdOutliers(self) -> int:
     return self.summaryValue( SummaryType.numberOfTRTHighThresholdOutliers )
 
-  def numberOfTRTXenonHits(self):
+  def numberOfTRTXenonHits(self) -> int:
     return self.summaryValue( SummaryType. numberOfTRTXenonHits )
 
-  def expectBLayerHit(self):
+  def expectBLayerHit(self) -> int:
     return self.summaryValue( SummaryType.expectBLayerHit )
 
-  def numberOfSiHits(self):
+  def numberOfSiHits(self) -> int:
     return -999
 
-  def numberOfSiDeadSensors(self):
+  def numberOfSiDeadSensors(self) -> int:
     return -999
 
-  def numberOfPixelDeadSensors(self):
+  def numberOfPixelDeadSensors(self) -> int:
     return self.summaryValue( SummaryType.numberOfPixelDeadSensors )
 
-  def numberOfSCTDeadSensors(self):
+  def numberOfSCTDeadSensors(self) -> int:
     return self.summaryValue( SummaryType.numberOfSCTDeadSensors )
 
-  def expectNextToInnermostPixelLayerHit(self):
+  def expectNextToInnermostPixelLayerHit(self) -> int:
     return self.summaryValue( SummaryType.expectNextToInnermostPixelLayerHit )
 
-  def numberOfNextToInnermostPixelLayerHits(self):
+  def numberOfNextToInnermostPixelLayerHits(self) -> int:
     return self.summaryValue( SummaryType.numberOfNextToInnermostPixelLayerHits )
 
-  def numberOfNextToInnermostPixelLayerOutliers(self):
+  def numberOfNextToInnermostPixelLayerOutliers(self) -> int:
     return self.summaryValue( SummaryType.numberOfNextToInnermostPixelLayerOutliers )
 
-  def size(self):
+  def size(self) -> int:
     """
     	Retrieve the TrackParticle container size
     """
@@ -327,7 +329,7 @@ class TrackParticle_v1(EDM):
     else:
       return 1
 
-  def empty(self):
+  def empty(self) -> bool:
     return False if self.size()>0 else True
 
 

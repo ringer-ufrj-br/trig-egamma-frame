@@ -2,9 +2,10 @@
 __all__ = ["CaloCluster_v1"]
 
 
-from egamma.core import EDM
-from egamma.core import StatusCode
 import numpy as np
+
+from trig_egamma_frame.kernel import EDM
+from trig_egamma_frame import StatusCode
 
 class CaloCluster_v1(EDM):
 
@@ -39,7 +40,7 @@ class CaloCluster_v1(EDM):
     EDM.__init__(self)
 
 
-  def initialize(self):
+  def initialize(self) -> StatusCode:
 
     self.link( self.__eventBranches['HLT__CaloCluster'] if self._is_hlt else self.__eventBranches["CaloCluster"] )
    
@@ -47,7 +48,7 @@ class CaloCluster_v1(EDM):
     return StatusCode.SUCCESS
 
 
-  def et(self):
+  def et(self) -> float:
     """
       Retrieve the Et information from Physval or SkimmedNtuple
     """
@@ -58,7 +59,7 @@ class CaloCluster_v1(EDM):
    
 
 
-  def eta(self):
+  def eta(self) -> float:
     """
       Retrieve the Eta information from Physval or SkimmedNtuple
     """
@@ -69,7 +70,7 @@ class CaloCluster_v1(EDM):
 
 
 
-  def phi(self):
+  def phi(self) -> float:
     """
       Retrieve the Phi information from Physval or SkimmedNtuple
     """
@@ -79,7 +80,7 @@ class CaloCluster_v1(EDM):
       return self._event.el_calo_phi
 
 
-  def etaBE2(self):
+  def etaBE2(self) -> float:
     """
       Retrieve the EtaBE2 information from Physval or SkimmedNtuple
     """
@@ -89,7 +90,7 @@ class CaloCluster_v1(EDM):
       return self._event.el_calo_etaBE2
 
 
-  def energy(self):
+  def energy(self) -> float:
     """
       Retrieve the E information from Physval or SkimmedNtuple
     """
@@ -100,7 +101,7 @@ class CaloCluster_v1(EDM):
 
 
 
-  def emCluster(self):
+  def emCluster(self) -> 'TrigEmCluster':
     """
       Retrieve the TrigEmCluster (FastCalo) python object into the Store Event
       For now, this is only available into the PhysVal dataframe.
@@ -112,7 +113,7 @@ class CaloCluster_v1(EDM):
 
 
 
-  def size(self):
+  def size(self) -> int:
     """
     	Retrieve the TrackParticle container size
     """
@@ -123,13 +124,13 @@ class CaloCluster_v1(EDM):
     
 
 
-  def empty(self):
+  def empty(self) -> bool:
     return False if self.size()>0 else True
 
 
 
 
-  def setToBeClosestThan( self, eta, phi ):
+  def setToBeClosestThan( self, eta : float, phi : float ) -> bool:
     idx = 0; minDeltaR = 999
     def deltaR(  eta1, phi1, eta2, phi2 ):
       deta = abs( eta1 - eta2 )

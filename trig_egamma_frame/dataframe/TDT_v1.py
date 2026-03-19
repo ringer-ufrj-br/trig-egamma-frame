@@ -1,16 +1,17 @@
 
 __all__ = ["TDT", "AcceptType"]
 
+from typing import List
+from enum import Enum
+from loguru import logger
+from trig_egamma_frame.kernel import EDM
+from trig_egamma_frame import StatusCode
+from trig_egamma_frame import stdvector2list
 
-from egamma.core import EDM
-from egamma.core import StatusCode, EnumStringification
-from egamma.core import stdvector2list
-from egamma.core.macros import *
-
-import ROOT
+import ROOT 
 
 
-class AcceptType(EnumStringification):
+class AcceptType(Enum):
 
     L1Calo = 0
     L2Calo = 1
@@ -51,11 +52,7 @@ class TDT(EDM):
         self._metadataName = 'tdt'
 
 
-
-
-
-
-    def initialize(self):
+    def initialize(self) -> StatusCode:
 
 
         if self._dataframe is DataframeEnum.Electron_v1:
@@ -63,7 +60,7 @@ class TDT(EDM):
         elif self._dataframe is DataframeEnum.Photon_v1:
             branches = self.__eventBranches["Photon_v1"]
         else:
-            MSG_WARNING( self, 'Not possible to initialize this metadata using this dataframe. skip!')
+            logger.warning( 'Not possible to initialize this metadata using this dataframe. skip!')
             return StatusCode.SUCCESS
 
 
@@ -75,39 +72,39 @@ class TDT(EDM):
             return StatusCode.FAILURE
 
         # Inform user whether TTree exists, and which options are available:
-        MSG_DEBUG( self, "Adding file: %s", inputFile)
+        logger.debug( f"Adding file: {inputFile}")
         treePath = self._metadataParams['basepath'] + '/' + self._metadataName
         obj = f.Get(treePath)
         if not obj:
-            MSG_WARNING( self, "Couldn't retrieve TTree (%s)!", treePath)
-            MSG_INFO( self, "File available info:")
+            logger.warning( f"Couldn't retrieve TTree ({treePath})!")
+            logger.info( "File available info:")
             f.ReadAll()
             f.ReadKeys()
             f.ls()
             return StatusCode.FAILURE
         elif not isinstance(obj, ROOT.TTree):
-            MSG_FATAL( self, "%s is not an instance of TTree!", treePath, ValueError)
+            logger.fatal( f"%s is not an instance of TTree!", treePath, ValueError)
         try:
             obj.GetEntry(0)
             self._triggerList = stdvector2list(obj.trig_tdt_triggerList)
             for trigItem in self._triggerList:
-                MSG_INFO( self, "Metadata trigger: %s", trigItem)
+                logger.info( f"Metadata trigger: {trigItem}")
         except:
-            MSG_ERROR( self, "Can not extract the trigger list from the metadata file.")
+            logger.error( "Can not extract the trigger list from the metadata file.")
             return StatusCode.FAILURE
 
         try:
             self.link( branches )
             return StatusCode.SUCCESS
         except:
-            MSG_WARNING( self, "Impossible to create the TDTMetaData Container")
+            logger.warning( "Impossible to create the TDTMetaData Container")
             return StatusCode.FAILURE
 
 
-    def isPassed(self, trigItem):
+    def isPassed(self, trigItem) -> bool:
         return self.ancestorPassed(trigitem,AcceptType.HLT)
 
-    def isActive(self, trigItem):
+    def isActive(self, trigItem) -> bool:
         if trigItem in self._triggerList:
             idx = self._triggerList.index(trigItem)
             isGood = (self._event.trig_tdt_L1_calo_accept[idx])
@@ -116,11 +113,11 @@ class TDT(EDM):
             return False
 
 
-    def getTriggerList(self):
+    def getTriggerList(self) -> List[str]:
       return self._triggerList
 
 
-    def ancestorPassed( self, trigItem, acceptType ):
+    def ancestorPassed( self, trigItem, acceptType ) -> bool:
         """
         Method to retireve the bool accept for a trigger. To use this:
         l2caloPassed = tdt.ancestorPassed("HLT_e28_lhtight_nod0_ivarloose", AcceptType.L2Calo)
@@ -149,9 +146,9 @@ class TDT(EDM):
                 return bool(self._event.trig_tdt_EF_ph_accept[idx])
 
           else:
-              MSG_ERROR( self, 'Trigger type not suppported.')
+              logger.error( 'Trigger type not suppported.')
         else:
-            MSG_WARNING( self, 'Trigger %s not storage in TDT metadata.',trigItem)
+            logger.warning( f'Trigger {trigItem} not storage in TDT metadata.')
 
 
 

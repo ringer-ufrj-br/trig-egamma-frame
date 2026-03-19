@@ -1,52 +1,53 @@
 
 __all__ = ['TrigEMCluster_v1', 'CaloSampling']
 
-from egamma.core import EDM
-from egamma.core import StatusCode
-from egamma.core import stdvector2list
+from trig_egamma_frame.kernel import EDM
+from trig_egamma_frame import StatusCode
+from trig_egamma_frame import stdvector2list
 from math import cosh
 import numpy as np
 import math
+from enum import Enum
 
 
 
-class CaloSampling(object):
+class CaloSampling(Enum):
     # LAr barrel
-                PreSamplerB  =  0
-                EMB1         =  1
-                EMB2         =  2
-                EMB3         =  3
-          # LAr EM endcap
-                PreSamplerE  =  4
-                EME1         =  5
-                EME2         =  6
-                EME3         =  7
-                # Hadronic endcap
-                HEC0         =  8
-                HEC1         =  9
-                HEC2         = 10
-                HEC3         = 11
-                # Tile barrel
-                TileBar0     = 12
-                TileBar1     = 13
-                TileBar2     = 14
-                # Tile gap (ITC & scint)
-                TileGap1     = 15
-                TileGap2     = 16
-                TileGap3     = 17
-                # Tile extended barrel
-                TileExt0     = 18
-                TileExt1     = 19
-                TileExt2     = 20
-                # Forward EM endcap
-                FCAL0        = 21
-                FCAL1        = 22
-                FCAL2        = 23
-                # MiniFCAL
-                MINIFCAL0    =  24
-                MINIFCAL1    =  25
-                MINIFCAL2    =  26
-                MINIFCAL3    =  27
+    PreSamplerB  =  0
+    EMB1         =  1
+    EMB2         =  2
+    EMB3         =  3
+    # LAr EM endcap
+    PreSamplerE  =  4
+    EME1         =  5
+    EME2         =  6
+    EME3         =  7
+    # Hadronic endcap
+    HEC0         =  8
+    HEC1         =  9
+    HEC2         = 10
+    HEC3         = 11
+    # Tile barrel
+    TileBar0     = 12
+    TileBar1     = 13
+    TileBar2     = 14
+    # Tile gap (ITC & scint)
+    TileGap1     = 15
+    TileGap2     = 16
+    TileGap3     = 17
+    # Tile extended barrel
+    TileExt0     = 18
+    TileExt1     = 19
+    TileExt2     = 20
+    # Forward EM endcap
+    FCAL0        = 21
+    FCAL1        = 22
+    FCAL2        = 23
+    # MiniFCAL
+    MINIFCAL0    =  24
+    MINIFCAL1    =  25
+    MINIFCAL2    =  26
+    MINIFCAL3    =  27
 
 
 # FastCalo object is similar to TrigEmCluster in xAOD framework
@@ -74,7 +75,7 @@ class TrigEMCluster_v1(EDM):
         EDM.__init__(self)
 
 
-    def initialize(self):
+    def initialize(self) -> StatusCode:
         """
           Link all branches
         """
@@ -83,7 +84,7 @@ class TrigEMCluster_v1(EDM):
      
 
 
-    def ringsE(self):
+    def ringsE(self) -> np.ndarray[np.float32]:
         """
           Retrieve the L2Calo Ringer Rins information from Physval or SkimmedNtuple
         """
@@ -93,37 +94,37 @@ class TrigEMCluster_v1(EDM):
 
 
     # Check if this object has rings
-    def isGoodRinger(self):
+    def isGoodRinger(self) -> bool:
         rings = stdvector2list(self._event.trig_L2_calo_rings)
         return True if len(rings)!=0 else False
         
 
-    def et(self):
+    def et(self) -> float:
         """
           Retrieve the et information from Physval or SkimmedNtuple
         """
         return self._event.trig_L2_calo_et
     
 
-    def eta(self):
+    def eta(self) -> float:
         """
           Retrieve the eta information from Physval or SkimmedNtuple
         """
         return self._event.trig_L2_calo_eta
         
 
-    def phi(self):
+    def phi(self) -> float:
         """
         Retrieve the phi information from Physval or SkimmedNtuple
         """
         return self._event.trig_L2_calo_phi
         
 
-    def reta(self):
+    def reta(self) -> float:
         return self.e237() / float(self.e277())
 
 
-    def eratio(self):
+    def eratio(self) -> float:
         eratio = (self.emaxs1() - self.e2tsts1())
         if (self.emaxs1() + self.e2tsts1()) != 0:
             eratio /= (self.emaxs1() + self.e2tsts1())
@@ -133,35 +134,35 @@ class TrigEMCluster_v1(EDM):
 
 
 
-    def e237(self):
+    def e237(self) -> float:
         """
         Retrieve the e237 information from Physval or SkimmedNtuple
         """
         return self._event.trig_L2_calo_e237
        
 
-    def e277(self):
+    def e277(self) -> float:
         """
         Retrieve the e277 information from Physval or SkimmedNtuple
         """
         return self._event.trig_L2_calo_e277
        
 
-    def fracs1(self):
+    def fracs1(self) -> float:
         """
           Retrieve the fracs1 information from Physval or SkimmedNtuple
         """
         return self._event.trig_L2_calo_fracs1
         
 
-    def emaxs1(self):
+    def emaxs1(self) -> float:
         """
           Retrieve the emaxs1 information from Physval or SkimmedNtuple
         """
         return self._event.trig_L2_calo_emaxs1
        
 
-    def weta2(self):
+    def weta2(self) -> float:
         """
           Retrieve the weta2 information from Physval or SkimmedNtuple
         """
@@ -169,21 +170,21 @@ class TrigEMCluster_v1(EDM):
       
 
 
-    def wstot(self):
+    def wstot(self) -> float:
         """
           Retrieve the wstot information from Physval or SkimmedNtuple
         """
         return self._event.trig_L2_calo_wstot
        
 
-    def ehad1(self):
+    def ehad1(self) -> float:
         """
           Retrieve the ehad1 information from Physval or SkimmedNtuple
         """
         return self._event.trig_L2_calo_ehad1
         
 
-    def e2tsts1(self):
+    def e2tsts1(self) -> float:
         """
           Retrieve the e2tsts1 information from Physval or SkimmedNtuple
         """
@@ -191,7 +192,7 @@ class TrigEMCluster_v1(EDM):
       
 
 
-    def f1(self):
+    def f1(self) -> float:
         """
         Retrieve the f1 information from Physval or SkimmedNtuple
         """
@@ -203,7 +204,7 @@ class TrigEMCluster_v1(EDM):
        
 
 
-    def f3(self):
+    def f3(self) -> float:
         """
         Retrieve the f3 information from Physval or SkimmedNtuple
         """
@@ -217,7 +218,7 @@ class TrigEMCluster_v1(EDM):
         return F3
        
 
-    def emTauRoI(self):
+    def emTauRoI(self) -> 'EmTauRoI':
         """
           Retrieve the EmTauRoI python object into the Store Event
           For now, this is only available into the PhysVal dataframe.
@@ -225,20 +226,20 @@ class TrigEMCluster_v1(EDM):
         return self.getContext().getHandler('HLT__EmTauRoIContainer')
 
 
-    def energy( self, idx=None ):
+    def energy( self, idx: int = None ) -> float:
         if idx:
             return self._event.trig_L2_calo_energySample[idx]
         else:
             return sum(stdvector2list(self._event.trig_L2_calo_energySample))
      
 
-    def getAvgmu(self):
+    def getAvgmu(self) -> float:
         # Retrieve event info to get the pileup information
         eventInfo  = self.getContext().getHandler('EventInfoContainer')
         return eventInfo.avgmu()
         
 
-    def accept( self,  pidname ):
+    def accept( self,  pidname: str ) -> bool:
         # Dictionary to acess the physval dataframe
         if pidname in self.__eventBranches:
             # the default selector branches is a vector

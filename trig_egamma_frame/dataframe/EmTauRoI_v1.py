@@ -1,10 +1,9 @@
 
 __all__ = ['EmTauRoI_v1']
 
-from egamma.core import EDM
-from egamma.core import StatusCode
-from egamma.core import stdvector2list
 
+from trig_egamma_frame.kernel import EDM
+from trig_egamma_frame import StatusCode
 
 class EmTauRoI_v1(EDM):
 
@@ -22,7 +21,7 @@ class EmTauRoI_v1(EDM):
         EDM.__init__(self)
 
 
-    def initialize(self):
+    def initialize(self) -> StatusCode:
       """
         Link all branches
       """
@@ -30,42 +29,42 @@ class EmTauRoI_v1(EDM):
       return StatusCode.SUCCESS
       
 
-    def emClus(self):
+    def emClus(self) -> float:
         """
           Retrieve the L1 EmClus information from Physval or SkimmedNtuple
         """
         return self._event.trig_L1_emClus
         
 
-    def tauClus(self):
+    def tauClus(self) -> float:
         """
           Retrieve the L1 tauClus information from Physval or SkimmedNtuple
         """
         return self._event.trig_L1_tauClus
        
 
-    def emIsol(self):
+    def emIsol(self) -> float:
         """
           Retrieve the L1 emIsol information from Physval or SkimmedNtuple
         """
         return self._event.trig_L1_emIsol
    
 
-    def hadCore(self):
+    def hadCore(self) -> float:
         """
           Retrieve the L1 hadIsol information from Physval or SkimmedNtuple
         """
         return self._event.trig_L1_hadIsol
       
 
-    def eta(self):
+    def eta(self) -> float:
         """
           Retrieve the eta information from Physval or SkimmedNtuple
         """
         return self._event.trig_L1_eta
     
 
-    def phi(self):
+    def phi(self) -> float:
         """
         Retrieve the phi information from Physval or SkimmedNtuple
         """

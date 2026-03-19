@@ -1,8 +1,8 @@
 
 __all__ = ['MonteCarlo_v1']
 
-from egamma.core import EDM
-from egamma.core import StatusCode
+from trig_egamma_frame.kernel import EDM
+from trig_egamma_frame import StatusCode
 
 
 
@@ -25,8 +25,7 @@ class MonteCarlo_v1(EDM):
     EDM.__init__(self)
 
 
-
-  def initialize(self):
+  def initialize(self) -> StatusCode:
     """
     Initialize all branches
     """
@@ -34,45 +33,45 @@ class MonteCarlo_v1(EDM):
     return StatusCode.SUCCESS
 
 
-  def isTruthElectronFromZ(self):
+  def isTruthElectronFromZ(self) -> bool:
     return self._event.mc_isTruthElectronFromZ
    
 
-  def isTruthElectronFromW(self):
+  def isTruthElectronFromW(self) -> bool:
     return self._event.mc_isTruthElectronFromW
     
 
-  def isTruthElectronFromJpsi(self):
+  def isTruthElectronFromJpsi(self) -> bool:
     return self._event.mc_isTruthElectronFromJpsi
    
 
-  def isTruthElectronFromAny(self):
+  def isTruthElectronFromAny(self) -> bool:
     return self._event.mc_isTruthElectronFromAny
     
 
-  def isTruthJetFromAny(self):
+  def isTruthJetFromAny(self) -> bool:
     return self._event.mc_isTruthJetFromAny
    
 
-  def isTruthPhotonFromAny(self):
+  def isTruthPhotonFromAny(self) -> bool:
     return self._event.mc_isTruthPhotonFromAny
    
   
-  def isMC(self):
+  def isMC(self) -> bool:
     """
       Retrieve the Et information from Physval or SkimmedNtuple
     """
     return bool(self._event.mc_hasMC)
    
 
-  def type(self):
+  def type(self) -> int:
     """
       Retrieve the Et information from Physval or SkimmedNtuple
     """
     return self._event.mc_type
     
 
-  def origin(self):
+  def origin(self) -> int:
     """
       Retrieve the Et information from Physval or SkimmedNtuple
     """

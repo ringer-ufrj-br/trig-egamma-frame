@@ -1,15 +1,17 @@
 
 __all__ = ['Photon_v1', 'EgammaParameters']
 
-
-from egamma.core import EDM
-from egamma.core import StatusCode, EnumStringification
-from egamma.core import stdvector2list
 import math
 
+from loguru import logger
+from enum import Enum
+from trig_egamma_frame.kernel import EDM
+from trig_egamma_frame import StatusCode
+from trig_egamma_frame import stdvector2list
 
 
-class EgammaParameters(EnumStringification):
+
+class EgammaParameters(Enum):
 
       # brief uncalibrated energy (sum of cells) in presampler in a 1x1 window in cells in eta X phi
       e011 = 0
@@ -215,11 +217,14 @@ class Photon_v1(EDM):
                                     ]
                                     }
 
-  def __init__(self):
+  def __init__(self) -> None:
+    """
+      Initialize the Photon_v1 object
+    """
     EDM.__init__(self)
 
 
-  def initialize(self):
+  def initialize(self) -> StatusCode:
     """
       Initalize all branches
     """
@@ -227,8 +232,7 @@ class Photon_v1(EDM):
     return StatusCode.SUCCESS
     
 
-
-  def et(self):
+  def et(self) -> float:
     """
       Retrieve the Et information from Physval or SkimmedNtuple
     """
@@ -236,7 +240,7 @@ class Photon_v1(EDM):
     return (self.caloCluster().energy()/math.cosh(eta))
 
 
-  def eta(self):
+  def eta(self) -> float:
     """
       Retrieve the Eta information from Physval or SkimmedNtuple
     """
@@ -246,7 +250,7 @@ class Photon_v1(EDM):
       return self._event.ph_eta
 
 
-  def phi(self):
+  def phi(self) -> float:
     """
       Retrieve the Phi information from Physval or SkimmedNtuple
     """
@@ -256,7 +260,7 @@ class Photon_v1(EDM):
       return self._event.ph_phi
  
 
-  def reta(self):
+  def reta(self) -> float:
     """
       Retrieve the Reta information from Physval or SkimmedNtuple
     """
@@ -267,7 +271,7 @@ class Photon_v1(EDM):
 
 
   # shower shape
-  def eratio(self):
+  def eratio(self) -> float:
     """
       Retrieve the eratio information from Physval or SkimmedNtuple
     """
@@ -278,7 +282,7 @@ class Photon_v1(EDM):
 
 
   # shower shape
-  def weta1(self):
+  def weta1(self) -> float:
     """
       Retrieve the weta1 information from Physval or SkimmedNtuple
     """
@@ -289,7 +293,7 @@ class Photon_v1(EDM):
 
 
   # shower shape
-  def weta2(self):
+  def weta2(self) -> float:
     """
       Retrieve the weta2 information from Physval or SkimmedNtuple
     """
@@ -300,7 +304,7 @@ class Photon_v1(EDM):
 
 
   # shower shape
-  def rhad(self):
+  def rhad(self) -> float:
     """
       Retrieve the rhad information from Physval or SkimmedNtuple
     """
@@ -311,7 +315,7 @@ class Photon_v1(EDM):
  
 
   # shower shape
-  def rhad1(self):
+  def rhad1(self) -> float:
     """
       Retrieve the rhad1 information from Physval or SkimmedNtuple
     """
@@ -322,7 +326,7 @@ class Photon_v1(EDM):
 
 
   # shower shape
-  def rphi(self):
+  def rphi(self) -> float:
     """
       Retrieve the rphi information from Physval or SkimmedNtuple
     """
@@ -333,7 +337,7 @@ class Photon_v1(EDM):
 
 
   # shower shape
-  def f1(self):
+  def f1(self) -> float:
     """
       Retrieve the f1 information from Physval or SkimmedNtuple
     """
@@ -344,7 +348,7 @@ class Photon_v1(EDM):
 
 
   # shower shape
-  def f3(self):
+  def f3(self) -> float:
     """
       Retrieve the f3 information from Physval or SkimmedNtuple
     """
@@ -355,7 +359,10 @@ class Photon_v1(EDM):
 
 
   # shower shape
-  def wtots1(self):
+  def wtots1(self) -> float:
+    """
+      Retrieve the wtots1 information from Physval or SkimmedNtuple
+    """
     if self._is_hlt:
       return self._event.trig_EF_ph_wtots1[self.getPos()]
     else:
@@ -363,7 +370,10 @@ class Photon_v1(EDM):
    
 
   # shower shape
-  def e277(self):
+  def e277(self) -> float:
+    """
+      Retrieve the e277 information from Physval or SkimmedNtuple
+    """
     if self._is_hlt:
       return self._event.trig_EF_ph_e277[self.getPos()]
     else:
@@ -371,7 +381,10 @@ class Photon_v1(EDM):
 
 
   # shower shape
-  def deltaE(self):
+  def deltaE(self) -> float:
+    """
+      Retrieve the deltaE information from Physval or SkimmedNtuple
+    """
     if self._is_hlt:
       return self._event.trig_EF_ph_deltaE[self.getPos()]
     else:
@@ -379,7 +392,10 @@ class Photon_v1(EDM):
   
 
 
-  def showerShapeValue( self, showerShapeType ):
+  def showerShapeValue( self, showerShapeType: EgammaParameters ) -> float:
+    """
+      Retrieve the shower shape value for the given EgammaParameters type
+    """
 
     # brief (emaxs1-e2tsts1)/(emaxs1+e2tsts1)
     if showerShapeType is EgammaParameters.Eratio:
@@ -422,12 +438,12 @@ class Photon_v1(EDM):
     elif showerShapeType is EgammaParameters.Rhad:
         return self.rhad()
     else:
-        self._logger.warning('Unknow ShowerShape type. %s', EgammaParameters.tostring(showerShapeType))
+        logger.warning(f'Unknow ShowerShape type. {EgammaParameters.tostring(showerShapeType)}')
         return -999
 
 
 
-  def getAvgmu(self):
+  def getAvgmu(self) -> float:
     """
       Retrieve the rphi information from Physval or SkimmedNtuple
     """
@@ -436,12 +452,12 @@ class Photon_v1(EDM):
     return eventInfo.avgmu()
 
 
-  def ringsE(self):
+  def ringsE(self) -> list:
     """
       Retrieve the Ringer Rings information from Physval or SkimmedNtuple
     """
     if self._is_hlt:
-      self._logger.warning("Ringer rings information not available in HLT Photon object.")
+      logger.warning("Ringer rings information not available in HLT Photon object.")
       return -999
     else:
       return self._event.ph_ringsE
@@ -449,16 +465,19 @@ class Photon_v1(EDM):
 
 
   # Check if this object has rings
-  def isGoodRinger(self):
+  def isGoodRinger(self) -> bool:
+    """
+      Check if this object has rings
+    """
     if self._is_hlt:
-      self._logger.warning("Ringer rings information not available in HLT Electron object.")
+      logger.warning("Ringer rings information not available in HLT Electron object.")
       return False
     else:
       rings = stdvector2list(self._event.ph_ringsE)
       return True if len(rings)!=0 else False
     
 
-  def size(self):
+  def size(self) -> int:
     """
       Retrieve the electro container size
     """
@@ -468,11 +487,17 @@ class Photon_v1(EDM):
       return 1
  
 
-  def empty(self):
+  def empty(self) -> bool:
+    """
+      Check if container is empty
+    """
     return False if self.size()>0 else True
 
 
   def __iter__(self):
+    """
+      Iterator over the elements
+    """
     self.setPos(-1) # force to be -1
     if self.size()>0:
       while (self.getPos()+1) < self.size():
@@ -480,7 +505,7 @@ class Photon_v1(EDM):
         yield self
 
 
-  def caloCluster(self):
+  def caloCluster(self) -> Any:
     """
       Retrieve the CaloCluster python object into the Store Event
       For now, this is only available into the PhysVal dataframe.
@@ -502,7 +527,10 @@ class Photon_v1(EDM):
         return None
     
 
-  def accept( self,  pidname ):
+  def accept( self,  pidname: str ) -> bool:
+    """
+      Check if the given pidname has been accepted
+    """
     # Dictionary to acess the physval dataframe
     if pidname in self.__eventBranches['Photon_v1']['HLT__Photon'] and self._is_hlt:
       # the default selector branches is a vector
@@ -515,7 +543,10 @@ class Photon_v1(EDM):
       return False
  
 
-  def isMCPhoton(self):
+  def isMCPhoton(self) -> bool:
+    """
+      Retrieve the isMCPhoton info
+    """
     return self._event.mc_isPhoton
 
 

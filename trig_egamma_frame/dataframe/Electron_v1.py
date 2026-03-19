@@ -1,18 +1,22 @@
 
-__all__ = ['Electron_v1', 'EgammaParameters', 'IsolationType']
+__all__ = [
+  'Electron_v1',
+  'EgammaParameters',
+  'IsolationType'
+  ]
 
-from egamma.core      import EDM
-from egamma.core      import StatusCode, EnumStringification
-from egamma.core      import stdvector2list
-from egamma.dataframe import TrackCaloMatchType
+
 import math
 import numpy as np
 
+from enum import Enum
+from trig_egamma_frame.kernel import EDM
+from trig_egamma_frame import StatusCode
+from trig_egamma_frame import stdvector2list
+from trig_egamma_frame.dataframe import TrackCaloMatchType
 
 
-
-
-class EgammaParameters(EnumStringification):
+class EgammaParameters(Enum):
 
      	# brief uncalibrated energy (sum of cells) in presampler in a 1x1 window in cells in eta X phi
       e011 = 0
@@ -119,7 +123,7 @@ class EgammaParameters(EnumStringification):
       DeltaE =43
 
 
-class IsolationType(EnumStringification):
+class IsolationType(Enum):
 
       # brief etcone20
       etcone20 = 0
@@ -283,7 +287,7 @@ class Electron_v1(EDM):
     EDM.__init__(self)
 
 
-  def initialize(self):
+  def initialize(self) -> StatusCode:
     """
       Link all branches
     """
@@ -291,7 +295,7 @@ class Electron_v1(EDM):
     return StatusCode.SUCCESS
 
 
-  def et(self):
+  def et(self) -> float:
     """
       Retrieve the Et information from Physval or SkimmedNtuple
     """
@@ -302,7 +306,7 @@ class Electron_v1(EDM):
       return (self.caloCluster().energy()/math.cosh(eta))
 
 
-  def eta(self):
+  def eta(self) -> float:
     """
       Retrieve the Eta information from Physval or SkimmedNtuple
     """
@@ -312,7 +316,7 @@ class Electron_v1(EDM):
       return self._event.el_eta
 
 
-  def phi(self):
+  def phi(self) -> float:
     """
       Retrieve the Phi information from Physval or SkimmedNtuple
     """
@@ -323,7 +327,7 @@ class Electron_v1(EDM):
 
 
   # shower shape
-  def reta(self):
+  def reta(self) -> float:
     """
       Retrieve the Reta information from Physval or SkimmedNtuple
     """
@@ -334,7 +338,7 @@ class Electron_v1(EDM):
 
 
   # shower shape
-  def eratio(self):
+  def eratio(self) -> float:
     """
       Retrieve the eratio information from Physval or SkimmedNtuple
     """
@@ -345,7 +349,7 @@ class Electron_v1(EDM):
 
 
   # shower shape
-  def weta1(self):
+  def weta1(self) -> float:
     """
       Retrieve the weta1 information from Physval or SkimmedNtuple
     """
@@ -356,7 +360,7 @@ class Electron_v1(EDM):
 
 
   # shower shape
-  def weta2(self):
+  def weta2(self) -> float:
     """
       Retrieve the weta2 information from Physval or SkimmedNtuple
     """
@@ -367,7 +371,7 @@ class Electron_v1(EDM):
 
 
   # shower shape
-  def rhad(self):
+  def rhad(self) -> float:
     """
       Retrieve the rhad information from Physval or SkimmedNtuple
     """
@@ -378,7 +382,7 @@ class Electron_v1(EDM):
 
 
   # shower shape
-  def rhad1(self):
+  def rhad1(self) -> float:
     """
       Retrieve the rhad1 information from Physval or SkimmedNtuple
     """
@@ -389,7 +393,7 @@ class Electron_v1(EDM):
 
 
   # shower shape
-  def rphi(self):
+  def rphi(self) -> float:
     """
       Retrieve the rphi information from Physval or SkimmedNtuple
     """
@@ -400,7 +404,7 @@ class Electron_v1(EDM):
  
 
   # shower shape
-  def f1(self):
+  def f1(self) -> float:
     """
       Retrieve the f1 information from Physval or SkimmedNtuple
     """
@@ -411,7 +415,7 @@ class Electron_v1(EDM):
 
 
   # shower shape
-  def f3(self):
+  def f3(self) -> float:
     """
       Retrieve the f3 information from Physval or SkimmedNtuple
     """
@@ -422,7 +426,7 @@ class Electron_v1(EDM):
 
 
   # shower shape
-  def wtots1(self):
+  def wtots1(self) -> float:
     if self._is_hlt:
       return self._event.trig_EF_el_wtots1[self.getPos()]
     else:
@@ -430,7 +434,7 @@ class Electron_v1(EDM):
  
 
   # shower shape
-  def e277(self):
+  def e277(self) -> float:
     if self._is_hlt:
       return self._event.trig_EF_el_e277[self.getPos()]
     else:
@@ -438,14 +442,14 @@ class Electron_v1(EDM):
 
 
   # shower shape
-  def deltaE(self):
+  def deltaE(self) -> float:
     if self._is_hlt:
       return self._event.trig_EF_el_deltaE[self.getPos()]
     else:
       return self._event.el_deltaE
 
 
-  def showerShapeValue( self, showerShapeType ):
+  def showerShapeValue( self, showerShapeType : EgammaParameters ) -> float:
 
     # brief (emaxs1-e2tsts1)/(emaxs1+e2tsts1)
     if showerShapeType is EgammaParameters.Eratio:
@@ -493,14 +497,14 @@ class Electron_v1(EDM):
 
 
   # trackCaloMatchValue
-  def deltaEta1(self):
+  def deltaEta1(self) -> float:
     if self._is_hlt:
       return self._event.trig_EF_el_deltaEta1[self.getPos()]
     else:
       return self._event.el_deltaEta1
     
 
-  def deta1(self):
+  def deta1(self) -> float:
     if self._is_hlt:
       return self._event.trig_EF_el_deltaEta1[self.getPos()]
     else:
@@ -508,7 +512,7 @@ class Electron_v1(EDM):
 
 
   # trackCaloMatchValue
-  def deta2(self):
+  def deta2(self) -> float:
     """
       Retrieve the deta2 information from Physval or SkimmedNtuple
     """
@@ -519,7 +523,7 @@ class Electron_v1(EDM):
 
 
   # trackCaloMatchValue
-  def dphi2(self):
+  def dphi2(self) -> float:
     """
       Retrieve the dphi2 information from Physval or SkimmedNtuple
     """
@@ -530,7 +534,7 @@ class Electron_v1(EDM):
 
 
   # Boosted
-  def eeMass (self):
+  def eeMass (self) -> float:
     """
       Adds DeltaR and eeMass information
     """
@@ -545,7 +549,7 @@ class Electron_v1(EDM):
 
 
   # Boosted
-  def deltaR (self):
+  def deltaR (self) -> float:
     """
       Adds DeltaR and eeMass information
     """
@@ -560,7 +564,7 @@ class Electron_v1(EDM):
 
 
   # trackCaloMatchValue
-  def deltaPhiRescaled0(self):
+  def deltaPhiRescaled0(self) -> float:
     """
       Retrieve the DeltaPhiRescaled information from Physval or SkimmedNtuple
     """
@@ -571,7 +575,7 @@ class Electron_v1(EDM):
  
 
   # trackCaloMatchValue
-  def deltaPhiRescaled2(self):
+  def deltaPhiRescaled2(self) -> float:
     """
       Retrieve the DeltaPhiRescaled2 information from Physval or SkimmedNtuple
     """
@@ -581,7 +585,7 @@ class Electron_v1(EDM):
       return self._event.el_deltaPhiRescaled2
 
 
-  def trackCaloMatchValue( self, matchType ):
+  def trackCaloMatchValue( self, matchType : TrackCaloMatchType ) -> float:
 
     # brief difference between the cluster eta (presampler) and
     # the eta of the track extrapolated to the presampler
@@ -627,7 +631,7 @@ class Electron_v1(EDM):
       return self.deltaPhiRescaled2()
 
 
-  def getAvgmu(self):
+  def getAvgmu(self) -> float:
     """
       Retrieve the rphi information from Physval or SkimmedNtuple
     """
@@ -636,7 +640,7 @@ class Electron_v1(EDM):
     return eventInfo.avgmu()
 
 
-  def ringsE(self):
+  def ringsE(self) -> List[float]:
     """
       Retrieve the Ringer Rings information from Physval or SkimmedNtuple
     """
@@ -650,7 +654,7 @@ class Electron_v1(EDM):
 
 
   # Check if this object has rings
-  def isGoodRinger(self):
+  def isGoodRinger(self) -> bool:
     if self._is_hlt:
       self._logger.warning("Ringer rings information not available in HLT Electron object.")
       return False
@@ -659,7 +663,7 @@ class Electron_v1(EDM):
       return True if len(rings)!=0 else False
 
 
-  def size(self):
+  def size(self) -> int:
     """
     	Retrieve the electro container size
     """
@@ -669,7 +673,7 @@ class Electron_v1(EDM):
       return 1
 
 
-  def empty(self):
+  def empty(self) -> bool:
     return False if self.size()>0 else True
 
 
@@ -681,7 +685,7 @@ class Electron_v1(EDM):
         yield self
 
 
-  def caloCluster(self):
+  def caloCluster(self) -> 'CaloCluster':
     """
       Retrieve the CaloCluster python object into the Store Event
       For now, this is only available into the PhysVal dataframe.
@@ -703,7 +707,7 @@ class Electron_v1(EDM):
         return None
 
 
-  def trackParticle(self):
+  def trackParticle(self) -> 'TrackParticle':
     """
       Retrieve the CaloCluster python object into the Store Event
       For now, this is only available into the PhysVal dataframe.
@@ -724,7 +728,7 @@ class Electron_v1(EDM):
         return None
 
 
-  def isolationValue( self, isolationType ):
+  def isolationValue( self, isolationType : IsolationType ) -> float:
 
     # helper function
     def get_value( event, branch, isolationtype, size, pos, logger ):
@@ -747,7 +751,7 @@ class Electron_v1(EDM):
   #
   # Get accept answer
   #
-  def accept( self,  pidname ):
+  def accept( self,  pidname : str ) -> bool:
 
     # Dictionary to acess the physval dataframe
     if pidname in self.__eventBranches['HLT__Electron'] and self._is_hlt:
@@ -761,7 +765,7 @@ class Electron_v1(EDM):
       return False
     
 
-  def setToBeClosestThan( self, eta, phi ):
+  def setToBeClosestThan( self, eta : float, phi : float ):
     idx = 0; minDeltaR = 999
     def deltaR( eta1, phi1, eta2, phi2 ):
       deta = abs( eta1 - eta2 )
