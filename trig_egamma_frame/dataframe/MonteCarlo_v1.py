@@ -12,10 +12,10 @@ class MonteCarlo_v1(EDM):
                       'mc_hasMC',
                       'mc_isTruthElectronAny',
                       'mc_isTruthElectronFromZ',
-                      'mc_isTruthElectronFromW',
+                      #'mc_isTruthElectronFromW',
                       'mc_isTruthElectronFromJpsi',
-                      'mc_isTruthJetFromAny',
-                      'mc_isTruthPhotonFromAny',
+                      #'mc_isTruthJetFromAny',
+                      #'mc_isTruthPhotonFromAny',
                       'mc_type',
                       'mc_origin',
                     ]

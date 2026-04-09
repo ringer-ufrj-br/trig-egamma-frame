@@ -1,7 +1,8 @@
 
 __all__ = ['EDM']
 
-from egamma.kernel import StatusCode
+from trig_egamma_frame.kernel.algorithm import StatusCode
+from trig_egamma_frame.enumerators import DataframeSchemma
 from typing import Any, List
 from loguru import logger
 from cppyy.ll import cast
@@ -13,7 +14,7 @@ import ROOT
 class EDM:
 
   # set the default skimmed dataframe
-  _dataframe = None
+  _dataframe = DataframeSchemma.Run3
   
   def __init__(self):
 
@@ -67,7 +68,7 @@ class EDM:
 
   @property
   def tree(self) -> ROOT.TTree:
-    self._tree
+    return self._tree
 
   @tree.setter
   def tree(self, v : ROOT.TTree):
@@ -205,9 +206,9 @@ class EDM:
             self.setBranchAddress( self._tree, branch  , self._event)
             self._branches.append(branch) # hold all branches from the body class
         except Exception as e:
-            traceback.print_exc()
-            print(e)
-            logger.warning( f"tt's not possible to set this branche: {branch}" )
+            #traceback.print_exc()
+            #print(e)
+            logger.warning( f"it's not possible to set this branch: {branch}" )
 
 
 

@@ -8,11 +8,10 @@ __all__ = [
 
 import math
 import numpy as np
-
+from typing import List, Iterator, Any
 from enum import Enum
 from trig_egamma_frame.kernel import EDM
 from trig_egamma_frame import StatusCode
-from trig_egamma_frame import stdvector2list
 from trig_egamma_frame.dataframe import TrackCaloMatchType
 
 
@@ -197,19 +196,17 @@ class Electron_v1(EDM):
                           'el_multiLepton',
 
                           # extra calo branches
-                          'el_calo_et',
-                          'el_calo_eta',
-                          'el_calo_phi',
-                          'el_calo_etaBE2',
-                          'el_calo_e',
+                          #'el_calo_et',
+                          #'el_calo_eta',
+                          #'el_calo_phi',
+                          #'el_calo_etaBE2',
+                          #'el_calo_e',
 
                           # Extra
                           'el_ringsE',
                           'el_nGoodVtx',
                           'el_nPileupPrimaryVtx',
 
-                          'el_etCone',
-                          'el_ptCone',
                           
                           # boosted
                           'el_tap_deltaR',
@@ -261,24 +258,23 @@ class Electron_v1(EDM):
                           'trig_EF_el_lhloose',
                           'trig_EF_el_lhmedium',
                           'trig_EF_el_lhtight',
-
+                        
 
                           # extra calo branches
-                          'trig_EF_el_calo_e',
-                          'trig_EF_el_calo_et',
-                          'trig_EF_el_calo_eta',
-                          'trig_EF_el_calo_phi',
-                          'trig_EF_el_calo_etaBE2',
-                          'trig_EF_calo_loose',
-                          'trig_EF_calo_medium',
-                          'trig_EF_calo_tight',
-                          'trig_EF_calo_lhvloose',
-                          'trig_EF_calo_lhloose',
-                          'trig_EF_calo_lhmedium',
-                          'trig_EF_calo_lhtight',
+                          #'trig_EF_el_calo_e',
+                          #'trig_EF_el_calo_et',
+                          #'trig_EF_el_calo_eta',
+                          #'trig_EF_el_calo_phi',
+                          #'trig_EF_el_calo_etaBE2',
+                          #'trig_EF_calo_loose',
+                          #'trig_EF_calo_medium',
+                          #'trig_EF_calo_tight',
+                          #'trig_EF_calo_lhvloose',
+                          #'trig_EF_calo_lhloose',
+                          #'trig_EF_calo_lhmedium',
+                          #'trig_EF_calo_lhtight',
 
-                          'trig_EF_el_etCone',
-                          'trig_EF_el_ptCone',
+                       
                           ]
                           }
                 
@@ -648,7 +644,7 @@ class Electron_v1(EDM):
       self._logger.warning("Ringer rings information not available in HLT Electron object.")
       return -999
     else:
-      rings = stdvector2list(self._event.el_ringsE)
+      rings = list(self._event.el_ringsE)
       return rings
 
 
@@ -659,7 +655,7 @@ class Electron_v1(EDM):
       self._logger.warning("Ringer rings information not available in HLT Electron object.")
       return False
     else:
-      rings = stdvector2list(self._event.el_ringsE)
+      rings = list(self._event.el_ringsE)
       return True if len(rings)!=0 else False
 
 

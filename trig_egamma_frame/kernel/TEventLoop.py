@@ -1,30 +1,49 @@
 
 __all__ = ['TEventLoop']
 
-from egamma.kernel       import StatusCode
-from egamma.kernel       import EventContext, StoreGate, StatusTool, StatusWTD
-
 import collections
 import ROOT
 import traceback
+
 from tqdm import tqdm
+from loguru import logger
+from trig_egamma_frame.kernel import StatusCode, StoreGate, StatusTool, StatusWTD, EventContext
+from trig_egamma_frame.enumerators import DataframeSchemma
+from expand_folders import expand_folders
 
 
 
 
-class TEventLoop( Messenger ):
+def print_root_tree(directory, indent=""):
+    # Get keys for the current directory
+    keys = directory.GetListOfKeys()
+    
+    for key in keys:
+        obj = key.ReadObj()
+        if isinstance(obj, ROOT.TDirectoryFile):
+            print(f"{indent}Directory: {obj.GetName()}")
+            # Recurse into the directory
+            print_root_tree(obj, indent + "  ")
+        elif isinstance(obj, ROOT.TTree):
+            print(f"{indent}Tree: {obj.GetName()} ({obj.GetEntries()} entries)")
+        else:
+            print(f"{indent}Object: {obj.GetName()} [{obj.ClassName()}]")
+
+
+
+
+class TEventLoop:
 
   def __init__(self, 
                name : str,
                inputFile : str,
                outputFile : str,
                treePath : str,
-               dataframe : str,
-               nov : int,
-               abort : bool,
-               mute : bool,
-               writeStoregate : bool,
-               level : LoggingLevel
+               dataframe : DataframeSchemma = DataframeSchemma.Run2,
+               nov : int=-1,
+               abort : bool=False,
+               mute : bool=False,
+               writeStoregate : bool=True,
                ):
 
     """
@@ -52,10 +71,9 @@ class TEventLoop( Messenger ):
     self._abort             = abort
     self._mute              = mute
     self._writeStoregate    = writeStoregate
-    self._level             = level
     
-    if type(self._fList) is not list:
-      self._fList = [self._fList]
+    if isinstance(self._fList, str):
+      self._fList = expand_folders(self._fList)
 
     self._containersSvc  = collections.OrderedDict() # container dict to hold all EDMs
     self._storegateSvc = None # storegate service to hold all hists
@@ -98,7 +116,9 @@ class TEventLoop( Messenger ):
       obj = self._f.Get(treePath)
       if not obj:
         logger.warning( f"Couldn't retrieve TTree ({treePath})!")
-        MSG_INFO( self, "File available info:")
+        print_root_tree(self._f)
+
+        logger.info( "File available info:")
         self._f.ReadAll()
         self._f.ReadKeys()
         self._f.ls()
@@ -144,15 +164,15 @@ class TEventLoop( Messenger ):
         print(e)
         traceback.print_exc()
         if self._abort:
-          MSG_FATAL(self, f"Abort event {entry}")
+          logger.fatal( f"Abort event {entry}")
         else:
-          MSG_ERROR(self, f"Error event {entry}")
+          logger.error( f"Error event {entry}")
 
 
     return StatusCode.SUCCESS
 
 
-  def process(self, entry):
+  def process(self, entry: int) -> None:
 
     # retrieve all values from the branches
     context = self.getContext()
@@ -160,14 +180,16 @@ class TEventLoop( Messenger ):
     # reading all values from file to EDM pointers.
     # the context hold all EDM pointers
     context.execute()
+
+    from trig_egamma_frame.kernel import ToolSvc as toolSvc
     # loop over tools...
-    for alg in self._alg_tools:
+    for alg in toolSvc:
       if alg.status is StatusTool.DISABLE:
         continue
       if alg.execute( context ).isFailure():
-        MSG_ERROR( self, f'The tool {alg.name} return status code different of SUCCESS')
+        logger.error( f'The tool {alg.name} return status code different of SUCCESS')
       if alg.wtd is StatusWTD.ENABLE:
-        MSG_DEBUG(self, f'Watchdog is true in {alg.name}. Skip events')
+        logger.debug( f'Watchdog is true in {alg.name}. Skip events')
         # reset the watchdog since this was used
         alg.wtd = StatusWTD.DISABLE
         break
@@ -176,35 +198,37 @@ class TEventLoop( Messenger ):
   #
   # Finalize the core
   #
-  def finalize( self ):
+  def finalize( self ) -> StatusCode:
 
-    MSG_INFO( self, 'Finalizing all tools...')
-    for alg in self._alg_tools:
+    logger.info( 'Finalizing all tools...')
+
+    from trig_egamma_frame.kernel import ToolSvc as toolSvc
+    for alg in toolSvc:
       if alg.isFinalized():
         continue
       if alg.finalize().isFailure():
-        MSG_ERROR( self, f'The tool {alg.name} return status code different of SUCCESS')
+        logger.error( f'The tool {alg.name} return status code different of SUCCESS')
 
 
-    MSG_INFO( self, 'Finalizing StoreGate service...')
+    logger.info( 'Finalizing StoreGate service...')
     if self._writeStoregate:
-      MSG_INFO(self, f"writting root data into {self._ofile}")
+      logger.info( f"writting root data into {self._ofile}")
       self._storegateSvc.write()
     del self._storegateSvc
 
-    MSG_DEBUG( self, "Finalizing file...")
+    logger.debug( "Finalizing file...")
     self._f.Close()
     del self._f
     del self._event
     del self._t
-    MSG_DEBUG( self, "Everything was finished... tchau!")
+    logger.debug( "Everything was finished... tchau!")
     return StatusCode.SUCCESS
 
 
   #
   # Run
   #
-  def run( self, nov=-1 ):
+  def run( self, nov: int = -1 ) -> None:
     self._nov = nov
     self.initialize()
     self.execute()
@@ -212,36 +236,33 @@ class TEventLoop( Messenger ):
 
 
 
-  def getEntries(self):
+  def getEntries(self) -> int:
     return self._entries
 
   #
   # User method
   #
-  def getEntry( self, entry ):
+  def getEntry( self, entry: int ) -> None:
     self._t.GetEntry( entry )
 
 
-  def getContext(self):
+  def getContext(self) -> EventContext:
     return self._context
 
 
   # get the storegate pointer
-  def getStoreGateSvc(self):
+  def getStoreGateSvc(self) -> StoreGate:
     return self._storegateSvc
 
 
   # set the storegate from another external source
-  def setStoreGateSvc(self, store):
+  def setStoreGateSvc(self, store: StoreGate) -> None:
     self._storegateSvc = store
 
 
   # number of event
-  def get_nov(self):
-    if self._nov < 0 or self._nov > self.getEntries():
-      return self.getEntries()
-    else:
-      return self._nov
+  def get_nov(self) -> int:
+    return self.getEntries() if self._nov < 0 or self._nov > self.getEntries() else self._nov
 
 
 

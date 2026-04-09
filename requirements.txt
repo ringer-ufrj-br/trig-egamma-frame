@@ -40,4 +40,5 @@ colorlog
 pybeamer
 rootplotlib
 tf2onnx
-
+loguru
+rich_argparse

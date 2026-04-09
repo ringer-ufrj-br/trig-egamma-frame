@@ -4,10 +4,10 @@ __all__ = ['Photon_v1', 'EgammaParameters']
 import math
 
 from loguru import logger
+from typing import List, Iterator, Any
 from enum import Enum
 from trig_egamma_frame.kernel import EDM
 from trig_egamma_frame import StatusCode
-from trig_egamma_frame import stdvector2list
 
 
 
@@ -452,7 +452,7 @@ class Photon_v1(EDM):
     return eventInfo.avgmu()
 
 
-  def ringsE(self) -> list:
+  def ringsE(self) -> List[float]:
     """
       Retrieve the Ringer Rings information from Physval or SkimmedNtuple
     """
@@ -460,7 +460,7 @@ class Photon_v1(EDM):
       logger.warning("Ringer rings information not available in HLT Photon object.")
       return -999
     else:
-      return self._event.ph_ringsE
+      return list(self._event.ph_ringsE)
     
 
 
@@ -473,7 +473,7 @@ class Photon_v1(EDM):
       logger.warning("Ringer rings information not available in HLT Electron object.")
       return False
     else:
-      rings = stdvector2list(self._event.ph_ringsE)
+      rings = list(self._event.ph_ringsE)
       return True if len(rings)!=0 else False
     
 

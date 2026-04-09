@@ -11,7 +11,7 @@ class EventInfo_v1(EDM):
             'avgmu',
             'LumiBlock',
             #'el_nPileupPrimaryVtx'
-            ],
+            ]
 
 
     def __init__(self):

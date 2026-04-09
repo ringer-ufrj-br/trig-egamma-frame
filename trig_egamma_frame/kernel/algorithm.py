@@ -14,7 +14,9 @@ import collections
 from enum          import Enum
 from loguru        import logger
 from typing        import Any, List
-from egamma.kernel import StoreGate
+from .StoreGate import StoreGate
+from trig_egamma_frame.enumerators import DataframeSchemma
+
 
 
 
@@ -37,6 +39,83 @@ class StatusWTD(Enum):
   """
   ENABLE  = 1
   DISABLE = 0
+
+
+
+# Status code object used for error code
+class StatusObj:
+
+  _status = 1
+
+  def __init__(self, sc):
+    self._status = sc
+
+  def isFailure(self):
+    """
+    Check if the status code is a failure
+
+    Returns:
+      bool: True if the status code is a failure, False otherwise
+    """
+    if self._status < 1:
+      return True
+    else:
+      return False
+
+  def __eq__(self, a, b):
+    """
+    Check if the status code is equal to another status code
+
+    Args:
+      a (StatusObj): The first status code
+      b (StatusObj): The second status code
+
+    Returns:
+      bool: True if the status code is equal to another status code, False otherwise
+    """
+    if a.status == b.status:
+      return True
+    else:
+      return False
+
+  def __ne__(self, a, b):
+    """
+    Check if the status code is not equal to another status code
+
+    Args:
+      a (StatusObj): The first status code
+      b (StatusObj): The second status code
+
+    Returns:
+      bool: True if the status code is not equal to another status code, False otherwise
+    """
+    if a.status != b.status:
+      return True
+    else:
+      return False
+
+  @property
+  def status(self):
+    """
+    Get the status code
+
+    Returns:
+      int: The status code
+    """
+    return self._status
+
+
+
+
+# status code enumeration
+class StatusCode:
+  """
+    The status code of something
+  """
+  SUCCESS = StatusObj(1)
+  FAILURE = StatusObj(0)
+  FATAL   = StatusObj(-1)
+
 
 
 class EventContext:
@@ -172,7 +251,7 @@ class EventContext:
     except KeyError:
       logger.error( f"Decoration {key} not found" )
 
-  def clearDecorations(s  elf):
+  def clearDecorations(self):
     """
     Clear all decorations
 
@@ -327,78 +406,7 @@ class Service:
       logger.error( f"tool with name {key} not found in the tool service")
 
 
-# Status code object used for error code
-class StatusObj:
 
-  _status = 1
-
-  def __init__(self, sc):
-    self._status = sc
-
-  def isFailure(self):
-    """
-    Check if the status code is a failure
-
-    Returns:
-      bool: True if the status code is a failure, False otherwise
-    """
-    if self._status < 1:
-      return True
-    else:
-      return False
-
-  def __eq__(self, a, b):
-    """
-    Check if the status code is equal to another status code
-
-    Args:
-      a (StatusObj): The first status code
-      b (StatusObj): The second status code
-
-    Returns:
-      bool: True if the status code is equal to another status code, False otherwise
-    """
-    if a.status == b.status:
-      return True
-    else:
-      return False
-
-  def __ne__(self, a, b):
-    """
-    Check if the status code is not equal to another status code
-
-    Args:
-      a (StatusObj): The first status code
-      b (StatusObj): The second status code
-
-    Returns:
-      bool: True if the status code is not equal to another status code, False otherwise
-    """
-    if a.status != b.status:
-      return True
-    else:
-      return False
-
-  @property
-  def status(self):
-    """
-    Get the status code
-
-    Returns:
-      int: The status code
-    """
-    return self._status
-
-
-
-# status code enumeration
-class StatusCode:
-  """
-    The status code of something
-  """
-  SUCCESS = StatusObj(1)
-  FAILURE = StatusObj(0)
-  FATAL   = StatusObj(-1)
 
 # Use this to attach all tools
 ToolSvc = Service("ToolSvc")
@@ -435,7 +443,7 @@ class Algorithm:
     return self._name
 
   @property
-  def dataframe(self) -> DataFrame:
+  def dataframe(self) -> DataframeSchemma:
     """Property to access the dataframe."""
     return self._dataframe
 

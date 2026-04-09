@@ -3,7 +3,6 @@ __all__ = ['TrigEMCluster_v1', 'CaloSampling']
 
 from trig_egamma_frame.kernel import EDM
 from trig_egamma_frame import StatusCode
-from trig_egamma_frame import stdvector2list
 from math import cosh
 import numpy as np
 import math
@@ -88,14 +87,14 @@ class TrigEMCluster_v1(EDM):
         """
           Retrieve the L2Calo Ringer Rins information from Physval or SkimmedNtuple
         """
-        rings = stdvector2list(self._event.trig_L2_calo_rings)
+        rings = list(self._event.trig_L2_calo_rings)
         return np.array(rings, dtype=np.float32)
       
 
 
     # Check if this object has rings
     def isGoodRinger(self) -> bool:
-        rings = stdvector2list(self._event.trig_L2_calo_rings)
+        rings = list(self._event.trig_L2_calo_rings)
         return True if len(rings)!=0 else False
         
 
@@ -230,7 +229,7 @@ class TrigEMCluster_v1(EDM):
         if idx:
             return self._event.trig_L2_calo_energySample[idx]
         else:
-            return sum(stdvector2list(self._event.trig_L2_calo_energySample))
+            return sum(list(self._event.trig_L2_calo_energySample))
      
 
     def getAvgmu(self) -> float:

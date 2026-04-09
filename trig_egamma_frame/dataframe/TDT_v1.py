@@ -4,9 +4,8 @@ __all__ = ["TDT", "AcceptType"]
 from typing import List
 from enum import Enum
 from loguru import logger
-from trig_egamma_frame.kernel import EDM
-from trig_egamma_frame import StatusCode
-from trig_egamma_frame import stdvector2list
+from trig_egamma_frame.kernel import EDM, StatusCode
+from trig_egamma_frame.enumerators import DataframeSchemma
 
 import ROOT 
 
@@ -55,9 +54,9 @@ class TDT(EDM):
     def initialize(self) -> StatusCode:
 
 
-        if self._dataframe is DataframeEnum.Electron_v1:
+        if self._dataframe is DataframeSchemma.Electron_v1:
             branches = self.__eventBranches["Electron_v1"]
-        elif self._dataframe is DataframeEnum.Photon_v1:
+        elif self._dataframe is DataframeSchemma.Photon_v1:
             branches = self.__eventBranches["Photon_v1"]
         else:
             logger.warning( 'Not possible to initialize this metadata using this dataframe. skip!')

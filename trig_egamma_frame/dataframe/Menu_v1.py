@@ -2,11 +2,12 @@
 __all__ = ["Menu_v1"]
 
 
+from typing import Any
 from loguru import logger
 from trig_egamma_frame.kernel import EDM
 from trig_egamma_frame import StatusCode
 from trig_egamma_frame.dataframe import AcceptType
-from trig_egamma_frame.emulator import Accept
+#from trig_egamma_frame.emulator import Accept
 
 
 #
