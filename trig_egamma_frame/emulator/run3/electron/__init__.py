@@ -9,17 +9,25 @@ ELECTRON_STEPS = ['L1Calo','FastCalo','FastElectron','PrecisionCalo','PrecisionE
 # Akshay Katre
 # Cuts migrated from L2CaloHypoConfig
 
-class L2CaloCutMaps(object):
-    # The following triggers were optimized in 2012 by YanPing
-    # e12_loose1
-    # e12_loose0
-    # loose triggers above 22 GeV use e12_loose1 cut defs
-    # e24_medium1 -- Higher threshold triggers use same cuts
-    # tight/tight1 uses e24_medium1 cuts
-    # New EF ID tunes will start with Run1 loose1,medium1,tight1 cuts
-    # Cut maps are grouped by Et threshold
-    # Adding vloose working points, same cuts as loose
-    def __init__(self, threshold):
+class L2CaloCutMaps:
+    """
+    Cut maps for L2 Calorimeter electron hypo.
+    
+    This class defines the HADET, CAERATIO, and CARCORE threshold maps
+    grouped by Et threshold and selection level.
+    
+    Attributes:
+        MapsHADETthr (dict): Map of HADET threshold lists per selection level.
+        MapsCAERATIOthr (dict): Map of CAERATIO threshold lists per selection level.
+        MapsCARCOREthr (dict): Map of CARCORE threshold lists per selection level.
+    """
+    def __init__(self, threshold: float) -> None:
+        """
+        Initialize cut maps based on the ET threshold.
+        
+        Args:
+            threshold (float): The ET threshold for the chain.
+        """
         ##########################
         # Et 5 GeV
         ##########################
@@ -172,8 +180,25 @@ class L2CaloCutMaps(object):
 
 # Following is much easier, no Et dependence
 # Almost no dependence on PID
-class L2CaloPhotonCutMaps():
-    def __init__(self, threshold):
+class L2CaloPhotonCutMaps:
+    """
+    Cut maps for L2 Calorimeter photon hypo.
+    
+    This class defines the HADET, CAERATIO, and CARCORE threshold maps
+    grouped by Et threshold and selection level for photons.
+    
+    Attributes:
+        MapsHADETthr (dict): Map of HADET threshold lists per selection level.
+        MapsCAERATIOthr (dict): Map of CAERATIO threshold lists per selection level.
+        MapsCARCOREthr (dict): Map of CARCORE threshold lists per selection level.
+    """
+    def __init__(self, threshold: float) -> None:
+        """
+        Initialize cut maps based on the ET threshold.
+        
+        Args:
+            threshold (float): The ET threshold for the chain.
+        """
         if(float(threshold) >= 0. and float(threshold) < 10):
             self.MapsHADETthr = {
                 'loose': [0.1638, 0.1596, 0.1218, 0.1638, 0.0448875, 0.1386, 0.1596, 0.1638, 0.147],

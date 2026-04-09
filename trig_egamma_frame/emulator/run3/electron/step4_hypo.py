@@ -1,308 +1,299 @@
 
 __all__ = ['TrigEgammaPrecisionElectronHypoTool']
 
-from egamma.core import Messenger
-from egamma.core.macros  import *
-from egamma.core import declareProperty, StatusCode
+from typing import List, Any, Optional, Dict
+from egamma.core import Messenger, StatusCode
+from egamma.core.macros import *
 from egamma.emulator import Accept
 from egamma import GeV
 
 import numpy as np
 import math
 
-def same( val , tool):
-  return [val]*( len( tool.EtaBins ) - 1 )
+class PrecisionElectron(Messenger):
+    """
+    PrecisionElectron hypo tool for precision electron emulation.
+    
+    Attributes:
+        name (str): The name of the hypo tool.
+        RelPtConeCut (float): Relative pT cone isolation cut value.
+        AcceptAll (bool): If True, all electrons are accepted.
+        ETthr (float): ET threshold value.
+        dPHICLUSTERthr (float): Delta phi threshold between cluster and RoI.
+        dETACLUSTERthr (float): Delta eta threshold between cluster and RoI.
+        PidName (str): Name of the selection (PID) to apply.
+        d0Cut (float): d0 cut for LRT.
+        DoNoPid (bool): If True, do not apply PID selection.
+    """
 
+    def __init__(self, 
+                 name: str, 
+                 RelPtConeCut: float = -1.0,
+                 AcceptAll: bool = False,
+                 ETthr: float = 0.0,
+                 dPHICLUSTERthr: float = 0.0,
+                 dETACLUSTERthr: float = 0.2,
+                 PidName: str = "",
+                 d0Cut: float = -1.0,
+                 DoNoPid: bool = False):
+        """
+        Initialize the PrecisionElectron hypo tool.
+        """
+        Messenger.__init__(self)
+        self.name = name
+        self.RelPtConeCut = RelPtConeCut
+        self.AcceptAll = AcceptAll
+        self.ETthr = ETthr
+        self.dPHICLUSTERthr = dPHICLUSTERthr
+        self.dETACLUSTERthr = dETACLUSTERthr
+        self.PidName = PidName
+        self.d0Cut = d0Cut
+        self.DoNoPid = DoNoPid
 
+    def initialize(self) -> StatusCode:
+        """
+        Initialize the PrecisionElectron hypo tool.
+        
+        Returns:
+            StatusCode: SUCCESS.
+        """
+        return StatusCode.SUCCESS
 
-#
-# Hypo tool
-#
-class PrecisionElectron( Messenger ):
+    def finalize(self) -> StatusCode:
+        """
+        Finalize the PrecisionElectron hypo tool.
+        
+        Returns:
+            StatusCode: SUCCESS.
+        """
+        return StatusCode.SUCCESS
 
+    def accept(self, context: Any) -> Accept:
+        """
+        Evaluate the PrecisionElectron hypo for all electrons in the container.
+        
+        Args:
+            context: The execution context.
+            
+        Returns:
+            Accept: The acceptance result.
+        """
+        elCont = context.getHandler("HLT__ElectronContainer")
+        pClus = context.getHandler("HLT__TrigEMClusterContainer")
 
-  #
-  # Constructor
-  #
-  def __init__(self, name, **kw):
+        current = elCont.getPos()
+        bitAccept = [False for _ in range(elCont.size())]
+        emTauRoI = pClus.emTauRoI()
 
-    Messenger.__init__(self)
-    self.name = name
-    declareProperty( self, kw, "RelPtConeCut"         , -1       )
-    declareProperty( self, kw, "AcceptAll"            , False    )
-    declareProperty( self, kw, "ETthr"                ,   0      )
-    declareProperty( self, kw, "dPHICLUSTERthr"       ,   0      )
-    declareProperty( self, kw, "dETACLUSTERthr"       ,   0.2    )
-    declareProperty( self, kw, "PidName"              , ""       )
-    declareProperty( self, kw, "d0Cut"                , -1       )
-    declareProperty( self, kw, "DoNoPid"              , False    )
+        for el in elCont:
+            passed = self.emulate(el, emTauRoI)
+            bitAccept[el.getPos()] = passed
 
+        elCont.setPos(current)
+        passed = any(bitAccept)
+        return Accept(self.name, [("Pass", passed)])
 
+    def emulate(self, el: Any, roi: Any) -> bool:
+        """
+        Perform precision electron emulation logic.
+        
+        Args:
+            el: The electron object.
+            roi: The RoI object for reference.
+            
+        Returns:
+            bool: True if the electron passes all cuts.
+        """
+        phiRef = roi.phi()
+        etaRef = roi.eta()
 
-  #
-  # Initialize method
-  #
-  def initialize(self):
-    return StatusCode.SUCCESS
+        if math.fabs(phiRef) > np.pi:
+            phiRef -= 2 * np.pi
 
+        if self.AcceptAll:
+            return True
 
-  #
-  # Accept method
-  # 
-  def accept(self, context):
+        if abs(etaRef) > 2.6:
+            MSG_DEBUG(self, 'The cluster had eta coordinates beyond the EM fiducial volume.')
+            return False
 
-    elCont = context.getHandler("HLT__ElectronContainer")
-    pClus = context.getHandler( "HLT__TrigEMClusterContainer" )
+        cl = el.caloCluster()
+        trk = el.trackParticle()
 
-    current = elCont.getPos()
-    bitAccept = [False for _ in range(elCont.size())]
+        deta = abs(etaRef - cl.eta())
+        dphi = abs(phiRef - cl.phi())
+        if math.fabs(dphi) > np.pi:
+            dphi -= 2 * np.pi
+        dphi = abs(dphi)
 
-    # get the equivalent L1 EmTauRoi object in athena
-    emTauRoI = pClus.emTauRoI()
+        if deta > self.dETACLUSTERthr:
+            return False
+        if dphi > self.dPHICLUSTERthr:
+            return False
+        if cl.et() < self.ETthr:
+            return False
 
-    for el in elCont:
-      passed = self.emulate(el, emTauRoI)
-      bitAccept[el.getPos()] = passed
-    # Loop over all electrons
+        if self.DoNoPid:
+            return True
 
-    elCont.setPos( current )
-    # got this far => passed!
-    passed = any( bitAccept )
+        if self.d0Cut > 0.0:
+            d0 = trk.d0()
+            if d0 < self.d0Cut:
+                return False
 
-    return Accept( self.name, [ ("Pass", passed) ] )
+        if not el.accept('trig_EF_el_' + self.PidName):
+            return False
 
+        ptvarcone20 = el.ptvarcone20()
+        relptvarcone20 = ptvarcone20 / el.pt()
 
-  def emulate(self, el, roi):
+        if self.RelPtConeCut < -100:
+            MSG_DEBUG(self, "not applying isolation. Returning NOW")
+            return True
 
-    passed = False
+        if relptvarcone20 > self.RelPtConeCut:
+            return False
 
-    # fill local variables for RoI reference position
-    phiRef = roi.phi()
-    etaRef = roi.eta()
-
-    # correct phi the to right range (probably not needed anymore)
-    if  math.fabs(phiRef) > np.pi: phiRef -= 2*np.pi # correct phi if outside range
-
-    if self.AcceptAll:
-      return True
-
-
-    if abs(etaRef) > 2.6:
-      MSG_DEBUG(self, 'The cluster had eta coordinates beyond the EM fiducial volume.')
-      return False
-
-    # calo cluster
-    cl = el.caloCluster()
-    trk = el.trackParticle()
-
-    deta = abs(etaRef - cl.eta())
-    dphi = abs(phiRef - cl.phi())
-
-    if math.fabs(dphi) > np.pi: dphi -= 2*np.pi
-
-    if deta > self.dETACLUSTERthr:
-      return False
-      
-    if dphi > self.dPHICLUSTERthr:   
-      return False
-
-    if cl.et() < self.ETthr:
-      return False
-
-    if self.DoNoPid:
-      return True
-
-    # LRT cut
-    if self.d0Cut > 0.0:
-      d0 = trk.d0()
-      if d0 < self.d0Cut:
-        return False
-
-    # Pid cut
-    if not el.accept('trig_EF_el_'+self.PidName):
-      return False
-
-    ptvarcone20 = el.ptvarcone20()
-    relptvarcone20 = ptvarcone20/el.pt()
-
-    if self.RelPtConeCut < -100:
-      MSG_DEBUG(self, "not applying isolation. Returning NOW")
-      return True
-
-
-    if relptvarcone20 > self.RelPtConeCut:
-      return False
-
-    # Pass all cuts
-    return True
-
-
-  #
-  # Finalize method
-  #
-  def finalize(self):
-    return StatusCode.SUCCESS
-
-
+        return True
 
 
 class PrecisionElectronConfiguration(Messenger):
+    """
+    Helper class to configure PrecisionElectron based on chain information.
+    """
+    __operation_points = ['tight', 'medium', 'loose', 'vloose', 
+                          'lhtight', 'lhmedium', 'lhloose', 'lhvloose',
+                          'dnntight', 'dnnmedium', 'dnnloose', 'mergedtight', 'nopid']
 
-
-  __operation_points  = [  'tight'    ,
-                           'medium'   ,
-                           'loose'    ,
-                           'vloose'   ,
-                           'lhtight'  ,
-                           'lhmedium' ,
-                           'lhloose'  ,
-                           'lhvloose' ,
-                           'dnntight' ,
-                           'dnnmedium',
-                           'dnnloose' ,
-                           'mergedtight',
-                           'nopid',
-                           ]
-
-  __operation_points_lhInfo = [
-        'nopix'
-        ]
-
-  __operation_points_gsfInfo = [
-        'nogsf'
-        ]
-
-  # isolation cuts:w
-  __isolationCut = {
+    __isolationCut = {
         None: None,
         'ivarloose': 0.1,
         'ivarmedium': 0.065,
         'ivartight': 0.05
-        }
+    }
 
-  # LRT d0 cuts
-  __lrtD0Cut = {
-      '': -1.,
-      None: None,
-      'lrtloose':2.0,
-      'lrtmedium':3.0,
-      'lrttight':5.
-      }
+    __lrtD0Cut = {
+        '': -1.,
+        None: None,
+        'lrtloose': 2.0,
+        'lrtmedium': 3.0,
+        'lrttight': 5.0
+    }
+
+    def __init__(self, name: str, cpart: Dict[str, Any]):
+        """
+        Initialize the PrecisionElectron configuration helper.
+        """
+        Messenger.__init__(self)
+        self.__threshold = cpart['threshold']
+        self.__sel = cpart['addInfo'][0] if cpart['addInfo'] else cpart['IDinfo']
+        self.__iso = cpart['isoInfo']
+        self.__d0 = cpart['lrtInfo']
+        self.__gsfInfo = cpart['gsfInfo']
+        self.__lhInfo = cpart['lhInfo']
+
+        self.hypo = PrecisionElectron(name)
+        self.hypo.ETthr = self.__threshold * GeV
+        self.hypo.dETACLUSTERthr = 0.1
+        self.hypo.dPHICLUSTERthr = 0.1
+        self.hypo.RelPtConeCut = -999
+        self.hypo.PidName = ""
+        self.hypo.d0Cut = -1
+        self.hypo.AcceptAll = False
+        self.hypo.DoNoPid = False
+
+        MSG_INFO(self, f'Electron_Threshold :{self.__threshold}')
+        MSG_INFO(self, f'Electron_Pidname   :{self.pidname()}')
+        MSG_INFO(self, f'Electron_iso       :{self.__iso}')
+        MSG_INFO(self, f'Electron_d0        :{self.__d0}')
+
+    def pidname(self) -> str:
+        """Returns the PID name."""
+        return self.__sel
+
+    def etthr(self) -> float:
+        """Returns the ET threshold."""
+        return self.__threshold
+
+    def isoInfo(self) -> str:
+        """Returns isolation information."""
+        return self.__iso
+
+    def d0Info(self) -> str:
+        """Returns d0 information."""
+        return self.__d0
+
+    def gsfInfo(self) -> str:
+        """Returns GSF information."""
+        return self.__gsfInfo
+
+    def nocut(self) -> None:
+        """Configure PrecisionElectron for no cuts."""
+        MSG_INFO(self, 'Configure nocut')
+        self.hypo.ETthr = self.etthr() * GeV
+        self.hypo.dETACLUSTERthr = 9999.
+        self.hypo.dPHICLUSTERthr = 9999.
+
+    def noPid(self) -> None:
+        """Configure PrecisionElectron for no PID selection."""
+        MSG_INFO(self, 'Configure noPid')
+        self.hypo.DoNoPid = True
+        self.hypo.ETthr = self.etthr() * GeV
+        self.hypo.dETACLUSTERthr = 9999.
+        self.hypo.dPHICLUSTERthr = 9999.
+
+    def addLRTCut(self) -> None:
+        """Add LRT cuts if applicable."""
+        if self.d0Info() not in self.__lrtD0Cut:
+            MSG_FATAL(self, f"Bad LRT selection name: {self.d0Info()}")
+        self.hypo.d0Cut = self.__lrtD0Cut[self.d0Info()]
+
+    def acceptAll(self) -> None:
+        """Accept all electrons."""
+        self.hypo.AcceptAll = True
+
+    def addIsoCut(self) -> None:
+        """Add isolation cuts if applicable."""
+        if self.isoInfo() not in self.__isolationCut:
+            MSG_FATAL(self, f"Bad Iso selection name: {self.isoInfo()}")
+        self.hypo.RelPtConeCut = self.__isolationCut[self.isoInfo()]
+
+    def nominal(self) -> None:
+        """Configure PrecisionElectron for nominal selection."""
+        if self.pidname() not in self.__operation_points:
+            MSG_FATAL(self, "Bad selection name: %s" % self.pidname())
+        self.hypo.PidName = self.pidname()
+
+    def compile(self) -> None:
+        """Compile the configuration based on PID and chain info."""
+        if 'nocut' == self.pidname():
+            self.nocut()
+        elif 'nopid' == self.pidname():
+            self.noPid()
+        else:
+            self.nominal()
+
+        if self.isoInfo() and self.isoInfo() != "":
+            MSG_INFO(self, "Adding IsoCut...")
+            self.addIsoCut()
+        
+        if self.d0Info() and self.d0Info() != "":
+            MSG_INFO(self, "Adding LRTCut...")
+            self.addLRTCut()
 
 
-  def __init__(self, name, cpart):
-
-    Messenger.__init__(self)
-    self.__threshold  = cpart['threshold']
-    self.__sel        = cpart['addInfo'][0] if cpart['addInfo'] else cpart['IDinfo']
-    self.__iso        = cpart['isoInfo']
-    self.__d0         = cpart['lrtInfo']
-    self.__gsfInfo    = cpart['gsfInfo']
-    self.__lhInfo     = cpart['lhInfo']
+def configure(name: str, chainPart: Dict[str, Any]) -> PrecisionElectron:
+    """
+    Configure the PrecisionElectron hypo tool.
     
-
-    self.hypo = PrecisionElectron(name)
-    self.hypo.ETthr          = self.__threshold*GeV
-    self.hypo.dETACLUSTERthr = 0.1
-    self.hypo.dPHICLUSTERthr = 0.1
-    self.hypo.RelPtConeCut   = -999
-    self.hypo.PidName        = ""
-    self.hypo.d0Cut          = -1
-    self.hypo.AcceptAll      = False
-    self.hypo.DoNoPid        = False
-
-    MSG_INFO(self, f'Electron_Threshold :{self.__threshold}' )
-    MSG_INFO(self, f'Electron_Pidname   :{self.pidname()}' )
-    MSG_INFO(self, f'Electron_iso       :{self.__iso}' )
-    MSG_INFO(self, f'Electron_d0        :{self.__d0}' )
-
-
-  #
-  # Get the pidname
-  #
-  def pidname( self ):
-    # if LLH, we should append the LH extra information if exist
-    return self.__sel
-
-  def etthr(self):
-    return self.__threshold
-
-  def isoInfo(self):
-    return self.__iso
-
-  def d0Info(self):
-    return self.__d0
-
-  def gsfInfo(self):
-    return self.__gsfInfo
-
-  def nocut(self):
-
-    MSG_INFO(self, 'Configure nocut' )
-    self.hypo.ETthr          = self.etthr()*GeV
-    self.hypo.dETACLUSTERthr = 9999.
-    self.hypo.dPHICLUSTERthr = 9999.
-
-  def noPid(self):
-    
-    MSG_INFO(self, 'Configure noPid' )
-    self.hypo.DoNoPid        = True
-    self.hypo.ETthr          = self.etthr()*GeV
-    # No other cuts applied
-    self.hypo.dETACLUSTERthr = 9999.
-    self.hypo.dPHICLUSTERthr = 9999.
-
-  #
-  # LRT extra cut
-  #
-  def addLRTCut(self):
-    if not self.d0Info() in self.__lrtD0Cut:
-      MSG_FATAL(self, f"Bad LRT selection name: {self.d0Info()}")
-    self.__tool.d0Cut = self.__lrtD0Cut[self.d0Info()]
-
-  def acceptAll(self):
-     self.hypo.AcceptAll = True
-  #
-  # Isolation extra cut
-  #
-  def addIsoCut(self):
-    if not self.isoInfo() in self.__isolationCut:
-      MSG_FATAL(self, f"Bad Iso selection name: {self.isoInfo()}")
-    self.hypo.RelPtConeCut = self.__isolationCut[self.isoInfo()]
-
-  def nominal(self):
-    if not self.pidname() in self.__operation_points:
-      MSG_FATAL(self, "Bad selection name: %s" % self.pidname())
-    self.hypo.PidName = self.pidname()
-
-  
-  #
-  # Compile the chain
-  #
-  def compile(self):
-
-    if 'nocut' == self.pidname():
-      MSG_INFO(self, "Configure nocut...")
-      self.nocut()
-    elif 'nopid' == self.pidname():
-      MSG_INFO(self, "Configure nopid...")
-      self.noPid()
-    else: # nominal chain using pid selection
-      MSG_INFO(self, "Configure nominal...")
-      self.nominal()
-
-
-    # secundary cut configurations
-    if self.isoInfo() and self.isoInfo()!="":
-      MSG_INFO(self, "Adding IsoCut...")
-      self.addIsoCut()
-    if self.d0Info() and self.d0Info()!="":
-      MSG_INFO(self, "Adding LRTCut...")
-      self.addLRTCut()
-    
-
-def configure(name, chainPart):
-  config = PrecisionElectronConfiguration(name, chainPart)
-  config.compile()
-  return config.hypo
+    Args:
+        name (str): The name of the hypo tool.
+        chainPart (dict): Chain configuration dictionary.
+        
+    Returns:
+        PrecisionElectron: The configured PrecisionElectron hypo tool.
+    """
+    config = PrecisionElectronConfiguration(name, chainPart)
+    config.compile()
+    return config.hypo
 

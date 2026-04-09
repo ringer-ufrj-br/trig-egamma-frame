@@ -1,34 +1,32 @@
 
 __all__ = ["ElectronChain"]
 
-
-from egamma.core import Messenger, StatusCode
-from egamma.core.macros  import *
-from egamma.emulator.run3.menu.ChainDict import get_chain_dict
-from egamma.emulator import Accept
+from typing import List
+from trig_egamma_frame  import StatusCode, EventContext
+from trig_egamma_frame.emulator.run3.menu.ChainDict import get_chain_dict
+from trig_egamma_frame.emulator import Accept
 from pprint import pprint
 
 
 
-class ElectronChain(Messenger):
+class ElectronChain:
 
-  def __init__(self, trigName):
+  def __init__(self, trigName : str):
     
-    Messenger.__init__(self)
     self.trigName = trigName
     self.chainPart = get_chain_dict(self.trigName)
     self.sequences = self.prepareSequence()
     self.compile()
 
 
-  def name(self):
+  def name(self) -> str:
     return self.trigName
 
   # adapt from: https://gitlab.cern.ch/atlas/athena/-/blob/master/Trigger/TriggerCommon/TriggerMenuMT/python/HLT/Electron/ElectronChainConfiguration.py
   # ----------------------
   # Prepare the sequence
   # ----------------------
-  def prepareSequence(self):
+  def prepareSequence(self) -> List[str]:
       # This function prepares the list of step names from which assembleChainImpl would make the chain assembly from.
       
       # --------------------
@@ -193,7 +191,7 @@ class ElectronChain(Messenger):
   #
   # Initialize all hypos
   #
-  def initialize(self):
+  def initialize(self) -> StatusCode:
     for hypo in self.hypos:
       if hypo.initialize().isFailure():
         MSG_ERROR(self, f"Its not possible to initialize {hypo.name}")
@@ -204,7 +202,7 @@ class ElectronChain(Messenger):
   #
   # Finalize all hypos
   #
-  def finalize(self):
+  def finalize(self) -> StatusCode:
     for hypo in self.hypos:
       if hypo.finalize().isFailure():
         MSG_ERROR(self, f"Its not possible to finalize {hypo.name}")
@@ -216,7 +214,7 @@ class ElectronChain(Messenger):
   #
   # Emulate the sequence
   #
-  def accept(self, context):
+  def accept(self, context : EventContext) -> Accept:
 
     answer = Accept(self.trigName, [(hypo.name, False) for hypo in self.hypos])
     for hypo in self.hypos:

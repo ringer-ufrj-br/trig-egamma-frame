@@ -2,10 +2,9 @@
 
 __all__ = []
 
-
-from egamma.core import Messenger
-from egamma.core.macros  import *
-from egamma.core import declareProperty, StatusCode
+from typing import List, Any, Optional, Dict
+from egamma.core import Messenger, StatusCode
+from egamma.core.macros import *
 from egamma.emulator import Accept
 from egamma.emulator.run3.electron import L2CaloCutMaps
 from egamma.emulator.run3.ringer import RingerSelector
@@ -17,417 +16,414 @@ import os
 import numpy as np
 import math
 
-def same(value):
-    return [value]*9
-
+def same(value: Any) -> List[Any]:
+    """
+    Returns a list of 9 identical values.
     
-#
-# L2Calo hypo self.hypo
-#
+    Args:
+        value: The value to replicate.
+        
+    Returns:
+        List[Any]: A list containing the value repeated 9 times.
+    """
+    return [value] * 9
+
 class L2Calo(Messenger):
+    """
+    L2Calo hypo tool for Layer 2 Calorimeter emulation.
+    
+    Attributes:
+        name (str): The name of the hypo tool.
+        AcceptAll (bool): If True, all clusters are accepted.
+        UseRinger (bool): If True, use Ringer for selection.
+        EtaBins (List[float]): List of eta bin boundaries.
+        ETthr (List[float]): ET thresholds for each eta bin.
+        dETACLUSTERthr (float): Delta eta threshold between cluster and RoI.
+        dPHICLUSTERthr (float): Delta phi threshold between cluster and RoI.
+        F1thr (List[float]): F1 thresholds for each eta bin.
+        ET2thr (List[float]): High ET thresholds for each eta bin.
+        HADET2thr (List[float]): Hadronic ET thresholds for high ET bin.
+        HADETthr (List[float]): Hadronic ET thresholds for each eta bin.
+        WETA2thr (List[float]): Weta2 thresholds for each eta bin.
+        WSTOTthr (List[float]): Wstot thresholds for each eta bin.
+        F3thr (List[float]): F3 thresholds for each eta bin.
+        CARCOREthr (List[float]): Rcore thresholds for each eta bin.
+        CAERATIOthr (List[float]): Eratio thresholds for each eta bin.
+        ConfigPath (Optional[str]): Path to Ringer configuration file.
+        EtCut (float): ET cut value for Ringer.
+    """
 
-  #
-  # Constructor
-  #
-  def __init__(self, name, **kw):
+    def __init__(self, 
+                 name: str, 
+                 AcceptAll: bool = False,
+                 UseRinger: bool = False,
+                 EtaBins: List[float] = [0.0, 0.6, 0.8, 1.15, 1.37, 1.52, 1.81, 2.01, 2.37, 2.47],
+                 ETthr: List[float] = same(0),
+                 dETACLUSTERthr: float = 0.1,
+                 dPHICLUSTERthr: float = 0.1,
+                 F1thr: List[float] = same(0.005),
+                 ET2thr: List[float] = same(90.0 * GeV),
+                 HADET2thr: List[float] = same(999.0),
+                 HADETthr: List[float] = same(999.0),
+                 WETA2thr: List[float] = same(99999.),
+                 WSTOTthr: List[float] = same(99999.),
+                 F3thr: List[float] = same(99999.),
+                 CARCOREthr: List[float] = same(999.0),
+                 CAERATIOthr: List[float] = same(999.0),
+                 ConfigPath: Optional[str] = None,
+                 EtCut: float = -999.0):
+        """
+        Initialize the L2Calo hypo tool.
+        """
+        Messenger.__init__(self)
+        self.name = name
+        self.AcceptAll = AcceptAll
+        self.UseRinger = UseRinger
+        self.EtaBins = EtaBins
+        self.ETthr = ETthr
+        self.dETACLUSTERthr = dETACLUSTERthr
+        self.dPHICLUSTERthr = dPHICLUSTERthr
+        self.F1thr = F1thr
+        self.ET2thr = ET2thr
+        self.HADET2thr = HADET2thr
+        self.HADETthr = HADETthr
+        self.WETA2thr = WETA2thr
+        self.WSTOTthr = WSTOTthr
+        self.F3thr = F3thr
+        self.CARCOREthr = CARCOREthr
+        self.CAERATIOthr = CAERATIOthr
+        self.ConfigPath = ConfigPath
+        self.EtCut = EtCut
+        self.ringer = None
 
-    Messenger.__init__(self)
-    self.name = name
+    def initialize(self) -> StatusCode:
+        """
+        Initialize the L2Calo hypo tool, loading Ringer if needed.
+        
+        Returns:
+            StatusCode: SUCCESS or FAILURE.
+        """
+        if self.UseRinger:
+            MSG_INFO(self, f"Loading ringer models from {self.ConfigPath}")
+            self.ringer = RingerSelector(ConfigPath=self.ConfigPath)
+            if self.ringer.initialize().isFailure():
+                MSG_FATAL(self, "Its not possible to initialize the ringer selector.")
+                return StatusCode.FAILURE
 
-    declareProperty( self, kw, "AcceptAll"      , False                               )
-    declareProperty( self, kw, "UseRinger"      , False                               )
-    declareProperty( self, kw, "EtaBins"        , [0.0, 0.6, 0.8, 1.15, 1.37, 1.52, 1.81, 2.01, 2.37, 2.47] )
-    declareProperty( self, kw, "ETthr"          , same(0)                             )
-    declareProperty( self, kw, "dETACLUSTERthr" , 0.1                                 )
-    declareProperty( self, kw, "dPHICLUSTERthr" , 0.1                                 )
-    declareProperty( self, kw, "F1thr"          , same(0.005)                         )
-    declareProperty( self, kw, "ET2thr"         , same(90.0*GeV)                      )
-    declareProperty( self, kw, "HADET2thr"      , same(999.0)                         )
-    declareProperty( self, kw, "HADETthr"       , same(999.0)                         )
-    declareProperty( self, kw, "WETA2thr"       , same(99999.)                        )
-    declareProperty( self, kw, "WSTOTthr"       , same(99999.)                        )
-    declareProperty( self, kw, "F3thr"          , same(99999.)                        )
-    declareProperty( self, kw, "CARCOREthr"     , same(999.0)                         )
-    declareProperty( self, kw, "CAERATIOthr"    , same(999.0)                         )
-    declareProperty( self, kw, "ConfigPath"     , None                                )
-    declareProperty( self, kw, "EtCut"          , -999                                )
+        return StatusCode.SUCCESS
 
+    def finalize(self) -> StatusCode:
+        """
+        Finalize the L2Calo hypo tool.
+        
+        Returns:
+            StatusCode: SUCCESS.
+        """
+        return StatusCode.SUCCESS
 
+    def accept(self, context: Any) -> Accept:
+        """
+        Evaluate the L2Calo hypo for a given context.
+        
+        Args:
+            context: The execution context.
+            
+        Returns:
+            Accept: The acceptance result.
+        """
+        if self.UseRinger:
+            passed = self.emulate_ringer(context)
+        else:
+            passed = self.emulate(context)
 
-  #
-  # Initialize method
-  #
-  def initialize(self): 
+        return Accept(self.name, [("Pass", passed)])
 
-    if self.UseRinger:
-      MSG_INFO(self, f"Loading ringer models from {self.ConfigPath}")
-      self.ringer = RingerSelector(ConfigPath=self.ConfigPath)
-      if self.ringer.initialize().isFailure():
-        MSG_FATAL(self, "Its not possible to initialize the ringer selector.")
+    def emulate(self, context: Any) -> bool:
+        """
+        Perform L2 calorimenter emulation.
+        
+        Args:
+            context: The execution context.
+            
+        Returns:
+            bool: True if context is accepted.
+        """
+        pClus = context.getHandler("HLT__TrigEMClusterContainer")
+        emTauRoi = pClus.emTauRoI()
+        PassedCuts = 0
 
-    return StatusCode.SUCCESS
+        phiRef = emTauRoi.phi()
+        etaRef = emTauRoi.eta()
 
+        if abs(etaRef) > 2.6:
+            MSG_DEBUG(self, 'The cluster had eta coordinates beyond the EM fiducial volume.')
+            return False
 
+        if self.AcceptAll:
+            MSG_DEBUG(self, "Accept all.")
+            return True
 
-  #
-  # Finalize method
-  #
-  def finalize(self):
-    return StatusCode.SUCCESS
+        if math.fabs(phiRef) > np.pi:
+            phiRef -= 2 * np.pi
 
+        absEta = math.fabs(pClus.eta())
+        etaBin = -1
+        if absEta > self.EtaBins[-1]:
+            absEta = self.EtaBins[-1]
+        
+        for idx, value in enumerate(self.EtaBins[:-1]):
+            if (absEta >= self.EtaBins[idx] and absEta < self.EtaBins[idx + 1]):
+                etaBin = idx
+                break
 
-  #
-  # Accept method
-  #
-  def accept(self, context):
+        inCrack = True if (absEta > 2.37 or (absEta > 1.37 and absEta < 1.52)) else False
 
-    if self.UseRinger:
-      passed = self.emulate_ringer(context)
-    else:
-      passed = self.emulate(context)
+        dPhi = math.fabs(pClus.phi() - phiRef)
+        dPhi = dPhi if (dPhi < np.pi) else (2 * np.pi - dPhi)
 
-    return Accept( self.name, [ ("Pass", passed)] )
+        energyRatio = 0.0
+        if (pClus.emaxs1() + pClus.e2tsts1()) > 0:
+            energyRatio = (pClus.emaxs1() - pClus.e2tsts1()) / float(pClus.emaxs1() + pClus.e2tsts1())
 
+        rCore = 0.0
+        if (pClus.e277() != 0.0):
+            rCore = pClus.e237() / float(pClus.e277())
 
+        F1 = pClus.f1()
+        eT_T2Calo = float(pClus.et())
 
-  #
-  # Emulation method
-  #
-  def emulate(self, context):
+        hadET_T2Calo = 0.0
+        if (eT_T2Calo != 0 and pClus.eta() != 0):
+            hadET_T2Calo = pClus.ehad1() / math.cosh(math.fabs(pClus.eta())) / eT_T2Calo
 
+        Weta2 = pClus.weta2()
+        Wstot = pClus.wstot()
+        F3 = pClus.f3()
 
+        if (math.fabs(pClus.eta() - etaRef) > self.dETACLUSTERthr):
+            return False
+        PassedCuts += 1
 
-    pClus = context.getHandler( "HLT__TrigEMClusterContainer" )
-    # get the equivalent L1 EmTauRoi object in athena
-    emTauRoi = pClus.emTauRoI()
-    PassedCuts=0
+        if (dPhi > self.dPHICLUSTERthr):
+            MSG_DEBUG(self, 'dphi > dphicluster')
+            return False
+        PassedCuts += 1
 
-    # fill local variables for RoI reference position
-    phiRef = emTauRoi.phi()
-    etaRef = emTauRoi.eta()
+        if (etaBin == -1):
+            MSG_DEBUG(self, "Cluster eta: %1.3f  outside eta range ", absEta)
+            return False
+        PassedCuts += 1
 
-    if abs(etaRef) > 2.6:
-      MSG_DEBUG(self, 'The cluster had eta coordinates beyond the EM fiducial volume.')
-      return False
+        if (rCore < self.CARCOREthr[etaBin]): return False
+        PassedCuts += 1
 
-    if self.AcceptAll:
-      MSG_DEBUG(self, "Accept all.")
-      return True
+        if (inCrack or F1 < self.F1thr[etaBin]):
+            MSG_DEBUG(self, "TrigEMCluster: InCrack= %d F1=%1.3f", inCrack, F1)
+        else:
+            if (energyRatio < self.CAERATIOthr[etaBin]): return False
+        PassedCuts += 1
 
-    # correct phi the to right range (probably not needed anymore)
-    if  math.fabs(phiRef) > np.pi: phiRef -= 2*np.pi; # correct phi if outside range
+        if (eT_T2Calo < self.ETthr[etaBin]): return False
+        PassedCuts += 1
 
-    absEta = math.fabs( pClus.eta() )
-    etaBin = -1
-    if absEta > self.EtaBins[-1]:
-      absEta=self.EtaBins[-1]
-    # get the corrct eta bin range
-    for idx, value in enumerate(self.EtaBins):
-      if ( absEta > self.EtaBins[idx] and absEta < self.EtaBins[idx+1] ):
-        etaBin = idx
+        hadET_cut = 0.0
+        if (eT_T2Calo > self.ET2thr[etaBin]):
+            hadET_cut = self.HADET2thr[etaBin]
+        else:
+            hadET_cut = self.HADETthr[etaBin]
 
-    # Is in crack region?
-    inCrack = True if (absEta > 2.37 or (absEta > 1.37 and absEta < 1.52)) else False
+        if (hadET_T2Calo > hadET_cut): return False
+        PassedCuts += 1
+        PassedCuts += 1
 
-    # Deal with angle diferences greater than Pi
-    dPhi =  math.fabs(pClus.phi() - phiRef)
-    dPhi = dPhi if (dPhi < np.pi) else  (2*np.pi - dPhi)
+        if (Weta2 > self.WETA2thr[etaBin]): return False
+        PassedCuts += 1
 
-    # calculate cluster quantities // definition taken from TrigElectron constructor
-    if ( pClus.emaxs1() + pClus.e2tsts1() ) > 0 :
-      energyRatio = ( pClus.emaxs1() - pClus.e2tsts1() ) / float( pClus.emaxs1() + pClus.e2tsts1() )
+        if (Wstot >= self.WSTOTthr[etaBin]): return False
+        PassedCuts += 1
 
-    # (VD) here the definition is a bit different to account for the cut of e277 @ EF
-    if ( pClus.e277()!= 0.):
-      rCore = pClus.e237() / float(pClus.e277())
+        if (F3 > self.F3thr[etaBin]): return False
+        PassedCuts += 1
 
-    # fraction of energy deposited in 1st sampling
-    #if ( math.fabs(pClus.energy()) > 0.00001) :
-    #  F1 = (pClus.energy(CaloSampling.EMB1)+pClus.energy(CaloSampling.EME1))/float(pClus.energy())
-    F1 = pClus.f1()
+        MSG_DEBUG(self, 'T2Calo emulation approved...')
+        return True
 
-    eT_T2Calo  = float(pClus.et())
+    def emulate_ringer(self, context: Any) -> bool:
+        """
+        Perform Ringer emulation.
+        
+        Args:
+            context: The execution context.
+            
+        Returns:
+            bool: True if context is accepted by Ringer.
+        """
+        fc = context.getHandler("HLT__TrigEMClusterContainer")
+        et = fc.et()
 
-    if ( eT_T2Calo!=0 and pClus.eta()!=0 ):
-      hadET_T2Calo = pClus.ehad1()/math.cosh(math.fabs(pClus.eta()))/eT_T2Calo
+        if self.AcceptAll:
+            MSG_DEBUG(self, "Accept all")
+            return True
 
-    # extract Weta2 varable
-    Weta2 = pClus.weta2()
-    # extract Wstot varable
-    Wstot = pClus.wstot()
+        if et < self.EtCut:
+            return False
 
-    # extract F3 (backenergy i EM calorimeter
-    #e0 = pClus.energy(CaloSampling.PreSamplerB) + pClus.energy(CaloSampling.PreSamplerE)
-    #e1 = pClus.energy(CaloSampling.EMB1) + pClus.energy(CaloSampling.EME1)
-    #e2 = pClus.energy(CaloSampling.EMB2) + pClus.energy(CaloSampling.EME2)
-    #e3 = pClus.energy(CaloSampling.EMB3) + pClus.energy(CaloSampling.EME3)
-    #eallsamples = float(e0+e1+e2+e3)
-    #F3 = e3/eallsamples if math.fabs(eallsamples)>0. else 0.
-    F3 = pClus.f3()
-    # apply cuts: DeltaEta(clus-ROI)
-    if ( math.fabs(pClus.eta() - etaRef) > self.dETACLUSTERthr ):
-      return False
-
-    PassedCuts+=1  #Deta
-
-    # DeltaPhi(clus-ROI)
-    if ( dPhi > self.dPHICLUSTERthr ):
-      MSG_DEBUG(self, 'dphi > dphicluster')
-      return False
-
-    PassedCuts+=1 #DPhi
-
-    # eta range
-    if ( etaBin==-1 ):  # VD
-      MSG_DEBUG(self, "Cluster eta: %1.3f  outside eta range ",absEta )
-      return False
-    else:
-      MSG_DEBUG(self, "eta bin used for cuts ")
-
-    PassedCuts+=1 # passed eta cut
-
-    # Rcore
-    if ( rCore < self.CARCOREthr[etaBin] ):  return False
-    PassedCuts+=1 # Rcore
-
-    # Eratio
-    if ( inCrack or F1<self.F1thr[etaBin] ):
-      MSG_DEBUG(self, "TrigEMCluster: InCrack= %d F1=%1.3f",inCrack,F1 )
-    else:
-      if ( energyRatio < self.CAERATIOthr[etaBin] ): return False
-
-    PassedCuts+=1 # Eratio
-    if(inCrack): energyRatio = -1; # Set default value in crack for monitoring.
-
-    # ET_em
-    if ( eT_T2Calo < self.ETthr[etaBin]): return False
-
-    PassedCuts+=1 # ET_em
-
-    hadET_cut = 0.0
-    # find which ET_had to apply : this depends on the ET_em and the eta bin
-    if ( eT_T2Calo >  self.ET2thr[etaBin] ):
-      hadET_cut = self.HADET2thr[etaBin]
-    else:
-      hadET_cut = self.HADETthr[etaBin]
-
-    # ET_had
-    if ( hadET_T2Calo > hadET_cut ): return False
-    PassedCuts+=1 #ET_had
-    # F1
-    # if ( F1 < m_F1thr[0]) return true;  //(VD) not cutting on this variable, only used to select whether to cut or not on eRatio
-    PassedCuts+=1 # F1
-    # Weta2
-    if ( Weta2 > self.WETA2thr[etaBin]): return False
-    PassedCuts+=1 # Weta2
-    # Wstot
-    if ( Wstot >= self.WSTOTthr[etaBin]): return False
-    PassedCuts+=1 # Wstot
-    # F3
-    if ( F3 > self.F3thr[etaBin]): return False
-    PassedCuts+=1 # F3
-    # got this far => passed!
-    MSG_DEBUG(self, 'T2Calo emulation approved...')
-    return True
-
-
-
-  #
-  # Emulate ringer decision
-  #
-  def emulate_ringer(self, context):
-
-    fc = context.getHandler("HLT__TrigEMClusterContainer")
-    et = fc.et() # in GeV
-
-    if self.AcceptAll:
-      MSG_DEBUG(self, "Accept all")
-      return True
-
-    if et < self.EtCut:
-      return False
-
-    return self.ringer.emulate(context)
-
-
-
-
-
-
-#
-# For electron and photons auto configuration
-#
-
-
+        return self.ringer.emulate(context)
 
 
 class L2CaloConfiguration(Messenger):
+    """
+    Helper class to configure L2Calo based on chain information.
+    """
+    __operation_points = ['tight', 'medium', 'loose', 'vloose', 
+                          'lhtight', 'lhmedium', 'lhloose', 'lhvloose',
+                          'dnntight', 'dnnmedium', 'dnnloose', 'dnnvloose']
 
-  __operation_points  = [  'tight'    , 
-                           'medium'   , 
-                           'loose'    , 
-                           'vloose'   , 
-                           'lhtight'  , 
-                           'lhmedium' , 
-                           'lhloose'  , 
-                           'lhvloose' ,
-                           'dnntight' ,
-                           'dnnmedium',
-                           'dnnloose' ,
-                           'dnnvloose',
-                           ]
+    def __init__(self, name: str, cpart: Dict[str, Any]):
+        """
+        Initialize the configuration helper.
+        """
+        Messenger.__init__(self)
+        self.__cand = cpart['trigType']
+        self.__threshold = cpart['threshold']
+        self.__sel = 'ion' if 'ion' in cpart['extra'] else (cpart['addInfo'][0] if cpart['addInfo'] else cpart['IDinfo'])
+        self.__gsfinfo = cpart['gsfInfo'] if cpart['trigType'] == 'e' and cpart['gsfInfo'] else ''
+        self.__idperfinfo = cpart['idperfInfo'] if cpart['trigType'] == 'e' and cpart['idperfInfo'] else ''
+        self.__noringerinfo = cpart['L2IDAlg']
+        self.__ringerVersion = cpart['rVersion'] if 'rVersion' in cpart.keys() else None
 
+        self.hypo = L2Calo(name)
+        self.hypo.AcceptAll = False
+        self.hypo.UseRinger = False
+        self.hypo.EtaBins = [0.0, 0.6, 0.8, 1.15, 1.37, 1.52, 1.81, 2.01, 2.37, 2.47]
+        self.hypo.ETthr = same(self.__threshold * GeV)
+        self.hypo.dETACLUSTERthr = 0.1
+        self.hypo.dPHICLUSTERthr = 0.1
+        self.hypo.F1thr = same(0.005)
+        self.hypo.ET2thr = same(90.0 * GeV)
+        self.hypo.HADET2thr = same(999.0)
+        self.hypo.HADETthr = same(0.058)
+        self.hypo.WETA2thr = same(99999.)
+        self.hypo.WSTOTthr = same(99999.)
+        self.hypo.F3thr = same(99999.)
+        self.hypo.CARCOREthr = same(-9999.)
+        self.hypo.CAERATIOthr = same(-9999.)
 
-  def __init__(self, name, cpart):
-    Messenger.__init__(self)
+        MSG_INFO(self, 'Signature :%s', self.__cand)
+        MSG_INFO(self, 'Threshold :%s', self.__threshold)
+        MSG_INFO(self, 'Pidname   :%s', self.__sel)
+        MSG_INFO(self, 'noringerinfo :%s', self.__noringerinfo)
 
-    self.__cand          = cpart['trigType']
-    self.__threshold     = cpart['threshold']
-    self.__sel           = 'ion' if 'ion' in cpart['extra'] else (cpart['addInfo'][0] if cpart['addInfo'] else cpart['IDinfo'])
-    self.__gsfinfo       = cpart['gsfInfo'] if cpart['trigType']=='e' and cpart['gsfInfo'] else ''
-    self.__idperfinfo    = cpart['idperfInfo'] if cpart['trigType']=='e' and cpart['idperfInfo'] else ''
-    self.__noringerinfo  = cpart['L2IDAlg']
-    self.__ringerVersion = cpart['rVersion'] if 'rVersion' in cpart.keys() else None
+    def pidname(self) -> str:
+        """Returns the PID name."""
+        return self.__sel
 
-    self.hypo = L2Calo(name)
-    self.hypo.AcceptAll      = False
-    self.hypo.UseRinger      = False
-    self.hypo.EtaBins        = [0.0, 0.6, 0.8, 1.15, 1.37, 1.52, 1.81, 2.01, 2.37, 2.47]
-    self.hypo.ETthr          = same( self.__threshold*GeV )
-    self.hypo.dETACLUSTERthr = 0.1
-    self.hypo.dPHICLUSTERthr = 0.1
-    self.hypo.F1thr          = same( 0.005    )
-    self.hypo.ET2thr         = same( 90.0*GeV )
-    self.hypo.HADET2thr      = same( 999.0    )
-    self.hypo.HADETthr       = same( 0.058    )
-    self.hypo.WETA2thr       = same( 99999.   )
-    self.hypo.WSTOTthr       = same( 99999.   )
-    self.hypo.F3thr          = same( 99999.   )
-    self.hypo.CARCOREthr     = same( -9999.   )
-    self.hypo.CAERATIOthr    = same( -9999.   )
+    def etthr(self) -> float:
+        """Returns the ET threshold."""
+        return self.__threshold
 
-    MSG_INFO(self, 'Signature :%s'   , self.__cand )
-    MSG_INFO(self, 'Threshold :%s'   , self.__threshold )
-    MSG_INFO(self, 'Pidname   :%s'   , self.__sel )
-    MSG_INFO(self, 'noringerinfo :%s', self.__noringerinfo )
+    def isElectron(self) -> bool:
+        """Returns True if the candidate is an electron."""
+        return 'e' in self.__cand
 
+    def isPhoton(self) -> bool:
+        """Returns True if the candidate is a photon."""
+        return 'g' in self.__cand
 
-  def pidname( self ):
-    return self.__sel
+    def noringerinfo(self) -> str:
+        """Returns noringer information."""
+        return self.__noringerinfo
 
-  def etthr(self):
-    return self.__threshold
+    def gsfinfo(self) -> str:
+        """Returns GSF information."""
+        return self.__gsfinfo
 
-  def isElectron(self):
-    return 'e' in self.__cand
+    def idperfinfo(self) -> str:
+        """Returns idperf information."""
+        return self.__idperfinfo
 
-  def isPhoton(self):
-    return 'g' in self.__cand
+    def nocut(self) -> None:
+        """Configure L2Calo for no cuts."""
+        MSG_INFO(self, 'Configure nocut')
+        self.hypo.AcceptAll = True
+        self.hypo.UseRinger = False
+        self.hypo.ETthr = same(self.etthr() * GeV)
+        self.hypo.dETACLUSTERthr = 9999.
+        self.hypo.dPHICLUSTERthr = 9999.
+        self.hypo.F1thr = same(0.0)
+        self.hypo.HADETthr = same(9999.)
+        self.hypo.CARCOREthr = same(-9999.)
+        self.hypo.CAERATIOthr = same(-9999.)
 
-  def noringerinfo(self):
-    return self.__noringerinfo
+    def etcut(self) -> None:
+        """Configure L2Calo for ET cut only."""
+        MSG_INFO(self, 'Configure etcut or nopid')
+        self.hypo.UseRinger = False
+        self.hypo.ETthr = same((self.etthr() - 3) * GeV)
+        self.hypo.dETACLUSTERthr = 9999.
+        self.hypo.dPHICLUSTERthr = 9999.
+        self.hypo.F1thr = same(0.0)
+        self.hypo.HADETthr = same(9999.)
+        self.hypo.CARCOREthr = same(-9999.)
+        self.hypo.CAERATIOthr = same(-9999.)
 
-  def gsfinfo(self):
-    return self.__gsfinfo
+    def noringer(self) -> None:
+        """Configure L2Calo for non-Ringer selection."""
+        MSG_INFO(self, 'Configure noringer')
+        self.hypo.UseRinger = False
+        self.hypo.ETthr = same((self.etthr() - 3) * GeV)
+        self.hypo.HADETthr = L2CaloCutMaps(self.etthr()).MapsHADETthr[self.pidname()]
+        self.hypo.CARCOREthr = L2CaloCutMaps(self.etthr()).MapsCARCOREthr[self.pidname()]
+        self.hypo.CAERATIOthr = L2CaloCutMaps(self.etthr()).MapsCAERATIOthr[self.pidname()]
 
-  def idperfinfo(self):
-    return self.__idperfinfo
+    def nominal(self) -> None:
+        """Configure L2Calo for nominal Ringer selection."""
+        MSG_INFO(self, 'Configure ringer')
+        self.hypo.UseRinger = True
+        self.hypo.EtCut = (self.etthr() - 3.) * GeV
+        if not self.pidname() in self.__operation_points:
+            MSG_FATAL(self, f"Bad selection name: {self.pidname()}")
 
+        opnames = {
+            'tight': 'Tight',
+            'medium': 'Medium',
+            'loose': 'Loose',
+            'vloose': 'VeryLoose',
+        }
 
-  def nocut(self):
+        path = os.path.join(
+            electronFlags.ringerVersion[self.__ringerVersion],
+            'ElectronRinger{op}TriggerConfig.conf'.format(op=opnames[treat_pidname(self.pidname())])
+        )
+        self.hypo.ConfigPath = path
+
+    def compile(self) -> None:
+        """Compile the configuration based on PID and chain info."""
+        if self.pidname() in ('etcut', 'ion', 'nopid'):
+            self.etcut()
+        elif self.pidname() in self.__operation_points and 'noringer' in self.noringerinfo() and self.isElectron():
+            self.noringer()
+        elif self.pidname() in self.__operation_points and 'noringer' not in self.noringerinfo() and self.isElectron():
+            self.nominal()
+        elif self.pidname() in self.__operation_points and self.isPhoton() and 'ringer' != self.noringerinfo():
+            self.etcut()
+        elif self.pidname() in self.__operation_points and self.isPhoton() and 'ringer' == self.noringerinfo():
+            self.nominal()
+        elif self.etthr() == 0:
+            self.nocut()
+
+def configure(name: str, chainPart: Dict[str, Any]) -> Messenger:
+    """
+    Configure the L2Calo hypo tool.
     
-    MSG_INFO(self, 'Configure nocut' )
-    self.hypo.AcceptAll      = True
-    self.hypo.UseRinger      = False
-    self.hypo.ETthr          = same( self.etthr()*GeV )
-    self.hypo.dETACLUSTERthr = 9999.
-    self.hypo.dPHICLUSTERthr = 9999.
-    self.hypo.F1thr          = same( 0.0    )
-    self.hypo.HADETthr       = same( 9999.  )
-    self.hypo.CARCOREthr     = same( -9999. )
-    self.hypo.CAERATIOthr    = same( -9999. )
-
-
-  def etcut(self):
-
-    MSG_INFO(self, 'Configure etcut or nopid' )
-    self.hypo.UseRinger      = False
-    self.hypo.ETthr          = same( ( self.etthr()  -  3 )*GeV )
-    self.hypo.dETACLUSTERthr = 9999.
-    self.hypo.dPHICLUSTERthr = 9999.
-    self.hypo.F1thr          = same( 0.0    )
-    self.hypo.HADETthr       = same( 9999.  )
-    self.hypo.CARCOREthr     = same( -9999. )
-    self.hypo.CAERATIOthr    = same( -9999. )
-
-
-  def noringer(self):
-
-    MSG_INFO(self, 'Configure noringer' )
-    self.hypo.UseRinger   = False
-    self.hypo.ETthr       = same( ( self.etthr()  - 3 )*GeV )
-    self.hypo.HADETthr    = L2CaloCutMaps( self.etthr() ).MapsHADETthr[self.pidname()]
-    self.hypo.CARCOREthr  = L2CaloCutMaps( self.etthr() ).MapsCARCOREthr[self.pidname()]
-    self.hypo.CAERATIOthr = L2CaloCutMaps( self.etthr() ).MapsCAERATIOthr[self.pidname()]
-
-
-  def nominal(self):
-
-    MSG_INFO(self, 'Configure ringer' )
-    self.hypo.UseRinger = True
-    self.hypo.EtCut     = (self.etthr()-3.)*GeV  
-    if not self.pidname() in self.__operation_points:
-      MSG_FATAL(self, f"Bad selection name: {self.pidname()}")
-    
-    opnames = {
-      'tight' : 'Tight',
-      'medium': 'Medium',
-      'loose' : 'Loose',
-      'vloose': 'VeryLoose',
-    }
-
-    # setup the electron ringer abspath
-    path = os.path.join(
-      electronFlags.ringerVersion[self.__ringerVersion],
-      'ElectronRinger{op}TriggerConfig.conf'.format(op=opnames[treat_pidname(self.pidname())])
-    )
-    # Configure ringer here
-    self.hypo.ConfigPath = path
-
-
-
-  #
-  # compile the chain
-  #
-  def compile(self):
-
-    if self.pidname() in ('etcut', 'ion', 'nopid'):
-      self.etcut()
-
-    elif self.pidname() in self.__operation_points and 'noringer' in self.noringerinfo() and self.isElectron():
-      self.noringer()
-
-    elif self.pidname() in self.__operation_points and 'noringer' not in self.noringerinfo() and self.isElectron():
-      self.nominal()
-
-    elif self.pidname() in self.__operation_points and self.isPhoton() and  'ringer'!=self.noringerinfo():
-      self.etcut()
-    elif self.pidname() in self.__operation_points and self.isPhoton() and  'ringer'==self.noringerinfo():
-      self.nominal()
-   
-    elif self.etthr()==0:
-      self.nocut()
-
-
-
-
-
-#
-# Configure the hypo from trigger name
-#
-def configure( name, chainPart):
-
-  config = L2CaloConfiguration(name, chainPart)
-  config.compile()
-  return config.hypo
+    Args:
+        name (str): The name of the hypo tool.
+        chainPart (dict): Chain configuration dictionary.
+        
+    Returns:
+        Messenger: The configured L2Calo hypo tool.
+    """
+    config = L2CaloConfiguration(name, chainPart)
+    config.compile()
+    return config.hypo
 

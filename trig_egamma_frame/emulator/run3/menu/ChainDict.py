@@ -1,10 +1,10 @@
 
 __all__ = ["get_chain_dict", "treat_pidname", "ringer_versions"]
 
-from egamma.core import Messenger
-from egamma.core.macros  import *
+from typing import Dict
 from pprint import pprint
 from copy import copy
+from loguru import logger
 
 ringer_versions = ['run2_v8', 'run3_v0', 'run3_v1']
 
@@ -104,7 +104,7 @@ PhotonChainParts = {
     }
 
 
-def treat_pidname(pidname):
+def treat_pidname(pidname : str) -> str:
   if 'tight' in pidname:
     return 'tight'
   elif 'medium' in pidname:
@@ -116,18 +116,12 @@ def treat_pidname(pidname):
     return 'loose'
 
 
-class ChainDict(Messenger):
+class ChainDict:
 
-    def __init__(self, trigName):
-        Messenger.__init__(self)
+    def __init__(self, trigName : str):
         self.trigName = trigName
         self.args = {}
 
-
-
-    #
-    # Get chain dict
-    #
     def configure(self):
 
         d = copy(ElectronChainParts_Default)
@@ -169,12 +163,15 @@ class ChainDict(Messenger):
         self.args = d
 
 
-def get_chain_dict( trigger ):
+def get_chain_dict( trigger : str ) -> Dict:
 
     chain = ChainDict(trigger)
     chain.configure()
     return chain.args
     
+
+
+
 if __name__ == "__main__":
 
 
@@ -188,7 +185,6 @@ if __name__ == "__main__":
                     ]
 
     for trigger in trigger_list:
-
         chain = ChainDict(trigger)
         chain.configure()   
         pprint(chain.args)
