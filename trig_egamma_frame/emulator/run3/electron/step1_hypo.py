@@ -2,19 +2,20 @@
 
 __all__ = []
 
-from typing import List, Any, Optional, Dict
-from egamma.core import Messenger, StatusCode
-from egamma.core.macros import *
-from egamma.emulator import Accept
-from egamma.emulator.run3.electron import L2CaloCutMaps
-from egamma.emulator.run3.ringer import RingerSelector
-from egamma.emulator.run3.menu import electronFlags, treat_pidname
-from egamma import GeV
-from ROOT import TEnv
-
 import os
 import numpy as np
 import math
+
+from loguru import logger
+from typing import List, Any, Optional, Dict
+from trig_egamma_frame import StatusCode
+from trig_egamma_frame.emulator import Accept
+from trig_egamma_frame.emulator.run3.selector import L2CaloCutMaps, RingerSelector
+from trig_egamma_frame.emulator.run3.menu import electronFlags, treat_pidname
+from trig_egamma_frame import GeV
+from ROOT import TEnv
+
+
 
 def same(value: Any) -> List[Any]:
     """
@@ -28,7 +29,7 @@ def same(value: Any) -> List[Any]:
     """
     return [value] * 9
 
-class L2Calo(Messenger):
+class L2Calo:
     """
     L2Calo hypo tool for Layer 2 Calorimeter emulation.
     
@@ -75,7 +76,6 @@ class L2Calo(Messenger):
         """
         Initialize the L2Calo hypo tool.
         """
-        Messenger.__init__(self)
         self.name = name
         self.AcceptAll = AcceptAll
         self.UseRinger = UseRinger
@@ -104,10 +104,10 @@ class L2Calo(Messenger):
             StatusCode: SUCCESS or FAILURE.
         """
         if self.UseRinger:
-            MSG_INFO(self, f"Loading ringer models from {self.ConfigPath}")
+            logger.info( f"Loading ringer models from {self.ConfigPath}")
             self.ringer = RingerSelector(ConfigPath=self.ConfigPath)
             if self.ringer.initialize().isFailure():
-                MSG_FATAL(self, "Its not possible to initialize the ringer selector.")
+                logger.error( "Its not possible to initialize the ringer selector.")
                 return StatusCode.FAILURE
 
         return StatusCode.SUCCESS
@@ -156,11 +156,11 @@ class L2Calo(Messenger):
         etaRef = emTauRoi.eta()
 
         if abs(etaRef) > 2.6:
-            MSG_DEBUG(self, 'The cluster had eta coordinates beyond the EM fiducial volume.')
+            logger.debug( 'The cluster had eta coordinates beyond the EM fiducial volume.')
             return False
 
         if self.AcceptAll:
-            MSG_DEBUG(self, "Accept all.")
+            logger.debug( "Accept all.")
             return True
 
         if math.fabs(phiRef) > np.pi:
@@ -205,12 +205,12 @@ class L2Calo(Messenger):
         PassedCuts += 1
 
         if (dPhi > self.dPHICLUSTERthr):
-            MSG_DEBUG(self, 'dphi > dphicluster')
+            logger.debug( 'dphi > dphicluster')
             return False
         PassedCuts += 1
 
         if (etaBin == -1):
-            MSG_DEBUG(self, "Cluster eta: %1.3f  outside eta range ", absEta)
+            logger.debug( "Cluster eta: %1.3f  outside eta range ", absEta)
             return False
         PassedCuts += 1
 
@@ -218,7 +218,7 @@ class L2Calo(Messenger):
         PassedCuts += 1
 
         if (inCrack or F1 < self.F1thr[etaBin]):
-            MSG_DEBUG(self, "TrigEMCluster: InCrack= %d F1=%1.3f", inCrack, F1)
+            logger.debug( "TrigEMCluster: InCrack= %d F1=%1.3f", inCrack, F1)
         else:
             if (energyRatio < self.CAERATIOthr[etaBin]): return False
         PassedCuts += 1
@@ -262,7 +262,7 @@ class L2Calo(Messenger):
         et = fc.et()
 
         if self.AcceptAll:
-            MSG_DEBUG(self, "Accept all")
+            logger.debug( "Accept all")
             return True
 
         if et < self.EtCut:
@@ -271,7 +271,7 @@ class L2Calo(Messenger):
         return self.ringer.emulate(context)
 
 
-class L2CaloConfiguration(Messenger):
+class L2CaloConfiguration:
     """
     Helper class to configure L2Calo based on chain information.
     """
@@ -283,7 +283,6 @@ class L2CaloConfiguration(Messenger):
         """
         Initialize the configuration helper.
         """
-        Messenger.__init__(self)
         self.__cand = cpart['trigType']
         self.__threshold = cpart['threshold']
         self.__sel = 'ion' if 'ion' in cpart['extra'] else (cpart['addInfo'][0] if cpart['addInfo'] else cpart['IDinfo'])
@@ -309,10 +308,10 @@ class L2CaloConfiguration(Messenger):
         self.hypo.CARCOREthr = same(-9999.)
         self.hypo.CAERATIOthr = same(-9999.)
 
-        MSG_INFO(self, 'Signature :%s', self.__cand)
-        MSG_INFO(self, 'Threshold :%s', self.__threshold)
-        MSG_INFO(self, 'Pidname   :%s', self.__sel)
-        MSG_INFO(self, 'noringerinfo :%s', self.__noringerinfo)
+        logger.info( f'Signature :{self.__cand}')
+        logger.info( f'Threshold :{self.__threshold}')
+        logger.info( f'Pidname   :{self.__sel}')
+        logger.info( f'noringerinfo :{self.__noringerinfo}')
 
     def pidname(self) -> str:
         """Returns the PID name."""
@@ -357,7 +356,7 @@ class L2CaloConfiguration(Messenger):
 
     def etcut(self) -> None:
         """Configure L2Calo for ET cut only."""
-        MSG_INFO(self, 'Configure etcut or nopid')
+        logger.info( 'Configure etcut or nopid')
         self.hypo.UseRinger = False
         self.hypo.ETthr = same((self.etthr() - 3) * GeV)
         self.hypo.dETACLUSTERthr = 9999.
@@ -369,7 +368,7 @@ class L2CaloConfiguration(Messenger):
 
     def noringer(self) -> None:
         """Configure L2Calo for non-Ringer selection."""
-        MSG_INFO(self, 'Configure noringer')
+        logger.info( 'Configure noringer')
         self.hypo.UseRinger = False
         self.hypo.ETthr = same((self.etthr() - 3) * GeV)
         self.hypo.HADETthr = L2CaloCutMaps(self.etthr()).MapsHADETthr[self.pidname()]
@@ -378,11 +377,11 @@ class L2CaloConfiguration(Messenger):
 
     def nominal(self) -> None:
         """Configure L2Calo for nominal Ringer selection."""
-        MSG_INFO(self, 'Configure ringer')
+        logger.info( 'Configure ringer')
         self.hypo.UseRinger = True
         self.hypo.EtCut = (self.etthr() - 3.) * GeV
         if not self.pidname() in self.__operation_points:
-            MSG_FATAL(self, f"Bad selection name: {self.pidname()}")
+            logger.error( f"Bad selection name: {self.pidname()}")
 
         opnames = {
             'tight': 'Tight',
@@ -412,7 +411,7 @@ class L2CaloConfiguration(Messenger):
         elif self.etthr() == 0:
             self.nocut()
 
-def configure(name: str, chainPart: Dict[str, Any]) -> Messenger:
+def configure(name: str, chainPart: Dict[str, Any]):
     """
     Configure the L2Calo hypo tool.
     
@@ -421,7 +420,7 @@ def configure(name: str, chainPart: Dict[str, Any]) -> Messenger:
         chainPart (dict): Chain configuration dictionary.
         
     Returns:
-        Messenger: The configured L2Calo hypo tool.
+        The configured L2Calo hypo tool.
     """
     config = L2CaloConfiguration(name, chainPart)
     config.compile()

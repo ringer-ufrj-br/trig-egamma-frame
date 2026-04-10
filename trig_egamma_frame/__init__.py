@@ -53,3 +53,13 @@ from .dataframe import *
 from . import event
 __all__.extend(event.__all__)
 from .event import *
+
+from . import emulator
+__all__.extend(emulator.__all__)
+from .emulator import *
+
+from . import algorithms
+__all__.extend(algorithms.__all__)
+from .algorithms import *
+
+

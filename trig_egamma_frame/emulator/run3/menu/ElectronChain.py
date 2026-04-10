@@ -6,7 +6,7 @@ from trig_egamma_frame  import StatusCode, EventContext
 from trig_egamma_frame.emulator.run3.menu.ChainDict import get_chain_dict
 from trig_egamma_frame.emulator import Accept
 from pprint import pprint
-
+from loguru import logger
 
 
 class ElectronChain:
@@ -71,7 +71,7 @@ class ElectronChain:
       # Now, we will add this if there is any IDInfo (i.e. any of dnn* or lh* in the chain name). Otherwise we wont run precision steps
       
       if not self.chainPart['IDinfo'] and not self.chainPart['isoInfo'] and not self.chainPart['addInfo']: 
-          MSG_DEBUG(self, "No IDInfo, no isoInfo and no addInfo. Returning here up to fastElectron")
+          logger.debug("No IDInfo, no isoInfo and no addInfo. Returning here up to fastElectron")
           return stepNames
       if self.chainPart['lrtInfo']:
           stepNames += ['getPrecisionCaloElectron_lrt']
@@ -80,7 +80,7 @@ class ElectronChain:
       # If its an etcut chain, we will not run precision Tracking Electron. Just precision Calo. So returning here if its an etcut chain unless its an etcut_idperf chaiin:
       
       if 'etcut' in self.chainPart['addInfo'] and 'idperf' not in self.chainPart['idperfInfo']:
-          MSG_DEBUG(self, "This is an etcut chain. Returning here")
+          logger.debug("This is an etcut chain. Returning here")
           return stepNames
       # Step5
       # After precisionCalo Electron we have to do precision tracking next. Current available variantas are:
@@ -108,7 +108,7 @@ class ElectronChain:
           
       # If its an idperf chain, we will not run precision Electron. Just precision Calo and Precision Tracking so returning here if its an etcut chain
       if 'idperf' in self.chainPart['idperfInfo']:
-          MSG_DEBUG(self, "This is an idperf chain. Returning here")
+          logger.debug("This is an idperf chain. Returning here")
           return stepNames
       # Step7
       # and Finally! once we have precision tracking adn precision calo, we can build our electrons!. Current available variantas are:
@@ -126,7 +126,7 @@ class ElectronChain:
               stepNames += ['getPrecisionGSFElectron_lrt']
           else:
               stepNames += ['getPrecisionGSFElectron']
-      MSG_DEBUG(self, "Returning chain with all steps in the sequence")
+      logger.debug("Returning chain with all steps in the sequence")
       return stepNames
 
 
@@ -142,20 +142,20 @@ class ElectronChain:
   # Configure L1 trigger
   #
   def getL1Calo(self):
-    from egamma.emulator.run3.electron.step0_hypo import configure
+    from trig_egamma_frame.emulator.run3.electron.step0_hypo import configure
     name = "L1Calo"
     hypo = configure( name , self.chainPart)
     return hypo
 
 
   def getFastCalo(self):
-    from egamma.emulator.run3.electron.step1_hypo import configure
+    from trig_egamma_frame.emulator.run3.electron.step1_hypo import configure
     name = "FastCalo"
     hypo = configure( name , self.chainPart)
     return hypo
 
   def getFastElectron(self):
-    from egamma.emulator.run3.electron.step2_hypo import configure
+    from trig_egamma_frame.emulator.run3.electron.step2_hypo import configure
     name = "FastElectron"
     hypo = configure( name , self.chainPart)
     return hypo
@@ -164,7 +164,7 @@ class ElectronChain:
     return None
 
   def getPrecisionCaloElectron(self):
-    from egamma.emulator.run3.electron.step3_hypo import configure
+    from trig_egamma_frame.emulator.run3.electron.step3_hypo import configure
     name = "PrecisionCalo"
     hypo = configure( name , self.chainPart)
     return hypo
@@ -182,7 +182,7 @@ class ElectronChain:
     return hypo
 
   def getPrecisionElectron(self):
-    from egamma.emulator.run3.electron.step4_hypo import configure
+    from trig_egamma_frame.emulator.run3.electron.step4_hypo import configure
     name = "PrecisionElectron"
     hypo = configure( name , self.chainPart)
     return hypo
@@ -194,7 +194,7 @@ class ElectronChain:
   def initialize(self) -> StatusCode:
     for hypo in self.hypos:
       if hypo.initialize().isFailure():
-        MSG_ERROR(self, f"Its not possible to initialize {hypo.name}")
+        logger.error(f"Its not possible to initialize {hypo.name}")
         return StatusCode.FAILURE
 
     return StatusCode.SUCCESS
@@ -205,7 +205,7 @@ class ElectronChain:
   def finalize(self) -> StatusCode:
     for hypo in self.hypos:
       if hypo.finalize().isFailure():
-        MSG_ERROR(self, f"Its not possible to finalize {hypo.name}")
+        logger.error(f"Its not possible to finalize {hypo.name}")
         return StatusCode.FAILURE
 
     return StatusCode.SUCCESS

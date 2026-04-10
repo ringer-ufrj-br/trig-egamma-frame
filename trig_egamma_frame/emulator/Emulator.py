@@ -2,6 +2,7 @@
 __all__ = ["Emulator", "attach"]
 
 
+from loguru import logger
 from trig_egamma_frame import Algorithm, StatusCode, ToolSvc
 import collections
 
@@ -58,9 +59,9 @@ class Emulator( Algorithm ):
     """
 
     for chain in self.chains.values():
-      MSG_INFO( self, f'Initializing {chain.name()} chain')
+      logger.info( f'Initializing {chain.name()} chain')
       if chain.initialize().isFailure():
-        MSG_FATAL( self, f'Can not initialize {chain.name()}')
+        logger.error( f'Can not initialize {chain.name()}')
 
     return StatusCode.SUCCESS
 
@@ -93,7 +94,7 @@ class Emulator( Algorithm ):
     if self.isValid(key):
       return self.chains[key].accept( context )
     else:
-      MSG_ERROR( self, f"The key {key} is not in the emulation" )
+      logger.error( f"The key {key} is not in the emulation" )
 
 
   def finalize(self) -> StatusCode:
@@ -105,9 +106,9 @@ class Emulator( Algorithm ):
     """
 
     for chain in self.chains.values():
-      MSG_INFO( self, f'Finalizing {chain.name()} chain')
+      logger.info( f'Finalizing {chain.name()} chain')
       if chain.finalize().isFailure():
-        MSG_ERROR( self, f'Can not finalizing {chain.name()}')
+        logger.error( f'Can not finalizing {chain.name()}')
 
     return StatusCode.SUCCESS
 

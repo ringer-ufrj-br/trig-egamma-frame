@@ -9,7 +9,7 @@ with open("requirements.txt", "r") as f:
 
 
 setup(
-    name='egamma',
+    name='trig_egamma_frame',
     version='1.0.0',
     license='GPL-3.0',
     #description='novacula orquestrator',

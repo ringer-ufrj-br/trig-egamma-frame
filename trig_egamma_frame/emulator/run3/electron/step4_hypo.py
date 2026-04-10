@@ -2,15 +2,14 @@
 __all__ = ['TrigEgammaPrecisionElectronHypoTool']
 
 from typing import List, Any, Optional, Dict
-from egamma.core import Messenger, StatusCode
-from egamma.core.macros import *
-from egamma.emulator import Accept
-from egamma import GeV
-
+from trig_egamma_frame.emulator import StatusCode
+from trig_egamma_frame.emulator import Accept
+from trig_egamma_frame import GeV
+from loguru import logger
 import numpy as np
 import math
 
-class PrecisionElectron(Messenger):
+class PrecisionElectron:
     """
     PrecisionElectron hypo tool for precision electron emulation.
     
@@ -114,7 +113,7 @@ class PrecisionElectron(Messenger):
             return True
 
         if abs(etaRef) > 2.6:
-            MSG_DEBUG(self, 'The cluster had eta coordinates beyond the EM fiducial volume.')
+            logger.debug( 'The cluster had eta coordinates beyond the EM fiducial volume.')
             return False
 
         cl = el.caloCluster()
@@ -148,7 +147,7 @@ class PrecisionElectron(Messenger):
         relptvarcone20 = ptvarcone20 / el.pt()
 
         if self.RelPtConeCut < -100:
-            MSG_DEBUG(self, "not applying isolation. Returning NOW")
+            logger.debug( "not applying isolation. Returning NOW")
             return True
 
         if relptvarcone20 > self.RelPtConeCut:
@@ -157,7 +156,7 @@ class PrecisionElectron(Messenger):
         return True
 
 
-class PrecisionElectronConfiguration(Messenger):
+class PrecisionElectronConfiguration:
     """
     Helper class to configure PrecisionElectron based on chain information.
     """
@@ -184,7 +183,6 @@ class PrecisionElectronConfiguration(Messenger):
         """
         Initialize the PrecisionElectron configuration helper.
         """
-        Messenger.__init__(self)
         self.__threshold = cpart['threshold']
         self.__sel = cpart['addInfo'][0] if cpart['addInfo'] else cpart['IDinfo']
         self.__iso = cpart['isoInfo']
@@ -202,10 +200,10 @@ class PrecisionElectronConfiguration(Messenger):
         self.hypo.AcceptAll = False
         self.hypo.DoNoPid = False
 
-        MSG_INFO(self, f'Electron_Threshold :{self.__threshold}')
-        MSG_INFO(self, f'Electron_Pidname   :{self.pidname()}')
-        MSG_INFO(self, f'Electron_iso       :{self.__iso}')
-        MSG_INFO(self, f'Electron_d0        :{self.__d0}')
+        logger.info( f'Electron_Threshold :{self.__threshold}')
+        logger.info( f'Electron_Pidname   :{self.pidname()}')
+        logger.info( f'Electron_iso       :{self.__iso}')
+        logger.info( f'Electron_d0        :{self.__d0}')
 
     def pidname(self) -> str:
         """Returns the PID name."""
@@ -229,14 +227,14 @@ class PrecisionElectronConfiguration(Messenger):
 
     def nocut(self) -> None:
         """Configure PrecisionElectron for no cuts."""
-        MSG_INFO(self, 'Configure nocut')
+        logger.info( 'Configure nocut')
         self.hypo.ETthr = self.etthr() * GeV
         self.hypo.dETACLUSTERthr = 9999.
         self.hypo.dPHICLUSTERthr = 9999.
 
     def noPid(self) -> None:
         """Configure PrecisionElectron for no PID selection."""
-        MSG_INFO(self, 'Configure noPid')
+        logger.info( 'Configure noPid')
         self.hypo.DoNoPid = True
         self.hypo.ETthr = self.etthr() * GeV
         self.hypo.dETACLUSTERthr = 9999.
@@ -245,7 +243,7 @@ class PrecisionElectronConfiguration(Messenger):
     def addLRTCut(self) -> None:
         """Add LRT cuts if applicable."""
         if self.d0Info() not in self.__lrtD0Cut:
-            MSG_FATAL(self, f"Bad LRT selection name: {self.d0Info()}")
+            logger.error( f"Bad LRT selection name: {self.d0Info()}")
         self.hypo.d0Cut = self.__lrtD0Cut[self.d0Info()]
 
     def acceptAll(self) -> None:
@@ -255,13 +253,13 @@ class PrecisionElectronConfiguration(Messenger):
     def addIsoCut(self) -> None:
         """Add isolation cuts if applicable."""
         if self.isoInfo() not in self.__isolationCut:
-            MSG_FATAL(self, f"Bad Iso selection name: {self.isoInfo()}")
+            logger.error( f"Bad Iso selection name: {self.isoInfo()}")
         self.hypo.RelPtConeCut = self.__isolationCut[self.isoInfo()]
 
     def nominal(self) -> None:
         """Configure PrecisionElectron for nominal selection."""
         if self.pidname() not in self.__operation_points:
-            MSG_FATAL(self, "Bad selection name: %s" % self.pidname())
+            logger.error( "Bad selection name: %s" % self.pidname())
         self.hypo.PidName = self.pidname()
 
     def compile(self) -> None:
@@ -274,11 +272,11 @@ class PrecisionElectronConfiguration(Messenger):
             self.nominal()
 
         if self.isoInfo() and self.isoInfo() != "":
-            MSG_INFO(self, "Adding IsoCut...")
+            logger.info( "Adding IsoCut...")
             self.addIsoCut()
         
         if self.d0Info() and self.d0Info() != "":
-            MSG_INFO(self, "Adding LRTCut...")
+            logger.info( "Adding LRTCut...")
             self.addLRTCut()
 
 

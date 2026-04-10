@@ -126,7 +126,7 @@ class ElectronLoop( TEventLoop ):
       if alg.status is StatusTool.DISABLE:
         continue
       # Retrieve all services
-      alg.level = self._level
+      #alg.level = self._level
       alg.setContext( self.getContext() )
       alg.setStoreGateSvc( self.getStoreGateSvc() )
       alg.dataframe = self._dataframe

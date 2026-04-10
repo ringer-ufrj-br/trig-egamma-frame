@@ -18,6 +18,4 @@ from . import TEventLoop
 __all__.extend(TEventLoop.__all__)
 from .TEventLoop import *
 
-from . import root
-__all__.extend(root.__all__)
-from .root import *
+

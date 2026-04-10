@@ -1,16 +1,18 @@
 
 __all__ = []
 
-from typing import List, Any, Optional, Dict
-from egamma.core import Messenger, StatusCode
-from egamma.core.macros import *
-from egamma.emulator import Accept
-from egamma import GeV
-
 import numpy as np
 import math
 
-class PrecisionCalo(Messenger):
+from loguru import logger
+from typing import List, Any, Optional, Dict
+from trig_egamma_frame import StatusCode
+from trig_egamma_frame.emulator import Accept
+from trig_egamma_frame import GeV
+
+
+
+class PrecisionCalo:
     """
     PrecisionCalo hypo tool for precision calorimeter emulation.
     
@@ -31,7 +33,6 @@ class PrecisionCalo(Messenger):
         """
         Initialize the PrecisionCalo hypo tool.
         """
-        Messenger.__init__(self, name)
         self.name = name
         self.AcceptAll = AcceptAll
         self.ETthr = ETthr
@@ -76,7 +77,7 @@ class PrecisionCalo(Messenger):
         etaRef = emTauRoi.eta()
 
         if abs(etaRef) > 2.6:
-            MSG_DEBUG(self, 'The cluster had eta coordinates beyond the EM fiducial volume.')
+            logger.debug( 'The cluster had eta coordinates beyond the EM fiducial volume.')
             return Accept(self.name, [("Pass", False)])
         
         if math.fabs(phiRef) > np.pi:

@@ -2,7 +2,7 @@
 __all__ = ["electronFlags"]
 
 import os
-from egamma.emulator.run3.menu import ringer_versions
+from trig_egamma_frame.emulator.run3.menu import ringer_versions
 
 class ElectronFlags:
     def __init__(self):

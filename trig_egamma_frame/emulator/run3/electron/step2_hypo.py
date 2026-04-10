@@ -1,16 +1,18 @@
 
 __all__ = ['L2Electron']
 
-from typing import List, Any, Optional, Dict
-from egamma.core import Messenger, StatusCode
-from egamma.core.macros import *
-from egamma.emulator import Accept
-from egamma import GeV
 
 import numpy as np
 import math
 
-class L2Electron(Messenger):
+from loguru import logger
+from typing import List, Any, Optional, Dict
+from trig_egamma_frame import StatusCode
+from trig_egamma_frame.emulator import Accept
+from trig_egamma_frame import GeV
+
+
+class L2Electron:
     """
     L2Electron hypo tool for Layer 2 electron emulation.
     
@@ -42,7 +44,6 @@ class L2Electron(Messenger):
         """
         Initialize the L2Electron hypo tool.
         """
-        Messenger.__init__(self, name)
         self.name = name
         self.EtCut = EtCut
         self.TrackPt = TrackPt
@@ -108,10 +109,10 @@ class L2Electron(Messenger):
                                 if (TRTHitRatio > self.TRTRatio):
                                     if self.DoLRT and d0 > self.d0Cut:
                                         passed = True
-                                        MSG_DEBUG(self, "Event LRT accepted !")
+                                        logger.debug( "Event LRT accepted !")
                                     elif not self.DoLRT:
                                         passed = True
-                                        MSG_DEBUG(self, "Event accepted !")
+                                        logger.debug( "Event accepted !")
 
             bitAccept[el.getPos()] = passed
 
@@ -120,7 +121,7 @@ class L2Electron(Messenger):
         return Accept(self.name, [("Pass", passed)])
 
 
-class L2ElectronConfiguration(Messenger):
+class L2ElectronConfiguration:
     """
     Helper class to configure L2Electron based on chain information.
     """
@@ -138,15 +139,14 @@ class L2ElectronConfiguration(Messenger):
         """
         Initialize the L2Electron configuration helper.
         """
-        Messenger.__init__(self)
         self.__threshold = cpart['threshold']
         self.__sel = cpart['addInfo'][0] if cpart['addInfo'] else cpart['IDinfo']
         self.__idperfInfo = cpart['idperfInfo']
         self.__lrtInfo = cpart['lrtInfo']
         self.hypo = L2Electron(name)
         
-        MSG_INFO(self, 'Threshold :%s', self.__threshold)
-        MSG_INFO(self, 'Pidname   :%s', self.__sel)
+        logger.info( 'Threshold :%s', self.__threshold)
+        logger.info( 'Pidname   :%s', self.__sel)
 
     def etthr(self) -> float:
         """Returns the ET threshold."""
@@ -185,14 +185,14 @@ class L2ElectronConfiguration(Messenger):
     def compile(self) -> None:
         """Compile the configuration based on PID and chain info."""
         if 'idperf' in self.idperfInfo():
-            MSG_INFO(self, "Configure nocut...")
+            logger.info( "Configure nocut...")
             self.nocut()
         else:
-            MSG_INFO(self, "Configure nominal...")
+            logger.info( "Configure nominal...")
             self.nominal()
         
         if self.lrtInfo() in self.__trigElectronLrtd0Cut:
-            MSG_INFO(self, "Adding LRT cuts...")
+            logger.info( "Adding LRT cuts...")
             self.addLRTCut()
 
 

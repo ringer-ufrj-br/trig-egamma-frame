@@ -1,14 +1,16 @@
 
 __all__ = []
 
-from typing import List, Any, Optional, Dict
-from egamma.core import Messenger, StatusCode
-from egamma.core.macros import *
-from egamma.emulator import Accept
 import math
 import re
 
-class L1Calo(Messenger):
+from loguru import logger
+from typing import List, Any, Optional, Dict
+from trig_egamma_frame import StatusCode
+from trig_egamma_frame.emulator import Accept
+
+
+class L1Calo:
     """
     L1Calo hypo tool for legacy L1 emulation.
     
@@ -39,7 +41,6 @@ class L1Calo(Messenger):
         """
         Initialize the L1Calo hypo tool with specified or default parameters.
         """
-        Messenger.__init__(self)
         self.name = name
         self.WPNames = WPNames
         self.HadCoreCutMin = HadCoreCutMin
@@ -115,25 +116,25 @@ class L1Calo(Messenger):
         emIsol = l1.emIsol() / 1.e3    # EM Isolation energy
 
         if ('H' in l1type):
-            MSG_DEBUG(self, "L1 (H) CUT")
+            logger.debug( "L1 (H) CUT")
             if not self.isolationL1(hadCoreCutMin, hadCoreCutOff, hadCoreSlope, hadCore, emE):
-                MSG_DEBUG(self, "rejected")
+                logger.debug( "rejected")
                 return False
-            MSG_DEBUG(self, "accepted")
+            logger.debug( "accepted")
 
         if ('I' in l1type):
-            MSG_DEBUG(self, "L1 (I) CUT")
+            logger.debug( "L1 (I) CUT")
             if not self.isolationL1(emIsolCutMin, emIsolCutOff, emIsolCutSlope, emIsol, emE):
-                MSG_DEBUG(self, "rejected")
+                logger.debug( "rejected")
                 return False
-            MSG_DEBUG(self, "accepted")
+            logger.debug( "accepted")
 
         if ('V' in l1type):
-            MSG_DEBUG(self, "L1 (V) CUT")
+            logger.debug( "L1 (V) CUT")
             if not self.variableEtL1(l1type, emE, eta):
-                MSG_DEBUG(self, "rejected")
+                logger.debug( "rejected")
                 return False
-            MSG_DEBUG(self, "accepted")
+            logger.debug( "accepted")
 
         if (emE <= l1threshold):
             return False
@@ -155,7 +156,7 @@ class L1Calo(Messenger):
             bool: True if it passes the isolation cut.
         """
         if (emE > self.IsolCutMax):
-            MSG_DEBUG(self, "L1 Isolation skipped, ET > Maximum isolation")
+            logger.debug( "L1 Isolation skipped, ET > Maximum isolation")
             return True
 
         isolation = offset + emE * slope
@@ -270,7 +271,7 @@ class L1Calo(Messenger):
         return cut
 
 
-class L1Calo_eFEX(Messenger):
+class L1Calo_eFEX:
     """
     L1Calo hypo tool for eFEX L1 emulation.
     
@@ -282,7 +283,6 @@ class L1Calo_eFEX(Messenger):
         """
         Initialize the L1Calo_eFEX hypo tool.
         """
-        Messenger.__init__(self)
         self.name = name
         self.L1Item = L1Item
 
@@ -317,7 +317,7 @@ class L1Calo_eFEX(Messenger):
         return Accept(self.name, [("Pass", True)])
 
 
-def configure(name: str, chainPart: Dict[str, Any]) -> Messenger:
+def configure(name: str, chainPart: Dict[str, Any]):
     """
     Configure the L1 hypo tool using the trigger chain information.
     
@@ -328,7 +328,7 @@ def configure(name: str, chainPart: Dict[str, Any]) -> Messenger:
     Returns:
         Messenger: The configured hypo tool (L1Calo or L1Calo_eFEX).
     """
-    from egamma.emulator import electronFlags
+    from trig_egamma_frame.emulator import electronFlags
     l1item = chainPart['L1Threshold']
 
     if electronFlags.L1Legacy:
