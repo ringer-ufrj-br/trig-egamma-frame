@@ -1,3 +1,5 @@
+[![maestro](https://github.com/lps-ufrj-br/maestro-lightning/actions/workflows/flow.yml/badge.svg)](https://github.com/lps-ufrj-br/maestro-lighning/actions/workflows/flow.yml)
+[![CI](https://github.com/ringer-ufrj-br/trig-egamma-frame/actions/workflows/ci.yml/badge.svg)](https://github.com/ringer-ufrj-br/trig-egamma-frame/actions/workflows/ci.yml)
 # ⚡ trig-egamma-frame
 
 > [!IMPORTANT]
@@ -6,6 +8,7 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/release/python-380/)
 [![Framework: ROOT](https://img.shields.io/badge/ROOT-6.xx-orange.svg)](https://root.cern/)
+
 
 A high-performance framework for **ATLAS Trigger Egamma emulation** and data processing. Designed for both Legacy (Run 2) and modern Run 3 data, this framework provides a modular and efficient environment to simulate trigger chains, optimize selectors (like Ringer), and dump analysis-ready data. 🚀
 
@@ -116,11 +119,7 @@ trig-egamma-frame/
 
 ---
 
-## 📜 License
 
-This project is licensed under the **GNU General Public License v3.0**.
-
----
 
 ## 📏 Coding Guidelines
 
@@ -133,6 +132,15 @@ This project is licensed under the **GNU General Public License v3.0**.
 > - 🏛️ **Classes**: Must use `PascalCase` (also known as CamelCase). (e.g., `class DataIngestion:`).
 >
 > Always prioritize readability and adhere to PEP 8 standards where applicable.
+
+
+---
+
+## 📜 License
+
+This project is licensed under the **GNU General Public License v3.0**.
+
+---
 
 <p align="center">
   <b>Developed by the Ringer UFRJ Group</b> 🎓 <br>
