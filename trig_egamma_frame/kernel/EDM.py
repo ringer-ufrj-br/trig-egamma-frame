@@ -4,7 +4,7 @@ __all__ = ['EDM']
 from trig_egamma_frame.kernel.algorithm import StatusCode
 from trig_egamma_frame.enumerators import DataframeSchemma
 from typing import Any, List
-from loguru import logger
+from trig_egamma_frame import logger
 from cppyy.ll import cast
 import traceback
 import ROOT

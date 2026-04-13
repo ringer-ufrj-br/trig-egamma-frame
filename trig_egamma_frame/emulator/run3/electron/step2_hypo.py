@@ -5,7 +5,7 @@ __all__ = ['L2Electron']
 import numpy as np
 import math
 
-from loguru import logger
+from trig_egamma_frame import logger
 from typing import List, Any, Optional, Dict
 from trig_egamma_frame import StatusCode
 from trig_egamma_frame.emulator import Accept
@@ -145,8 +145,8 @@ class L2ElectronConfiguration:
         self.__lrtInfo = cpart['lrtInfo']
         self.hypo = L2Electron(name)
         
-        logger.info( 'Threshold :%s', self.__threshold)
-        logger.info( 'Pidname   :%s', self.__sel)
+        logger.info(f'Threshold :{self.__threshold}')
+        logger.info(f'Pidname   :{self.__sel}')
 
     def etthr(self) -> float:
         """Returns the ET threshold."""

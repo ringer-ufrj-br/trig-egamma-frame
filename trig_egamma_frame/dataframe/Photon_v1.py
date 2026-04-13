@@ -3,7 +3,7 @@ __all__ = ['Photon_v1', 'EgammaParameters']
 
 import math
 
-from loguru import logger
+from trig_egamma_frame import logger
 from typing import List, Iterator, Any
 from enum import Enum
 from trig_egamma_frame.kernel import EDM

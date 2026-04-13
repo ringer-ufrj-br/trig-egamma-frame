@@ -10,7 +10,7 @@ import gc
 import collections
 from typing import Any, Dict, List, Optional, Iterator, Tuple
 
-from loguru import logger
+from trig_egamma_frame import logger
 
 #
 # StoreGate manager

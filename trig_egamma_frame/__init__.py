@@ -1,7 +1,7 @@
 __all__ = []
 
 import sys
-from loguru         import logger
+from loguru         import logger as _logger
 from rich_argparse  import RichHelpFormatter
 
 def get_argparser_formatter():
@@ -29,6 +29,66 @@ def setup_logs( name , level="INFO"):
         level=level,
         format=format,
     )
+
+def _fatal(logger_inst, message, *args, **kwargs):
+    """
+    Custom fatal method for loguru logger.
+    It logs at FATAL level and raises an exception.
+    Usage:
+        logger.fatal("Message")
+        logger.fatal("Message with %s", arg)
+        logger.fatal("Message", ValueError)
+        logger.fatal("Message with %s", arg, ValueError)
+    """
+    # 1. Determine if the last arg is an exception class
+    exc_type = RuntimeError
+    largs = list(args)
+    if largs and isinstance(largs[-1], type) and issubclass(largs[-1], Exception):
+        exc_type = largs.pop()
+    
+    # 2. Format the message if there are remaining args
+    if largs:
+        try:
+            if "%" in message:
+                formatted_msg = message % tuple(largs)
+            else:
+                formatted_msg = f"{message} {largs}"
+        except:
+             formatted_msg = f"{message} {largs}"
+    else:
+        formatted_msg = message
+        
+    # 3. Log it
+    # depth=2 to skip this function AND the LoggerWrapper.fatal call
+    logger_inst.opt(depth=2).log("FATAL", formatted_msg, **kwargs)
+    
+    # 4. Raise
+    raise exc_type(formatted_msg)
+
+# Register FATAL level
+try:
+    _logger.level("FATAL", no=60, color="<red><bold>")
+except TypeError: # Level already exists
+    pass
+
+# Patch logger to include fatal method
+# Note: Since we can't easily add methods to the loguru logger proxy directly, 
+# we provide a wrapped version that handles chained calls.
+class LoggerWrapper:
+    def __init__(self, logger_obj):
+        self._logger = logger_obj
+    def __getattr__(self, name):
+        attr = getattr(self._logger, name)
+        # Wrap methods that return a new logger instance
+        if name in ("bind", "opt", "patch", "configure"):
+            def wrapper(*args, **kwargs):
+                return LoggerWrapper(attr(*args, **kwargs))
+            return wrapper
+        return attr
+    def fatal(self, *args, **kwargs):
+        return _fatal(self._logger, *args, **kwargs)
+
+logger = LoggerWrapper(_logger)
     
 from . import enumerators
 __all__.extend(enumerators.__all__)

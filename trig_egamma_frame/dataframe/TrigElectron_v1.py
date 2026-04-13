@@ -95,7 +95,12 @@ class TrigElectron_v1(EDM):
         """
         return self._event.trig_L2_el_etOverPt[self.getPos()]
         
-
+    def d0(self) -> float:
+        """
+        Retrieve the trkClusDphi information from Physval or SkimmedNtuple
+        """
+        return -1
+        
     def trkClusDeta(self) -> float:
         """
         Retrieve the trkClusDeta information from Physval or SkimmedNtuple

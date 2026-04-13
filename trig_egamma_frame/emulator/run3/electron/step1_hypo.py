@@ -6,7 +6,7 @@ import os
 import numpy as np
 import math
 
-from loguru import logger
+from trig_egamma_frame import logger
 from typing import List, Any, Optional, Dict
 from trig_egamma_frame import StatusCode
 from trig_egamma_frame.emulator import Accept
@@ -14,6 +14,7 @@ from trig_egamma_frame.emulator.run3.selector import L2CaloCutMaps, RingerSelect
 from trig_egamma_frame.emulator.run3.menu import electronFlags, treat_pidname
 from trig_egamma_frame import GeV
 from ROOT import TEnv
+from pprint import pprint
 
 
 
@@ -283,13 +284,15 @@ class L2CaloConfiguration:
         """
         Initialize the configuration helper.
         """
+
+        pprint(cpart)
         self.__cand = cpart['trigType']
         self.__threshold = cpart['threshold']
         self.__sel = 'ion' if 'ion' in cpart['extra'] else (cpart['addInfo'][0] if cpart['addInfo'] else cpart['IDinfo'])
         self.__gsfinfo = cpart['gsfInfo'] if cpart['trigType'] == 'e' and cpart['gsfInfo'] else ''
         self.__idperfinfo = cpart['idperfInfo'] if cpart['trigType'] == 'e' and cpart['idperfInfo'] else ''
         self.__noringerinfo = cpart['L2IDAlg']
-        self.__ringerVersion = cpart['rVersion'] if 'rVersion' in cpart.keys() else None
+        self.__ringerVersion = cpart['ringerVersion'] if 'ringerVersion' in cpart.keys() else None
 
         self.hypo = L2Calo(name)
         self.hypo.AcceptAll = False

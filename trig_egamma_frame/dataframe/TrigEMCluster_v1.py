@@ -225,9 +225,9 @@ class TrigEMCluster_v1(EDM):
         return self.getContext().getHandler('HLT__EmTauRoIContainer')
 
 
-    def energy( self, idx: int = None ) -> float:
+    def energy( self, idx: CaloSampling = None ) -> float:
         if idx:
-            return self._event.trig_L2_calo_energySample[idx]
+            return self._event.trig_L2_calo_energySample[idx.value]
         else:
             return sum(list(self._event.trig_L2_calo_energySample))
      

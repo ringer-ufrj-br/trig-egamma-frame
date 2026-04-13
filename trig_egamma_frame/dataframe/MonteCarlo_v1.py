@@ -41,12 +41,12 @@ class MonteCarlo_v1(EDM):
     return self._event.mc_isTruthElectronFromW
     
 
-  def isTruthElectronFromJpsi(self) -> bool:
+  def isTruthElectronFromJpsiPrompt(self) -> bool:
     return self._event.mc_isTruthElectronFromJpsi
    
 
   def isTruthElectronFromAny(self) -> bool:
-    return self._event.mc_isTruthElectronFromAny
+    return self._event.mc_isTruthElectronAny
     
 
   def isTruthJetFromAny(self) -> bool:

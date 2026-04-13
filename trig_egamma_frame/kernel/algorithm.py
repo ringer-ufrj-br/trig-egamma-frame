@@ -12,7 +12,7 @@ __all__ = [
 import ROOT
 import collections
 from enum          import Enum
-from loguru        import logger
+from trig_egamma_frame import logger
 from typing        import Any, List
 from .StoreGate import StoreGate
 from trig_egamma_frame.enumerators import DataframeSchemma
@@ -400,8 +400,8 @@ class Service:
     Returns:
       Any: The tool for the given key
     """
-    if key in self._tools.keys():
-      return self._tools[key]
+    if key in self.__tools.keys():
+      return self.__tools[key]
     else:
       logger.error( f"tool with name {key} not found in the tool service")
 
@@ -505,7 +505,7 @@ class Algorithm:
   @wtd.setter
   def wtd(self, v : StatusWTD):
     """Set and enforce the watch dog status value."""
-    self._wtd = StatusWTD.retrieve(v)
+    self._wtd = v
 
   @property
   def status(self) -> StatusTool:

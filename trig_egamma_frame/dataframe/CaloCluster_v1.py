@@ -118,7 +118,7 @@ class CaloCluster_v1(EDM):
     	Retrieve the TrackParticle container size
     """
     if self._is_hlt:
-      return self.event.trig_EF_calo_eta.size()
+      return self._event.trig_EF_el_calo_et.size()
     else:
       return 1
     

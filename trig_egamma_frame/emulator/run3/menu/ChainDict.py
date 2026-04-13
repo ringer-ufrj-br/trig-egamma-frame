@@ -4,7 +4,7 @@ __all__ = ["get_chain_dict", "treat_pidname", "ringer_versions"]
 from typing import Dict
 from pprint import pprint
 from copy import copy
-from loguru import logger
+from trig_egamma_frame import logger
 
 ringer_versions = ['run2_v8', 'run3_v0', 'run3_v1']
 
@@ -33,7 +33,7 @@ ElectronChainParts = {
     'caloInfo'       : [],
     'lhInfo'         : ['nod0', 'nopix'],
     'L2IDAlg'        : ['noringer'],
-    'rVersion'       : ringer_versions,
+    'ringerVersion'  : ringer_versions,
     'addInfo'        : [ 'etcut', 'etcut1step',"fwd",'nopid'],
     'sigFolder'     : ['Egamma'],
     'subSigs'       : ['Electron'],
@@ -66,9 +66,10 @@ ElectronChainParts_Default = {
     'recoAlg'        : '',
     'FSinfo'         : '',
     'addInfo'        : [],
-    'sigFolder'     : ['Egamma'],
-    'subSigs'       : ['Electron'],
-    'topo'          : [],
+    'ringerVersion'  : 'run3_v1',
+    'sigFolder'      : ['Egamma'],
+    'subSigs'        : ['Electron'],
+    'topo'           : [],
     #'chainPartIndex': 0
 }
 

@@ -6,7 +6,6 @@ __all__ = ["ElectronDumper_v2"]
 
 import os 
 import ROOT 
-
 import numpy as np
 
 from itertools import product
@@ -14,12 +13,9 @@ from numbers import Number
 from collections import OrderedDict
 from typing import List, Dict, Tuple, Callable, Any, Sequence
 
-from loguru import logger
-
+from trig_egamma_frame import logger
 from trig_egamma_frame.kernel import Algorithm, StatusCode, EventContext, EDM
 from trig_egamma_frame import GeV
-
-
 from trig_egamma_frame.emulator import attach
 from trig_egamma_frame.emulator import electronFlags
 from trig_egamma_frame.emulator.run3 import ElectronChain as Chain
@@ -289,7 +285,7 @@ class ElectronDumper_v2( Algorithm ):
         """
         
         for chain_name in self.chains.keys():
-            trig_menu: EDM = context.getHandler("MenuContainer")
+            trig_menu = context.getHandler("MenuContainer")
             chain_results = trig_menu.accept(chain_name)
             for step_name in ELECTRON_STEPS:
                 step_chain_name = f"{step_name}_{chain_name}"
@@ -385,11 +381,14 @@ class ElectronDumper_v2( Algorithm ):
 
     def execute(self, context: EventContext) -> StatusCode:
 
+        logger.debug("Executing ElectronDumper_v2")
         fast_calo: EDM = context.getHandler( "HLT__TrigEMClusterContainer" )
         
         etBinIdx, etaBinIdx = self.__get_bin( fast_calo.et()/GeV, abs(fast_calo.eta()) )
         if etBinIdx < 0 or etaBinIdx < 0:
             return StatusCode.SUCCESS
+
+        logger.debug(f"Et bin: {etBinIdx}, Eta bin: {etaBinIdx}")
         buffer_dict = self.__buffer
 
         buffer_dict["et_bin"].append(np.int32(etBinIdx))
@@ -397,11 +396,14 @@ class ElectronDumper_v2( Algorithm ):
         eventInfo: EDM = context.getHandler( "EventInfoContainer" )
         buffer_dict["avgmu"].append(eventInfo.avgmu())
         
+        logger.debug("Adding offline decision to buffer_dict")
         self.__add_offline_decision(buffer_dict, context)
+        logger.debug("Applying decorators to buffer_dict")
         self.__apply_decorators(buffer_dict, context)        
+        logger.debug("Applying chain decorators to buffer_dict")
         self.__apply_chain_decorators(buffer_dict, context)
         if self.__decorate_ringerVersions:
-            MSG_DEBUG(self, "Decorate Ringer Versions is True. Adding information to buffer_dict")
+            logger.debug("Decorate Ringer Versions is True. Adding information to buffer_dict")
             models_dict = self.__models
             self.__add_ringer_decision(buffer_dict, models_dict, context)
             
@@ -415,7 +417,9 @@ class ElectronDumper_v2( Algorithm ):
                 self.__add_fc_rings(buffer_dict, context)
             return StatusCode.SUCCESS
 
+        logger.debug("Adding fast calo info to buffer_dict")
         self.__add_fast_calo_info(buffer_dict, context)
+        logger.debug("Adding tracking info to buffer_dict")
         self.__add_tracking_info(buffer_dict, context)
 
         return StatusCode.SUCCESS
@@ -430,18 +434,19 @@ class ElectronDumper_v2( Algorithm ):
         df_shape, to_df_buffer = self.__validate_buffer_dict(buffer_dict)
             
         #rdf = ROOT.RDF.MakeNumpyDataFrame(to_df_buffer)
-        rdf = ROOT.RDF.FromNumpy(to_df_buffer)
+        #rdf = ROOT.RDF.FromNumpy(to_df_buffer)
         output_filepath = f"{self.output}.root"
-        MSG_INFO(self, "Save RDataFrame into %s with shape (%d,%d)", output_filepath, df_shape[0], df_shape[1])
 
-        rdf_columns = rdf.GetColumnNames()
-        options = ROOT.RDF.RSnapshotOptions()
-        options.fCompressionLevel = 9
-        rdf.Snapshot("tree", 
-                     output_filepath,
-                     rdf_columns,
-                     options
-                         )
+        logger.info(f"Save RDataFrame into {output_filepath} with shape {df_shape}")
+
+        #rdf_columns = rdf.GetColumnNames()
+        #options = ROOT.RDF.RSnapshotOptions()
+        #options.fCompressionLevel = 9
+        #rdf.Snapshot("tree", 
+        #             output_filepath,
+        #             rdf_columns,
+        #             options
+        #                 )
         
         return StatusCode.SUCCESS
 

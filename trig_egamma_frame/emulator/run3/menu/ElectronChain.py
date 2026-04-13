@@ -6,7 +6,7 @@ from trig_egamma_frame  import StatusCode, EventContext
 from trig_egamma_frame.emulator.run3.menu.ChainDict import get_chain_dict
 from trig_egamma_frame.emulator import Accept
 from pprint import pprint
-from loguru import logger
+from trig_egamma_frame import logger
 
 
 class ElectronChain:
@@ -176,7 +176,7 @@ class ElectronChain:
     return None
 
   def getPrecisionGSFElectron(self):
-    from egamma.emulator.run3.electron.step4_hypo import configure
+    from trig_egamma_frame.emulator.run3.electron.step4_hypo import configure
     name = "PrecisionElectron"
     hypo = configure( name , self.chainPart)
     return hypo

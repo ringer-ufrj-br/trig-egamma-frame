@@ -3,7 +3,7 @@ __all__ = ["TDT", "AcceptType"]
 
 from typing import List
 from enum import Enum
-from loguru import logger
+from trig_egamma_frame import logger
 from trig_egamma_frame.kernel import EDM, StatusCode
 from trig_egamma_frame.enumerators import DataframeSchemma
 

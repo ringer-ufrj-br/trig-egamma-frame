@@ -13,9 +13,9 @@ class ElectronFlags:
         '''
         basepath = os.environ['CERN_DATA']
         self.ringerVersion = {
-            'run2_v8' : os.path.join(basepath, "joao.pinto/tunings/releases/Run2_20230227_v8/"),
-            'run3_v0' : os.path.join(basepath, "joao.pinto/tunings/releases/Run3_20230316_v0/"),
-            'run3_v1' : os.path.join(basepath, "joao.pinto/tunings/releases/Run3_20230316_v1/")
+            'run2_v8' : os.path.join(basepath, "tunings/release/trigger/Run2_20230227_v8/"),
+            'run3_v0' : os.path.join(basepath, "tunings/release/trigger/Run3_20230316_v0/"),
+            'run3_v1' : os.path.join(basepath, "tunings/release/trigger/Run3_20230316_v1/")
             }
         self.L1Legacy = True
     

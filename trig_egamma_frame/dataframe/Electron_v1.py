@@ -301,6 +301,11 @@ class Electron_v1(EDM):
     else:
       return (self.caloCluster().energy()/math.cosh(eta))
 
+  def pt(self) -> float:
+    """
+      Retrieve the pt information from Physval or SkimmedNtuple
+    """
+    return self.et()
 
   def eta(self) -> float:
     """
@@ -668,6 +673,16 @@ class Electron_v1(EDM):
     else:
       return 1
 
+
+  def ptvarcone20(self) -> float:
+    """
+      Retrieve the ptvarcone20 information from Physval or SkimmedNtuple
+    """
+    #if self._is_hlt:
+    #  return self._event.trig_EF_el_ptvarcone20[self.getPos()]
+    #else:
+    #  return self._event.el_ptvarcone20
+    return 10e9
 
   def empty(self) -> bool:
     return False if self.size()>0 else True

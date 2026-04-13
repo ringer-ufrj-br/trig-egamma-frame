@@ -4,7 +4,7 @@ __all__ = []
 import numpy as np
 import math
 
-from loguru import logger
+from trig_egamma_frame import logger
 from typing import List, Any, Optional, Dict
 from trig_egamma_frame import StatusCode
 from trig_egamma_frame.emulator import Accept

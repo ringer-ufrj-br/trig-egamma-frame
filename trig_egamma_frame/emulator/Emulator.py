@@ -2,7 +2,7 @@
 __all__ = ["Emulator", "attach"]
 
 
-from loguru import logger
+from trig_egamma_frame import logger
 from trig_egamma_frame import Algorithm, StatusCode, ToolSvc
 import collections
 

@@ -2,10 +2,9 @@
 __all__ = ['TrigEgammaPrecisionElectronHypoTool']
 
 from typing import List, Any, Optional, Dict
-from trig_egamma_frame.emulator import StatusCode
 from trig_egamma_frame.emulator import Accept
-from trig_egamma_frame import GeV
-from loguru import logger
+from trig_egamma_frame import GeV, StatusCode
+from trig_egamma_frame import logger
 import numpy as np
 import math
 
@@ -38,7 +37,6 @@ class PrecisionElectron:
         """
         Initialize the PrecisionElectron hypo tool.
         """
-        Messenger.__init__(self)
         self.name = name
         self.RelPtConeCut = RelPtConeCut
         self.AcceptAll = AcceptAll

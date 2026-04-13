@@ -1,19 +1,41 @@
 
 __all__ = ['ElectronLoop']
 
-
+from trig_egamma_frame import setup_logs
 from trig_egamma_frame.kernel import StatusCode, StatusTool, TEventLoop
 from trig_egamma_frame.enumerators import DataframeSchemma
-from loguru import logger
+from trig_egamma_frame import logger
 
 #
 # Electron loop
 #
 class ElectronLoop( TEventLoop ):
 
-  def __init__(self, name : str , **kw):
+  def __init__(self, 
+               name : str ,
+               inputFile : str,
+               outputFile : str,
+               treePath : str,
+               dataframe : DataframeSchemma = DataframeSchemma.Run2,
+               nov : int=-1,
+               abort : bool=False,
+               mute : bool=False,
+               writeStoregate : bool=True,
+               level : str='INFO',
+  ):
     # Retrieve all information needed
-    TEventLoop.__init__(self, name, **kw)
+    setup_logs(name, level=level)
+    TEventLoop.__init__(self, 
+                        name,
+                        inputFile,
+                        outputFile,
+                        treePath,
+                        dataframe,
+                        nov,
+                        abort,
+                        mute,
+                        writeStoregate
+                        )
 
 
   #
@@ -36,7 +58,7 @@ class ElectronLoop( TEventLoop ):
       from trig_egamma_frame.dataframe import EmTauRoI_v1      as EmTauRoI
       from trig_egamma_frame.dataframe import EventInfo_v1     as EventInfo
       from trig_egamma_frame.dataframe import MonteCarlo_v1    as MonteCarlo
-      #from trig_egamma_frame.dataframe import Menu_v1          as Menu
+      from trig_egamma_frame.dataframe import Menu_v1          as Menu
 
     elif self._dataframe is DataframeSchemma.Run3:
       
@@ -50,7 +72,7 @@ class ElectronLoop( TEventLoop ):
       from trig_egamma_frame.dataframe import EmTauRoI_v2      as EmTauRoI
       from trig_egamma_frame.dataframe import EventInfo_v2     as EventInfo
       from trig_egamma_frame.dataframe import MonteCarlo_v2    as MonteCarlo
-      #from trig_egamma_frame.dataframe import Menu_v1          as Menu
+      from trig_egamma_frame.dataframe import Menu_v1          as Menu
 
     else:
       return StatusCode.FATAL
@@ -67,7 +89,7 @@ class ElectronLoop( TEventLoop ):
                             'EventInfoContainer'         : EventInfo(),
                             'MonteCarloContainer'        : MonteCarlo(),
                             'CaloClusterContainer'       : CaloCluster(),
-                            #'MenuContainer'              : Menu(),
+                            'MenuContainer'              : Menu(),
                            }
 
     self._containersSvc.update({

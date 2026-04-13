@@ -6,7 +6,7 @@ import ROOT
 import traceback
 
 from tqdm import tqdm
-from loguru import logger
+from trig_egamma_frame import logger
 from trig_egamma_frame.kernel import StatusCode, StoreGate, StatusTool, StatusWTD, EventContext
 from trig_egamma_frame.enumerators import DataframeSchemma
 from expand_folders import expand_folders
@@ -187,7 +187,7 @@ class TEventLoop:
       if alg.status is StatusTool.DISABLE:
         continue
       if alg.execute( context ).isFailure():
-        logger.error( f'The tool {alg.name} return status code different of SUCCESS')
+        logger.fatal( f'The tool {alg.name} return status code different of SUCCESS')
       if alg.wtd is StatusWTD.ENABLE:
         logger.debug( f'Watchdog is true in {alg.name}. Skip events')
         # reset the watchdog since this was used

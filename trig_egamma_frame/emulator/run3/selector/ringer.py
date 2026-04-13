@@ -5,6 +5,7 @@ from trig_egamma_frame.kernel import StatusCode
 from trig_egamma_frame import GeV
 from ROOT import TEnv, kEnvUser
 from tensorflow import keras
+from trig_egamma_frame import logger
 import tensorflow as tf
 import numpy as np
 
@@ -62,9 +63,9 @@ half_rings_indexs = [0, 1, 2, 3, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 2
 class RingerSelector:
 
 
-  def __init__(self, config_path: str):
+  def __init__(self, ConfigPath: str):
     
-    self.config_path = config_path
+    self.ConfigPath = ConfigPath
 
   
 
@@ -117,7 +118,7 @@ class RingerSelector:
     offsets     = treat_float( env, 'Threshold__offset' )
 
     if max_avgmu < min_avgmu:
-      MSG_DEBUG(self, 'Fixing avgmu boundaries... ')
+      logger.debug( 'Fixing avgmu boundaries... ')
       #print('Fixing avgmu boundaries... ')
       a = max_avgmu; b = min_avgmu
       max_avgmu = b; min_avgmu = a

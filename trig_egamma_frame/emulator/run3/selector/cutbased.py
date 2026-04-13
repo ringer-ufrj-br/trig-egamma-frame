@@ -3,7 +3,7 @@ __all__ = ['CutBased', 'L2CaloCutMaps', 'L2CaloPhotonCutMaps']
 import math
 from typing import List, Optional, Any
 import numpy as np
-from loguru import logger
+from trig_egamma_frame import logger
 
 from trig_egamma_frame.kernel import StatusCode
 from trig_egamma_frame.emulator.run3.electron import L2CaloCutMaps
