@@ -1,51 +1,96 @@
-# ⚡ trig_egamma_frame
+# ⚡ trig-egamma-frame
+
+> [!IMPORTANT]
+> This software is the property of the **Federal University of Rio de Janeiro (UFRJ)**, developed in collaboration with **CERN** and the **Signal Processing Laboratory (LPS)**.
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![Python 3.7+](https://img.shields.io/badge/python-3.7+-blue.svg)](https://www.python.org/downloads/release/python-370/)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/release/python-380/)
 [![Framework: ROOT](https://img.shields.io/badge/ROOT-6.xx-orange.svg)](https://root.cern/)
 
-A high-performance framework for **ATLAS Trigger Egamma emulation** and data processing. Designed for Run 3, this framework provides a modular and efficient environment to simulate trigger chains, optimize selectors (like Ringer), and dump analysis-ready data.
+A high-performance framework for **ATLAS Trigger Egamma emulation** and data processing. Designed for both Legacy (Run 2) and modern Run 3 data, this framework provides a modular and efficient environment to simulate trigger chains, optimize selectors (like Ringer), and dump analysis-ready data. 🚀
 
 ---
 
 ## 🌟 Key Features
 
-- **🚀 Run 3 Emulation**: Complete emulation of L1 Calo, L2 Calo (FastCalo), Fast Electron, and Precision steps.
+- **🚀 Dual-Era Emulation**: Full support for legacy Run 2 (v1) and modern Run 3 (v2) trigger steps.
 - **🧠 ML-Ready**: Built-in support for the **Ringer Selector** using TensorFlow/Keras and ONNX.
 - **🏗️ Modular Architecture**: Leverages `Algorithm`, `StoreGate`, and `EDM` patterns for clean, extensible code.
-- **📊 Fast Data Dumping**: Integrated `ElectronDumper` utilizing ROOT's `RDataFrame` (FromNumpy) for high-speed I/O.
-- **🐳 Container Support**: Optimized for execution within Singularity/Apptainer environments.
+- **📊 Fast Data Dumping**: Integrated `ElectronDumper` utilizing ROOT's `RDataFrame` for high-speed I/O.
+- **🐳 Container Optimized**: Perfect for execution within Singularity/Apptainer environments.
 
 ---
 
-## 🛠️ Getting Started
+## 🛠️ Installation
 
-### 1. Requirements
+### 1. Requirements 📋
+* **Python 3.8+**
+* **CERN ROOT** (with PyROOT enabled)
+* **TensorFlow** (optional, for Ringer emulation)
 
-This project heavily relies on **CERN ROOT** and **TensorFlow**. It is highly recommended to run this within the provided Singularity container.
-
-### 2. Environment Setup
-
-Clone the repository and initialize the environment:
+### 2. Local Setup 💻
+The easiest way to install and manage the environment is using the provided `activate.sh` script:
 
 ```bash
+# Clone the repository
 git clone https://github.com/ringer-ufrj-br/trig-egamma-frame.git
 cd trig-egamma-frame
+
+# Initialize and activate the virtual environment
 source activate.sh
 ```
 
-The `activate.sh` script will:
-- Check for a virtual environment in `.trig_egamma_frame-env`.
-- Create and install dependencies if missing.
-- Set up necessary environment variables (e.g., `LOGURU_LEVEL`, `CERN_DATA`).
-
-### 3. Running with Singularity
-
-If you are on a cluster, use the provided `Makefile` to pull and run the environment:
+### 3. Using Singularity 🐳
+For cluster environments (like CERN LXPLUS), it is recommended to use the containerized version:
 
 ```bash
-# Run the container
+# Download the image (using Makefile)
+make pull
+
+# Run the container with necessary volume binds
 singularity run --bind /mnt/shared:/mnt/shared root_image.sif
+```
+
+---
+
+## 📊 Dataframe Schemes
+
+The framework handles different data eras through specific schemas:
+
+| Version | Schema | Data Years | Description |
+| :--- | :--- | :--- | :--- |
+| **v1** | `DataframeSchemma.Run2` | 2017, 2018 | Legacy Run 2 data formats. |
+| **v2** | `DataframeSchemma.Run3` | Run 3+ | Modern Run 3 data with updated EDM. |
+
+---
+
+## 🚀 Usage Example: Data Dumping
+
+To perform a trigger emulation and dump the results into a ROOT file, you can utilize the `ElectronLoop` and `ElectronDumper`:
+
+```python
+from trig_egamma_frame import ElectronLoop, DataframeSchemma
+from trig_egamma_frame.algorithms.dumper import ElectronDumper_v2 as ElectronDumper
+from trig_egamma_frame.kernel import ToolSvc
+
+# 1. Setup the Event Loop
+# Use DataframeSchemma.Run2 for v1 (2017/18) or Run3 for v2 (Run 3)
+loop = ElectronLoop(
+    "MyAnalysis",
+    inputFile  = "path/to/my/input.root",
+    treePath   = "*/HLT/Physval/Egamma/probes",
+    dataframe  = DataframeSchemma.Run2, # v1 data
+    outputFile = "output.root"
+)
+
+# 2. Configure the Dumper
+et_bins  = [3., 7., 10., 15., 20., 30., 40., 50., 1000.]
+eta_bins = [0.0, 0.8, 1.37, 1.54, 2.37, 2.50]
+dumper = ElectronDumper("dumper_output", et_bins, eta_bins)
+
+# 3. Add to Tool Service and Run
+ToolSvc += dumper
+loop.run(1000) # Process 1000 events
 ```
 
 ---
@@ -53,72 +98,43 @@ singularity run --bind /mnt/shared:/mnt/shared root_image.sif
 ## 📂 Project Structure
 
 ```text
-trig_egamma_frame/
-├── kernel/            # Core framework (Algorithm, StoreGate, StatusCode)
-├── emulator/          # Trigger emulation logic (L1, L2, EF steps)
-│   └── run3/          # Run 3 specific implementations (Selector, Menu)
-├── algorithms/        # High-level processing (Filter, Dumper)
-├── event/             # Event Data Model (EDM) definitions
-└── dataframe/         # Menu and configuration utilities
-share/
-└── examples/          # Reference scripts for common tasks
+trig-egamma-frame/
+├── trig_egamma_frame/    # Main package code
+│   ├── kernel/          # Core framework logic (Algorithm, StoreGate)
+│   ├── emulator/        # Trigger step emulation (L1, L2, EF)
+│   ├── algorithms/      # Processing algorithms (Filters, Dumpers)
+│   ├── dataframe/       # EDM implementation and Menu helpers
+│   ├── event/           # High-level Event Loop managers
+│   └── enumerators.py   # System-wide Enums and Flags
+├── share/               # Resource files
+│   └── examples/        # Production-ready example scripts
+├── scripts/             # Utility scripts for maintenance
+├── images/              # Docker and container build files
+├── Makefile             # Automation for builds and image management
+└── setup.py             # Package installation script
 ```
-
----
-
-## 📈 Usage Example
-
-To run a basic emulation and dump results, you can use the provided example script:
-
-```python
-from trig_egamma_frame import ElectronLoop, DataframeSchemma
-from trig_egamma_frame.algorithms.dumper import ElectronDumper_v2 as ElectronDumper
-from trig_egamma_frame.kernel import ToolSvc
-
-# Configure the event loop
-acc = ElectronLoop(
-    "EventATLASLoop",
-    inputFile  = "path/to/data",
-    treePath   = "*/HLT/Physval/Egamma/probes",
-    dataframe  = DataframeSchemma.Run2,
-    outputFile = "output.root"
-)
-
-# Add a dumper algorithm
-dumper = ElectronDumper("output_prefix", et_bins, eta_bins)
-ToolSvc += dumper
-
-# Run the processing
-acc.run(1000)
-```
-
-For more complex configurations, check [share/examples/run.py](file:///home/joao.pinto/git_repos/trig-egamma-frame/share/examples/run.py).
-
----
-
-## 🧪 Development & Testing
-
-We use `loguru` for beautiful, informative logging. You can control the verbosity using:
-
-```bash
-export LOGURU_LEVEL=DEBUG
-```
-
-### Build & Deploy
-
-Refer to the `Makefile` for container-related tasks:
-- `make build`: Build the Docker image.
-- `make push`: Push to registry.
-- `make pull`: Convert/Pull to Singularity image.
 
 ---
 
 ## 📜 License
 
-This project is licensed under the **GNU General Public License v3.0** - see the [LICENSE](http://www.gnu.org/licenses/gpl-3.0.html) for details.
+This project is licensed under the **GNU General Public License v3.0**.
 
 ---
 
+## 📏 Coding Guidelines
+
+> [!WARNING]
+> To maintain consistency across the codebase, all developers must follow these naming conventions:
+>
+> - 📁 **Directories**: Must be all lowercase and use `snake_case`. (e.g., use `data_loader/` instead of `dataLoader/` or `DataLoader/`).
+> - 🐍 **Python Files**: Must be all lowercase and use `snake_case`. (e.g., use `signal_processor.py` instead of `SignalProcessor.py` or `signalProcessor.py`).
+> - ⚙️ **Methods and Functions**: Must use `snake_case`. (e.g., `def calculate_metrics():` instead of `def CalculateMetrics():`).
+> - 🏛️ **Classes**: Must use `PascalCase` (also known as CamelCase). (e.g., `class DataIngestion:`).
+>
+> Always prioritize readability and adhere to PEP 8 standards where applicable.
+
 <p align="center">
-  Developed by the <b>Ringer UFRJ Group</b>
+  <b>Developed by the Ringer UFRJ Group</b> 🎓 <br>
+  <i>"Fast Egamma Trigger Emulation for ATLAS"</i>
 </p>
