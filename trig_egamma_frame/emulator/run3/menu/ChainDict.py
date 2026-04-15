@@ -137,6 +137,8 @@ class ChainDict:
         d['trigName']    = self.trigName
         d['threshold']   = float(trigParts[0][1::])
         d['L1Threshold'] = trigParts[-1]
+        l1item = trigParts[-1]
+        
 
         def check(trig, d, key, chainParts):
             for part in chainParts[key]:
@@ -148,17 +150,19 @@ class ChainDict:
 
             d['signature'] = 'Electron'
             d['trigType']  = 'e'
+            d['L1Legacy'] = False if ('e'==l1item[0]) else True
             for key in ElectronChainParts.keys():
                 check(trigger, d, key, ElectronChainParts)
             
         elif trigType == 'g':
             d['signature'] = 'Photon'
             d['trigType']  = 'g'
+            d['L1Legacy'] = False if ('g'==l1item[0]) else True
             for key in PhotonChainParts.keys():
                 check(trigger, d, key, PhotonChainParts)
 
         else:
-            MSG_FATAL(self, "Signature not supported.")
+            logger.fatal("Signature not supported.")
 
 
         self.args = d

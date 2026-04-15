@@ -7,6 +7,7 @@ __all__ = ["ElectronDumper_v2"]
 import os 
 import ROOT 
 import numpy as np
+import pandas as pd
 
 from itertools import product
 from numbers import Number
@@ -425,29 +426,13 @@ class ElectronDumper_v2( Algorithm ):
         return StatusCode.SUCCESS
 
     def finalize( self ) -> StatusCode:
-        
-        #if not os.path.exists(self.output):
-        #    os.makedirs(self.output)
-        #_, output_dirname = os.path.split(self.output)
-        
+
         buffer_dict = self.__buffer
         df_shape, to_df_buffer = self.__validate_buffer_dict(buffer_dict)
-            
-        #rdf = ROOT.RDF.MakeNumpyDataFrame(to_df_buffer)
-        #rdf = ROOT.RDF.FromNumpy(to_df_buffer)
-        output_filepath = f"{self.output}.root"
-
-        logger.info(f"Save RDataFrame into {output_filepath} with shape {df_shape}")
-
-        #rdf_columns = rdf.GetColumnNames()
-        #options = ROOT.RDF.RSnapshotOptions()
-        #options.fCompressionLevel = 9
-        #rdf.Snapshot("tree", 
-        #             output_filepath,
-        #             rdf_columns,
-        #             options
-        #                 )
-        
+        df = pd.DataFrame(to_df_buffer)
+        output_filepath = f"{self.output}.parquet"
+        logger.info(f"Save dataframe into {output_filepath} parquet with shape {df_shape}")
+        df.to_parquet(output_filepath)
         return StatusCode.SUCCESS
 
     def __validate_buffer_dict(self, buffer_dict) -> Tuple[Tuple[int, int], Dict[str, np.ndarray]]:

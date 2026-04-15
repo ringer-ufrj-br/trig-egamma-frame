@@ -330,8 +330,8 @@ def configure(name: str, chainPart: Dict[str, Any]):
     """
     from trig_egamma_frame.emulator import electronFlags
     l1item = chainPart['L1Threshold']
-
-    if electronFlags.L1Legacy:
+    l1legacy = chainPart['L1Legacy']
+    if l1legacy:
         hypo = L1Calo(name,
                       WPNames=['Tight', 'Medium', 'Loose'],
                       HadCoreCutMin=[1.0, 1.0, 1.0, 1.0],

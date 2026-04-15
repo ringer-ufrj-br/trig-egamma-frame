@@ -27,3 +27,5 @@ rich_argparse
 tensorflow
 expand_folders
 pydantic
+pyarrow
+fastparquet
