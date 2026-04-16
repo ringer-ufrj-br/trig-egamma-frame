@@ -1,6 +1,10 @@
 __all__ = [
     'Filter',        
-    ]
+    'EventFilter',
+    'isZ_decorator',
+    'isAny_decorator',
+    'isJpsi_decorator',
+]
 
 import numpy as np
 

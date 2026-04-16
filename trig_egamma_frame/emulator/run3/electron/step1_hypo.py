@@ -246,7 +246,7 @@ class L2Calo:
         if (F3 > self.F3thr[etaBin]): return False
         PassedCuts += 1
 
-        MSG_DEBUG(self, 'T2Calo emulation approved...')
+        logger.debug( 'T2Calo emulation approved...')
         return True
 
     def emulate_ringer(self, context: Any) -> bool:
@@ -346,7 +346,7 @@ class L2CaloConfiguration:
 
     def nocut(self) -> None:
         """Configure L2Calo for no cuts."""
-        MSG_INFO(self, 'Configure nocut')
+        logger.info( 'Configure nocut')
         self.hypo.AcceptAll = True
         self.hypo.UseRinger = False
         self.hypo.ETthr = same(self.etthr() * GeV)

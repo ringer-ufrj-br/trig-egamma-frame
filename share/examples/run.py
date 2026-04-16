@@ -2,13 +2,11 @@
 
 import numpy as np
 
-from trig_egamma_frame import ElectronLoop, DataframeSchemma, EventContext, GeV
+from trig_egamma_frame import ElectronLoop, DataframeSchemma, EventContext, GeV, ToolSvc
 from trig_egamma_frame.algorithms.dumper import ElectronDumper_v2 as ElectronDumper
-from trig_egamma_frame import Filter
-from trig_egamma_frame.kernel import ToolSvc
+from trig_egamma_frame.algorithms import Filter, EventFilter, isAny_decorator, isZ_decorator, isJpsi_decorator
+from trig_egamma_frame.algorithms import Efficiency, Quadrant
 
-
-from trig_egamma_frame.algorithms.Filter import EventFilter, isAny_decorator, isZ_decorator, isJpsi_decorator
 
 is_jets = False
 
@@ -21,7 +19,8 @@ output = 'test'
 et_bins  = [3., 7., 10., 15., 20., 30., 40., 50., 1000000.]
 eta_bins = [0.0, 0.8, 1.37, 1.54, 2.37, 2.50]
 triggers = [
-   "HLT_e28_lhtight_nod0_ringer_v1_ivarloose_eEM24VHI"
+   "HLT_e28_lhtight_nod0_noringer_ivarloose_eEM24VHI",
+   "HLT_e28_lhtight_nod0_ringer_v1_ivarloose_eEM24VHI",
 ]
 
 
@@ -52,4 +51,18 @@ def is_target( ctx : EventContext ) -> np.int32:
 dumper.decorate( "target", is_target)
 
 ToolSvc+=dumper
-acc.run(1000)
+
+
+ToolSvc+=Efficiency("Efficiency", triggers=triggers)
+
+
+quadrant = Quadrant("Quadrant")
+
+quadrant.add_feature(
+    "HLT_e28_lhtight_nod0_noringer_ivarloose_eEM24VHI",
+    "HLT_e28_lhtight_nod0_ringer_v1_ivarloose_eEM24VHI"
+)
+
+
+ToolSvc+=quadrant
+acc.run(5000)
