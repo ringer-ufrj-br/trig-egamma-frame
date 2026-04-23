@@ -28,8 +28,8 @@ jobs:
         run: |
           make build
 
-  test-import:
-    name: Import Test Job
+  test-collect:
+    name: Data Collection Job
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -44,30 +44,11 @@ jobs:
           activate-environment: trig-egamma-frame
           environment-file: environment.yml
           cache-environment: true
-      
-      - name: Run Import Test
+
+      - name: Install Package
         shell: bash -l {0}
         run: |
-          # Re-running build briefly to ensure entry points/editable mode if needed
-          # though the conda cache handles the heavy ROOT/dependencies
-          python tests/ci_test.py
-
-  test-collect:
-    name: Data Collection Job
-    needs: test-import
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Setup Conda
-        uses: conda-incubator/setup-miniconda@v3
-        with:
-          auto-update-conda: true
-          python-version: '3.10'
-          activate-environment: trig-egamma-frame
-          environment-file: environment.yml
-          cache-environment: true
+          make build
 
       - name: Run Data Collection Test
         shell: bash -l {0}
