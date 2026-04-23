@@ -28,7 +28,7 @@ jobs:
         run: |
           make build
 
-  test-collect:
+  test-run2-event-loop:
     name: Data Collection Job
     needs: build
     runs-on: ubuntu-latest
@@ -53,4 +53,31 @@ jobs:
       - name: Run Data Collection Test
         shell: bash -l {0}
         run: |
-          python tests/data_collect.py
+          python tests/test_run2_event_loop.py
+
+  test-run3-event-loop:
+    name: Data Collection Job
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Conda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          auto-update-conda: true
+          python-version: '3.10'
+          activate-environment: trig-egamma-frame
+          environment-file: environment.yml
+          cache-environment: true
+
+      - name: Install Package
+        shell: bash -l {0}
+        run: |
+          make build
+
+      - name: Run Data Collection Test
+        shell: bash -l {0}
+        run: |
+          python tests/test_run3_event_loop.py

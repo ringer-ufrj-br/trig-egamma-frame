@@ -21,9 +21,9 @@ def main():
                          outputFile = "output.root",
                          abort = True,
                       )
-
+    from trig_egamma_frame import ToolSvc
     ToolSvc+=Filter( "Filter", [EventFilter(is_data=True, is_background=False)])
-    acc.run(10000)
+    acc.run()
     # Dummy logic for data collection
     print("✅ Data collection successful!")
     sys.exit(0)
