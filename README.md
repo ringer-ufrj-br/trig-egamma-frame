@@ -32,6 +32,10 @@ A high-performance framework for **ATLAS Trigger Egamma emulation** and data pro
 * **TensorFlow** (optional, for Ringer emulation)
 
 ### 2. Local Setup 💻
+
+> [!NOTE]
+> This framework depends heavily on **CERN ROOT**. Due to the complexity of installing ROOT via standard Python `virtualenv`, we strictly use **Conda** (or Micromamba) for environment management. This ensures all binary dependencies, including PyROOT, are correctly linked.
+
 The easiest way to install and manage the environment is using the provided `conda` configuration:
 
 ```bash
@@ -40,7 +44,7 @@ git clone https://github.com/ringer-ufrj-br/trig-egamma-frame.git
 cd trig-egamma-frame
 
 # Install dependencies and setup environment
-make setup
+make install
 
 # Activate the conda environment
 source activate.sh
