@@ -102,10 +102,21 @@ dumper = ElectronDumper("dumper_output", et_bins, eta_bins)
 ToolSvc += dumper
 loop.run(1000) # Process 1000 events
 ```
-
----
-
-## 📂 Project Structure
+ 
+ ---
+ 
++## 📖 Tutorials & Examples
++
++Detailed tutorials and production-ready examples can be found in the [share/examples](share/examples) directory. These include:
++
++- **[01_collect_data_example.ipynb](share/examples/01_collect_data_example.ipynb)**: A comprehensive guide on trigger emulation and data collection.
++- **[02_efficiency_plots.ipynb](share/examples/02_efficiency_plots.ipynb)**: How to generate and customize efficiency curves.
++- **[03_quadrant_plots.ipynb](share/examples/03_quadrant_plots.ipynb)**: Analyzing the correlation between different trigger chains.
++- **[01_create_task.py](share/examples/01_create_task.py)**: Automation script for processing large-scale datasets.
++
++---
++
+ ## 📂 Project Structure
 
 ```text
 trig-egamma-frame/
