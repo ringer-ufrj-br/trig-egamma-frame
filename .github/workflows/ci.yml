@@ -14,20 +14,19 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Micromamba
-        uses: mambaorg/setup-micromamba@v1
+      - name: Setup Conda
+        uses: conda-incubator/setup-miniconda@v3
         with:
+          auto-update-conda: true
+          python-version: '3.10'
+          activate-environment: trig-egamma-frame
           environment-file: environment.yml
-          environment-name: trig-egamma-frame
-          cache-environment: true
-          cache-downloads: true
 
-      - name: Install Package
+      - name: Build Package
+        shell: bash -l {0}
         run: |
-          # micromamba activate is handled by the action, 
-          # but we run make build as requested.
-          # Note: make build uses activate.sh which expects 'conda'.
-          # setup-micromamba provides 'conda' wrapper.
+          # The environment is already created and activated by setup-miniconda
+          # We run make build to install the package in editable mode
           make build
 
   test-import:
@@ -38,12 +37,13 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Micromamba
-        uses: mambaorg/setup-micromamba@v1
+      - name: Setup Conda
+        uses: conda-incubator/setup-miniconda@v3
         with:
+          auto-update-conda: true
+          python-version: '3.10'
+          activate-environment: trig-egamma-frame
           environment-file: environment.yml
-          environment-name: trig-egamma-frame
-          cache-environment: true
       
       - name: Run Import Test
         shell: bash -l {0}
@@ -58,12 +58,13 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Micromamba
-        uses: mambaorg/setup-micromamba@v1
+      - name: Setup Conda
+        uses: conda-incubator/setup-miniconda@v3
         with:
+          auto-update-conda: true
+          python-version: '3.10'
+          activate-environment: trig-egamma-frame
           environment-file: environment.yml
-          environment-name: trig-egamma-frame
-          cache-environment: true
 
       - name: Run Data Collection Test
         shell: bash -l {0}
