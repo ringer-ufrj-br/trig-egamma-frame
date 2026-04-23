@@ -7,25 +7,65 @@ on:
     branches: [ master, main ]
 
 jobs:
-  test-import:
+  build:
+    name: Build and Install
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.10'
+      - name: Setup Micromamba
+        uses: mambaorg/setup-micromamba@v1
+        with:
+          environment-file: environment.yml
+          environment-name: trig-egamma-frame
+          cache-environment: true
+          cache-downloads: true
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install .
-        # Note: If some dependencies require ROOT, this test might fail 
-        # unless ROOT is installed in the runner.
-        # But for a basic import test of the common parts, it might pass.
+      - name: Install Package
+        run: |
+          # micromamba activate is handled by the action, 
+          # but we run make build as requested.
+          # Note: make build uses activate.sh which expects 'conda'.
+          # setup-micromamba provides 'conda' wrapper.
+          make build
 
-    - name: Verify Import
-      run: |
-        python -c "import trig_egamma_frame; print('Successfully imported trig_egamma_frame')"
+  test-import:
+    name: Test Import
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Micromamba
+        uses: mambaorg/setup-micromamba@v1
+        with:
+          environment-file: environment.yml
+          environment-name: trig-egamma-frame
+          cache-environment: true
+      
+      - name: Run Import Test
+        shell: bash -l {0}
+        run: |
+          python tests/ci_test.py
+
+  test-collect:
+    name: Test Data Collection
+    needs: test-import
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Micromamba
+        uses: mambaorg/setup-micromamba@v1
+        with:
+          environment-file: environment.yml
+          environment-name: trig-egamma-frame
+          cache-environment: true
+
+      - name: Run Data Collection Test
+        shell: bash -l {0}
+        run: |
+          python tests/data_collect.py
