@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    name: Build
+    name: build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -29,7 +29,7 @@ jobs:
           make build
 
   test-run2-event-loop:
-    name: Event Loop Run2
+    name: event loop (Run 2)
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -55,8 +55,38 @@ jobs:
         run: |
           python tests/test_run2_event_loop.py
 
+
+  test-run2-dumper:
+    name: dumper (Run 2)
+    needs: test-run2-event-loop
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Conda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          auto-update-conda: true
+          python-version: '3.10'
+          activate-environment: trig-egamma-frame
+          environment-file: environment.yml
+          cache-environment: true
+
+      - name: Install Package
+        shell: bash -l {0}
+        run: |
+          make build
+
+      - name: Run Test
+        shell: bash -l {0}
+        run: |
+          python tests/test_run2_dumper.py
+
+
+
   test-run3-event-loop:
-    name: Event Loop Run3
+    name: event loop (Run 3)
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -84,7 +114,7 @@ jobs:
 
 
   test-run3-dumper:
-    name: Dumper Run3
+    name: dumper (Run 3)
     needs: test-run3-event-loop
     runs-on: ubuntu-latest
     steps:
@@ -112,7 +142,7 @@ jobs:
 
 
   test-run3-efficiency:
-    name: Efficiency Run3
+    name: efficiency (Run 3)
     needs: test-run3-event-loop
     runs-on: ubuntu-latest
     steps:
@@ -139,7 +169,7 @@ jobs:
           python tests/test_run3_efficiency.py
 
   test-run3-quadrant:
-    name: Quadrant Run3
+    name: quadrant (Run 3)
     needs: test-run3-event-loop
     runs-on: ubuntu-latest
     steps:
