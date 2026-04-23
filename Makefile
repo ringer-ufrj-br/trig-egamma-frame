@@ -1,29 +1,38 @@
 SHELL := /bin/bash
 
-# Load environment variables from activate.sh for use in Makefile
-# This helps use variables like MLFLOW_PORT, etc. directly.
--include .env_vars
+# Configuration
+ENV_NAME := trig-egamma-frame
+ACTIVATE := source activate.sh
 
-.PHONY: build jupyter build_root_image
-all:  build
+.PHONY: install build jupyter clean all env-rm
 
-# Helper to export vars from activate.sh into a temporary file for Makefile inclusion
-.env_vars: activate.sh
-	@grep "export " activate.sh | sed 's/export //' > .env_vars
+all: build
 
-build: .env_vars
-	@bash activate.sh
+# Install environment and package
+install:
+	@echo "🛠️  Creating/Updating conda environment from environment.yml..."
+	@conda env create -f environment.yml || conda env update -n $(ENV_NAME) -f environment.yml
+	@echo "🛠️  Installing package in editable mode..."
+	@echo "✅ Installation complete."
 
-jupyter: .env_vars
-	@bash activate.sh && jupyter lab --IdentityProvider.token="" --ServerApp.password=""
+# Delete the conda environment
+env-rm:
+	@echo "🔥 Removing conda environment: $(ENV_NAME)..."
+	@conda env remove -n $(ENV_NAME) -y || true
+	@echo "✨ Environment removed."
 
-build_root_image:
-	singularity build --fakeroot --force root_image.sif images/root/Singularity.def
+# Build target to install the current package in editable mode
+build:
+	@echo "🛠️  Installing package in editable mode..."
+	@$(ACTIVATE) && pip install -e .
 
+# Launch Jupyter Lab within the conda environment
+jupyter:
+	@echo "🚀 Launching Jupyter Lab..."
+	@$(ACTIVATE) && jupyter lab --IdentityProvider.token="" --ServerApp.password=""
 
-clean:
-	@echo "🧹 Cleaning up..."
-	rm -rf .egamma-env
+clean: env-rm
+	@echo "🧹 Cleaning up legacy files..."
 	rm -rf build/
 	rm -rf dist/
 	rm -rf *.egg-info

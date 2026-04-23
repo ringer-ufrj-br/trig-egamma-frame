@@ -1,0 +1,10 @@
+name: trig-egamma-frame
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - root=6.30
+  - pip
+  - jupyterlab
+  

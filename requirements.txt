@@ -1,10 +1,6 @@
 numpy
-requests
-Werkzeug
 BeneDict
 prettytable
-ansi2html
-colorama
 psutil
 tqdm
 pytest-order
@@ -14,18 +10,16 @@ keras2onnx
 atlas-mpl-style
 scikit-learn
 seaborn
-jupyterlab
-wandb
 pandarallel
 tables
-colorlog
 pybeamer
-rootplotlib
 tf2onnx
 loguru
 rich_argparse
 tensorflow
-expand_folders
 pydantic
 pyarrow
 fastparquet
+expand_folders
+rootplotlib @ git+https://github.com/ringer-ufrj-br/rootplotlib.git
+maestro-lightning @ git+https://github.com/lps-ufrj-br/maestro-lightning.git

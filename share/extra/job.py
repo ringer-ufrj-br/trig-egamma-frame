@@ -37,26 +37,26 @@ acc = ElectronLoop(  "EventATLASLoop",
 
 
 ToolSvc+=Filter( "Filter", [my_filter])
-dumper = ElectronDumper(output, et_bins, eta_bins)
-for trigName in triggers:
-    dumper.decorate_chain(trigName)
-
-dumper.decorate( "mc_isTruthElectronFromZ"          , isZ_decorator   )
-dumper.decorate( "mc_isTruthElectronFromAny"        , isAny_decorator )
-dumper.decorate( "mc_isTruthElectronFromJpsiPromt"  , isJpsi_decorator)
-
-is_background=False
-def is_target( ctx : EventContext ) -> np.int32:
-    return np.int32(0) if is_background else np.int32(1)
-dumper.decorate( "target", is_target)
-
-ToolSvc+=dumper
+#dumper = ElectronDumper(output, et_bins, eta_bins)
+#for trigName in triggers:
+#    dumper.decorate_chain(trigName)
+#dumper.decorate( "mc_isTruthElectronFromZ"          , isZ_decorator   )
+#dumper.decorate( "mc_isTruthElectronFromAny"        , isAny_decorator )
+#dumper.decorate( "mc_isTruthElectronFromJpsiPromt"  , isJpsi_decorator)
+#is_background=False
+#def is_target( ctx : EventContext ) -> np.int32:
+#    return np.int32(0) if is_background else np.int32(1)
+#dumper.decorate( "target", is_target)
+#ToolSvc+=dumper
 
 
 ToolSvc+=Efficiency("Efficiency", triggers=triggers)
 
 
-quadrant = Quadrant("Quadrant")
+quadrant = Quadrant("Quadrant",
+                     et_bins  = [15.0,50.0,50000.0] ,
+                     eta_bins = [ 0.0, 0.8, 1.37, 1.54, 2.37, 2.50 ],
+                     )
 
 quadrant.add_feature(
     "HLT_e28_lhtight_nod0_noringer_ivarloose_eEM24VHI",
@@ -65,4 +65,4 @@ quadrant.add_feature(
 
 
 ToolSvc+=quadrant
-acc.run(5000)
+acc.run(10000)

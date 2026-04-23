@@ -1,12 +1,14 @@
 
-__all__ = ["Quadrant", "QuadrantConfig"]
+__all__ = ["Quadrant"]
 
 import math
 import array
 import numpy as np
 from typing import List, Dict, Optional, Sequence, Any, Union, Tuple
 from ROOT import TH1F, TH2F, TProfile, TProfile2D
-
+from trig_egamma_frame.emulator.run3.menu.ChainDict import get_chain_dict
+from trig_egamma_frame.emulator import attach
+from trig_egamma_frame.emulator.run3 import ElectronChain as Chain
 from trig_egamma_frame.kernel import Algorithm, StatusCode, EventContext
 from trig_egamma_frame import logger, GeV
 from trig_egamma_frame.enumerators import DataframeType as DataframeEnum
@@ -23,27 +25,9 @@ from trig_egamma_frame.constants import (
     nvtx_bins,
     lh_tuning_et_bins,
     lh_tuning_eta_bins,
+    lh_thres_et_bins,
+    lh_thres_eta_bins,
 )
-
-
-class QuadrantConfig:
-    """Config for a quadrant feature (pair of trigger expressions)."""
-    def __init__(self, name_a: str, expression_a: str, name_b: str, expression_b: str):
-        self._name_a = name_a
-        self._expression_a = expression_a
-        self._name_b = name_b
-        self._expression_b = expression_b
-    
-    def name_a(self) -> str: return self._name_a
-    def expression_a(self) -> str: return self._expression_a
-    def name_b(self) -> str: return self._name_b
-    def expression_b(self) -> str: return self._expression_b
-
-
-
-
-
-
 
 class Quadrant(Algorithm):
     """
@@ -53,8 +37,8 @@ class Quadrant(Algorithm):
     def __init__(self, 
                  name: str, 
                  basepath: str = "quadrant",
-                 et_bins: List[float] = lh_tuning_et_bins,
-                 eta_bins: List[float] = lh_tuning_eta_bins):
+                 et_bins: List[float] = lh_thres_et_bins,
+                 eta_bins: List[float] = lh_thres_eta_bins):
         """
         Constructor.
 
@@ -74,6 +58,8 @@ class Quadrant(Algorithm):
 
     def add_feature(self, name_a: str, name_b: str) -> None:
         """Add a quadrant configuration to monitor."""
+        attach(Chain(name_a))
+        attach(Chain(name_b))
         self.__quadrant_features.append((name_a, name_b))
 
 

@@ -5,12 +5,12 @@ from setuptools import setup, find_packages
 with open("README.md", "r") as f:
     long_description = f.read()
 with open("requirements.txt", "r") as f:
-    requirements = f.read()
+    requirements = f.read().splitlines()
 
 
 setup(
     name='trig_egamma_frame',
-    version='1.0.0',
+    version='2.0.0',
     license='GPL-3.0',
     #description='novacula orquestrator',
     long_description=long_description,

@@ -32,14 +32,17 @@ A high-performance framework for **ATLAS Trigger Egamma emulation** and data pro
 * **TensorFlow** (optional, for Ringer emulation)
 
 ### 2. Local Setup 💻
-The easiest way to install and manage the environment is using the provided `activate.sh` script:
+The easiest way to install and manage the environment is using the provided `conda` configuration:
 
 ```bash
 # Clone the repository
 git clone https://github.com/ringer-ufrj-br/trig-egamma-frame.git
 cd trig-egamma-frame
 
-# Initialize and activate the virtual environment
+# Install dependencies and setup environment
+make setup
+
+# Activate the conda environment
 source activate.sh
 ```
 

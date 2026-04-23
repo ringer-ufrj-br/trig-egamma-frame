@@ -1,15 +1,25 @@
 
 __all__ = ["Efficiency"]
 
+
+
+
 import array
 import numpy as np
+from tqdm import tqdm
 from typing import List, Dict, Optional, Sequence, Any, Union
-from ROOT import TH1F, TH2F, TProfile, TProfile2D
+from ROOT import TH1F, TH2F, TProfile, TProfile2D, TFile
+from expand_folders import expand_folders
+from copy import deepcopy
+from prettytable import PrettyTable
 
 from trig_egamma_frame.kernel import Algorithm, StatusCode, EventContext
 from trig_egamma_frame import logger, GeV
 from trig_egamma_frame.emulator.run3.menu.ChainDict import get_chain_dict
-from trig_egamma_frame.constants import etabins, zee_et_bins as zee_etbins, mu_bins as mubins
+from trig_egamma_frame.constants import eta_bins_default, zee_et_bins, mu_bins
+from trig_egamma_frame.emulator.run3.menu.ChainDict import get_chain_dict
+from trig_egamma_frame.emulator import attach
+from trig_egamma_frame.emulator.run3 import ElectronChain as Chain
 
 
 class Efficiency(Algorithm):
@@ -21,9 +31,9 @@ class Efficiency(Algorithm):
                  name: str, 
                  basepath: str = "trigger",
                  triggers: List[str] = [],
-                 etbins: Sequence[float] = zee_etbins,
-                 etabins: Sequence[float] = etabins,
-                 mubins: Sequence[float] = mubins,
+                 etbins: Sequence[float] = zee_et_bins,
+                 etabins: Sequence[float] = eta_bins_default,
+                 mubins: Sequence[float] = mu_bins,
                  pidname: Optional[str] = None):
         """
         Constructor for the Efficiency algorithm.
@@ -59,6 +69,7 @@ class Efficiency(Algorithm):
             Efficiency: The algorithm instance itself.
         """
         chainPart = get_chain_dict(trigName)
+        attach(Chain(trigName))
         self.triggers.append(chainPart)
         return self
 
@@ -257,3 +268,5 @@ class Efficiency(Algorithm):
         
         self.fina_lock()
         return StatusCode.SUCCESS 
+
+
