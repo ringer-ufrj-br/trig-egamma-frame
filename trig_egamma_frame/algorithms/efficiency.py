@@ -57,6 +57,9 @@ class Efficiency(Algorithm):
         self.mubins = array.array('d', mubins) if not isinstance(mubins, array.array) else mubins
         self.pidname = pidname
 
+        for trigName in self.__trigger_names:
+            attach(Chain(trigName))
+
 
     def __add__(self, trigName: str) -> 'Efficiency':
         """

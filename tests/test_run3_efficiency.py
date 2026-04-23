@@ -12,18 +12,25 @@ def main():
 
     print("🚀 Starting data collection test...")
 
-    input_files = "tests/samples/run_2/*.root"
+    input_files = "tests/samples/run_3/*.root"
    
     acc = ElectronLoop(  "EventATLASLoop",
                          inputFile  = input_files,
-                         treePath   = "*/HLT/Physval/Egamma/probes",
-                         dataframe  = DataframeSchemma.Run2,
+                         treePath  =  "*/HLT/EgammaMon/summary/events",
+                         dataframe  = DataframeSchemma.Run3,
                          outputFile = "output.root",
                          abort = True,
                       )
-
+    from trig_egamma_frame import ToolSvc
     ToolSvc+=Filter( "Filter", [EventFilter(is_data=True, is_background=False)])
-    acc.run(10000)
+
+    triggers = [
+        "HLT_e28_lhtight_nod0_noringer_ivarloose_eEM24VHI",
+        "HLT_e28_lhmedium_nod0_noringer_ivarloose_eEM24VHI",
+
+    ]
+    ToolSvc+=Efficiency("Efficiency", triggers=triggers)
+    acc.run()
     # Dummy logic for data collection
     print("✅ Data collection successful!")
     sys.exit(0)
