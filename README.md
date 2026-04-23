@@ -12,6 +12,18 @@
 
 A high-performance framework for **ATLAS Trigger Egamma emulation** and data processing. Designed for both Legacy (Run 2) and modern Run 3 data, this framework provides a modular and efficient environment to simulate trigger chains, optimize selectors (like Ringer), and dump analysis-ready data. 🚀
 
+## 🧪 CI Status
+
+| Test Job | Target | Status |
+| :--- | :--- | :--- |
+| **Environment** | Conda Build & Install | ![Build](https://img.shields.io/github/actions/workflow/status/ringer-ufrj-br/trig-egamma-frame/ci.yml?job=build&label=build&branch=master) |
+| **Run 2 Loop** | Event Loop (v1) | ![Run2 Loop](https://img.shields.io/github/actions/workflow/status/ringer-ufrj-br/trig-egamma-frame/ci.yml?job=test-run2-event-loop&label=run2-loop&branch=master) |
+| **Run 2 Dumper** | Data Dumping (v1) | ![Run2 Dumper](https://img.shields.io/github/actions/workflow/status/ringer-ufrj-br/trig-egamma-frame/ci.yml?job=test-run2-dumper&label=run2-dumper&branch=master) |
+| **Run 3 Loop** | Event Loop (v2) | ![Run3 Loop](https://img.shields.io/github/actions/workflow/status/ringer-ufrj-br/trig-egamma-frame/ci.yml?job=test-run3-event-loop&label=run3-loop&branch=master) |
+| **Run 3 Dumper** | Data Dumping (v2) | ![Run3 Dumper](https://img.shields.io/github/actions/workflow/status/ringer-ufrj-br/trig-egamma-frame/ci.yml?job=test-run3-dumper&label=run3-dumper&branch=master) |
+| **Efficiency** | Efficiency Algs (v2) | ![Efficiency](https://img.shields.io/github/actions/workflow/status/ringer-ufrj-br/trig-egamma-frame/ci.yml?job=test-run3-efficiency&label=efficiency&branch=master) |
+| **Quadrant** | Quadrant Algs (v2) | ![Quadrant](https://img.shields.io/github/actions/workflow/status/ringer-ufrj-br/trig-egamma-frame/ci.yml?job=test-run3-quadrant&label=quadrant&branch=master) |
+
 ---
 
 ## 🌟 Key Features
@@ -20,7 +32,6 @@ A high-performance framework for **ATLAS Trigger Egamma emulation** and data pro
 - **🧠 ML-Ready**: Built-in support for the **Ringer Selector** using TensorFlow/Keras and ONNX.
 - **🏗️ Modular Architecture**: Leverages `Algorithm`, `StoreGate`, and `EDM` patterns for clean, extensible code.
 - **📊 Fast Data Dumping**: Integrated `ElectronDumper` utilizing ROOT's `RDataFrame` for high-speed I/O.
-- **🐳 Container Optimized**: Perfect for execution within Singularity/Apptainer environments.
 
 ---
 
@@ -48,17 +59,6 @@ make install
 
 # Activate the conda environment
 source activate.sh
-```
-
-### 3. Using Singularity 🐳
-For cluster environments (like CERN LXPLUS), it is recommended to use the containerized version:
-
-```bash
-# Download the image (using Makefile)
-make pull
-
-# Run the container with necessary volume binds
-singularity run --bind /mnt/shared:/mnt/shared root_image.sif
 ```
 
 ---
